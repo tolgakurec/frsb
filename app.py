@@ -264,7 +264,7 @@ def delete_hybrid_book(book_id):
             time.sleep(0.1)
 
 # ==========================================
-# 3. OCR, ÇEVİRİ VE DİNAMİK HAZIRLIK MOTORU
+# 3. OCR, ÇEVİRİ VE DİNAMİK SÖZLÜK MOTORU
 # ==========================================
 @st.cache_resource
 def load_ocr():
@@ -323,9 +323,19 @@ def sort_reading_order(ocr_items):
             sorted_items.append(p['item'])
     return sorted_items
 
+def clean_word_key(text):
+    """Kelimeler ve kelime öbekleri arasındaki boşlukları ve kesme işaretlerini korur, sadece uçlardaki noktalamaları temizler."""
+    if not text:
+        return ""
+    # Baş ve sondaki noktalama işaretlerini kaldır ama ortadaki boşluk ve kesme işaretlerini koru
+    cleaned = re.sub(r"^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$", "", text).strip().lower()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned
+
 @st.cache_data(show_spinner=False)
 def translate_text(text, target_lang):
-    if not text.strip(): return ""
+    if not text or not text.strip():
+        return ""
     clients = ['gtx', 'dict-chrome-ex', 'te_lib']
     for client in clients:
         try:
@@ -333,38 +343,72 @@ def translate_text(text, target_lang):
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             res = urllib.request.urlopen(req, timeout=5)
             data = json.loads(res.read().decode('utf-8'))
-            return "".join([s[0] for s in data[0] if s[0]])
-        except: continue
+            translated_parts = []
+            if data and data[0]:
+                for s in data[0]:
+                    if s and s[0]:
+                        translated_parts.append(s[0])
+            return "".join(translated_parts).strip()
+        except:
+            continue
     return "-"
 
 @st.cache_data(show_spinner=False)
-def get_words_dictionary(words_list, target_lang):
-    clean_words = list(set([re.sub(r"[^\wÀ-ÿ'-]", "", w).strip().lower() for w in words_list if re.sub(r"[^\wÀ-ÿ'-]", "", w).strip()]))
-    if not clean_words: return {}
-    combined = " | ".join(clean_words)
-    translated = translate_text(combined, target_lang)
+def get_words_dictionary(texts_list, target_lang):
+    """Tüm cümle öbeklerini ve içindeki her bir tekil kelimeyi eksiksiz çevirip eşleştirir."""
     trans_map = {}
-    parts = [w.strip() for w in translated.split("|")]
-    for i, word in enumerate(clean_words):
-        trans_map[word] = parts[i] if i < len(parts) else "-"
+    unique_items = set()
+
+    for raw in texts_list:
+        clean = clean_word_key(raw)
+        if clean:
+            unique_items.add(clean)
+        # Eğer öbek birden fazla kelimeden oluşuyorsa içindeki tekil kelimeleri de sözlüğe ekle
+        for word in re.findall(r"[\wÀ-ÿ'-]+", raw):
+            w_clean = clean_word_key(word)
+            if len(w_clean) > 1:
+                unique_items.add(w_clean)
+
+    if not unique_items:
+        return {}
+
+    items_list = sorted(list(unique_items))
+
+    # Google API'yi yormamak için 15'erli gruplar halinde satır başı (\n) ile toplu çeviri
+    batch_size = 15
+    for i in range(0, len(items_list), batch_size):
+        batch = items_list[i:i + batch_size]
+        combined = "\n".join(batch)
+        translated_combined = translate_text(combined, target_lang)
+
+        lines = [line.strip() for line in translated_combined.split("\n") if line.strip()]
+        if len(lines) == len(batch):
+            for orig, trans in zip(batch, lines):
+                trans_map[orig] = trans
+        else:
+            # Satır sayısında uyuşmazlık olursa her birini tekil olarak güvenle al
+            for orig in batch:
+                trans_map[orig] = translate_text(orig, target_lang)
+
     return trans_map
 
-def clean_word_key(text):
-    return re.sub(r"[^\wÀ-ÿ'-]", "", text).strip().lower()
-
 def ensure_reading_ready(pages, target_lang):
-    """Sayfaları seçilen dilde okumaya hazır hale getirir; çevirileri ve sözlükleri eksiksiz bağlar."""
+    """Sayfaları okuma moduna tam hazır hale getirir; çevirileri ve kelime sözlüklerini eksiksiz bağlar."""
     for page in pages:
-        if page.get("current_lang") != target_lang or "full_trans" not in page:
-            words = [b["text"].strip() for b in page.get("boxes", []) if b.get("text", "").strip()]
-            full_str = " ".join(words)
+        if page.get("current_lang") != target_lang or "full_trans" not in page or "dictionary" not in page:
+            boxes = page.get("boxes", [])
+            raw_texts = []
+            for b in boxes:
+                raw = b.get("text", "").strip()
+                if raw:
+                    raw_texts.append(raw)
+                    b["clean"] = clean_word_key(raw)
+
+            full_str = " ".join(raw_texts)
             page["full_text"] = full_str
             page["full_trans"] = translate_text(full_str, target_lang)
-            page["dictionary"] = get_words_dictionary(words, target_lang)
+            page["dictionary"] = get_words_dictionary(raw_texts, target_lang)
             page["current_lang"] = target_lang
-            
-            for b in page.get("boxes", []):
-                b["clean"] = clean_word_key(b.get("text", ""))
     return pages
 
 def process_single_image(img):
@@ -440,7 +484,6 @@ elif st.session_state.reading_mode:
         st.session_state.reading_mode = False
         st.rerun()
 
-    # Sayfaların çevirilerini seçili dilde doğrula ve garantile
     pages = ensure_reading_ready(st.session_state.uploaded_book_pages, st.session_state.app_lang)
     pages_json = json.dumps(pages)
     target_flag = LANGUAGES[st.session_state.app_lang]["flag"]
@@ -509,7 +552,7 @@ elif st.session_state.reading_mode:
                 imgEl.src = "data:image/jpeg;base64," + page.img_b64;
                 pageCounter.innerText = `Sayfa ${{idx + 1}} / ${{allPages.length}}`;
                 btnPrev.disabled = (idx === 0); btnNext.disabled = (idx === allPages.length - 1);
-                card.style.display = 'none'; layer.innerHTML = ''; wordIndices = []; let charOffset = 0;
+                card.style.display = 'none'; card.dataset.type = ''; layer.innerHTML = ''; wordIndices = []; let charOffset = 0;
                 
                 (page.boxes || []).forEach((b, i) => {{
                     wordIndices.push({{ idx: i, start: charOffset, end: charOffset + b.text.length }});
@@ -518,18 +561,23 @@ elif st.session_state.reading_mode:
                     d.style.left = b.left + '%'; d.style.top = b.top + '%'; d.style.width = b.width + '%'; d.style.height = b.height + '%';
                     d.onclick = () => {{
                         resetHudTimer(); 
+                        clearTimeout(timer);
                         const dict = page.dictionary || {{}};
-                        const cleanKey = b.clean || b.text.replace(/[^\\p{{L}}\\p{{N}}'-]/gu, '').toLowerCase().trim();
-                        const trans = dict[cleanKey] || dict[b.clean] || dict[b.text.toLowerCase().trim()] || '-';
+                        const cleanKey = b.clean || b.text.toLowerCase().trim();
+                        let trans = dict[cleanKey] || dict[b.text.toLowerCase().trim()] || dict[b.text] || '-';
+                        if (trans === '-' || !trans) {{
+                            let noPunct = b.text.replace(/^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$/g, "").trim().toLowerCase();
+                            trans = dict[noPunct] || '-';
+                        }}
                         card.innerHTML = "🇫🇷 <b>" + b.text + "</b> ➔ " + targetFlag + " " + trans; 
                         card.style.display = 'block';
+                        card.dataset.type = 'word';
                         window.speechSynthesis.cancel(); 
                         const u = new SpeechSynthesisUtterance(b.text); 
                         u.lang = 'fr-FR'; 
                         u.rate = speeds[speedIdx]; 
                         window.speechSynthesis.speak(u);
-                        clearTimeout(timer); 
-                        timer = setTimeout(() => {{ card.style.display = 'none'; }}, 3500);
+                        timer = setTimeout(() => {{ card.style.display = 'none'; card.dataset.type = ''; }}, 4000);
                     }};
                     layer.appendChild(d);
                 }});
@@ -538,12 +586,15 @@ elif st.session_state.reading_mode:
             function prevPage() {{ resetHudTimer(); if (currentIndex > 0) loadPage(currentIndex - 1); }}
             function toggleTranslation() {{
                 resetHudTimer();
-                const transText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : "Çeviri yükleniyor...";
-                if (card.style.display === 'block') {{
+                clearTimeout(timer);
+                const transText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : "Çeviri hazırlanıyor...";
+                if (card.style.display === 'block' && card.dataset.type === 'page') {{
                     card.style.display = 'none';
+                    card.dataset.type = '';
                 }} else {{ 
                     card.innerHTML = "📝 <b>Sayfa Çevirisi:</b> " + transText; 
                     card.style.display = 'block'; 
+                    card.dataset.type = 'page';
                 }}
             }}
             function toggleKaraoke() {{ resetHudTimer(); if (isPlaying) stopKaraoke(); else playKaraoke(); }}
@@ -601,11 +652,11 @@ elif st.session_state.editor_mode:
             with st.spinner("Google Sheets'e kaydediliyor ve çeviriler hazırlanıyor..."):
                 saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
                 if saved_f:
-                    # Çevirileri okuma modu öncesinde hazırla
                     prepared = ensure_reading_ready(st.session_state.editor_pages, st.session_state.app_lang)
                     st.session_state.uploaded_book_pages = prepared
                     st.session_state.current_book_title = st.session_state.editor_book_title
                     st.session_state.editor_mode = False
+                    st.reading_mode = True
                     st.session_state.reading_mode = True
                     st.rerun()
                 else:
