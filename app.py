@@ -30,7 +30,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 0. ÇOK DİLLİ ARAYÜZ METİNLERİ (TR / EN / BG)
+# 0. ÇOK DİLLİ ARAYÜZ METİNLERİ (TR / EN / BG / DE / ES / RU)
 # ==========================================
 UI_TRANSLATIONS = {
     "tr": {
@@ -38,18 +38,9 @@ UI_TRANSLATIONS = {
         "subtitle": "Fransızca Hikayeleri Keşfet ve Birlikte Öğren",
         "created_by": "Bu uygulama Tolga Küreç tarafından oluşturulmuştur (Timuçin ve Teoman'ın Babası)",
         "purpose_title": "🎯 Uygulamanın Amacı",
-        "purpose_text": (
-            "Bu kütüphane, Fransızca bilmeyen ailelerin kitap okurken çocukları ile kaliteli ve verimli "
-            "vakit geçirmelerini sağlamak; hikayelerin konusunu kavramada ve Fransızca telaffuz (prononciation) "
-            "konusunda velilere rehberlik etmek için tasarlanmıştır."
-        ),
+        "purpose_text": "Bu kütüphane, Fransızca bilmeyen ailelerin kitap okurken çocukları ile kaliteli ve verimli vakit geçirmelerini sağlamak; hikayelerin konusunu kavramada ve Fransızca telaffuz (prononciation) konusunda velilere rehberlik etmek için tasarlanmıştır.",
         "usage_title": "💡 Nasıl Kullanılır?",
-        "usage_text": (
-            "1. Okumak istediğiniz hikayeyi kütüphaneden seçin ve açın.\n"
-            "2. Sayfadaki kelimelere dokunarak doğru Fransızca sesli okunuşunu dinleyin ve anlık çevirisini görün.\n"
-            "3. 'Sesli Dinle' butonu ile sayfanın tamamını akıcı olarak takip edin.\n"
-            "4. 'Sayfa Çevirisi' butonu ile hikayenin Türkçe özet mealini okuyun."
-        ),
+        "usage_text": "1. Okumak istediğiniz hikayeyi kütüphaneden seçin ve açın.\n2. Sayfadaki kelimelere dokunarak doğru Fransızca sesli okunuşunu dinleyin ve anlık çevirisini görün.\n3. 'Sesli Dinle' butonu ile sayfanın tamamını akıcı olarak takip edin.\n4. 'Sayfa Çevirisi' butonu ile hikayenin Türkçe özet mealini okuyun.",
         "email_label": "E-posta Adresiniz:",
         "login_btn": "Giriş Yap",
         "email_warn": "Lütfen geçerli bir e-posta adresi girin.",
@@ -85,18 +76,9 @@ UI_TRANSLATIONS = {
         "subtitle": "Explore French Stories & Learn Together",
         "created_by": "This application was created by Tolga Küreç (Father of Timuçin & Teoman)",
         "purpose_title": "🎯 Purpose of the App",
-        "purpose_text": (
-            "This library is designed for non-French speaking families to spend productive, enjoyable reading "
-            "time with their children. It assists parents in understanding the storyline and mastering French "
-            "pronunciation alongside their kids."
-        ),
+        "purpose_text": "This library is designed for non-French speaking families to spend productive, enjoyable reading time with their children. It assists parents in understanding the storyline and mastering French pronunciation alongside their kids.",
         "usage_title": "💡 How to Use?",
-        "usage_text": (
-            "1. Select a storybook from the library pool and open it.\n"
-            "2. Tap any word or phrase on the page to hear genuine French pronunciation and view instant translation.\n"
-            "3. Use 'Listen Aloud' to experience karaoke audio playback of the whole page.\n"
-            "4. Use 'Page Translation' to reveal the full meaning of the page."
-        ),
+        "usage_text": "1. Select a storybook from the library pool and open it.\n2. Tap any word or phrase on the page to hear genuine French pronunciation and view instant translation.\n3. Use 'Listen Aloud' to experience karaoke audio playback of the whole page.\n4. Use 'Page Translation' to reveal the full meaning of the page.",
         "email_label": "Your Email Address:",
         "login_btn": "Sign In",
         "email_warn": "Please enter a valid email address.",
@@ -132,18 +114,9 @@ UI_TRANSLATIONS = {
         "subtitle": "Открийте френските приказки и учете заедно",
         "created_by": "Това приложение е създадено от Толга Кюреч (Бащата на Тимучин и Теоман)",
         "purpose_title": "🎯 Цел на приложението",
-        "purpose_text": (
-            "Тази библиотека е създадена, за да помогне на семействата, които не говорят френски, "
-            "да прекарват пълноценно и приятно време с децата си по време на четене. Тя подпомага родителите "
-            "в разбирането на сюжета и правилното френско произношение."
-        ),
+        "purpose_text": "Тази библиотека е създадена, за да помогне на семействата, които не говорят френски, да прекарват пълноценно и приятно време с децата си по време на четене. Тя подпомага родителите в разбирането на сюжета и правилното френско произношение.",
         "usage_title": "💡 Как се използва?",
-        "usage_text": (
-            "1. Изберете приказка от библиотеката и я отворете.\n"
-            "2. Докоснете дума или фраза на страницата, за да чуете произношението ѝ и да видите превода.\n"
-            "3. Натиснете 'Слушай', за да чуете гладкото четене на цялата страница с караоке ефект.\n"
-            "4. Натиснете 'Превод на страницата', за да прочетете пълния смислов превод."
-        ),
+        "usage_text": "1. Изберете приказка от библиотеката и я отворете.\n2. Докоснете дума или фраза на страницата, за да чуете произношението ѝ и да видите превода.\n3. Натиснете 'Слушай', за да чуете гладкото четене на цялата страница с караоке ефект.\n4. Натиснете 'Превод на страницата', за да прочетете пълния смислов превод.",
         "email_label": "Вашият имейл адрес:",
         "login_btn": "Вход",
         "email_warn": "Моля, въведете валиден имейл адрес.",
@@ -173,6 +146,120 @@ UI_TRANSLATIONS = {
         "zen_stop": "Спри",
         "zen_page_trans": "Превод на страницата",
         "zen_loading_trans": "Подготвя се превод..."
+    },
+    "de": {
+        "title": "📚 Französische Märchenbibliothek",
+        "subtitle": "Entdecken Sie französische Geschichten & lernen Sie gemeinsam",
+        "created_by": "Diese App wurde von Tolga Küreç (Vater von Timuçin & Teoman) erstellt",
+        "purpose_title": "🎯 Zweck der App",
+        "purpose_text": "Diese Bibliothek wurde entwickelt, damit nicht französischsprachige Familien beim Vorlesen qualitativ hochwertige und produktive Zeit mit ihren Kindern verbringen können. Sie hilft Eltern dabei, die Handlung zu verstehen und die französische Aussprache zu üben.",
+        "usage_title": "💡 Wie funktioniert es?",
+        "usage_text": "1. Wählen Sie ein Buch aus der Bibliothek aus und öffnen Sie es.\n2. Tippen Sie auf Wörter auf der Seite, um die französische Aussprache zu hören und die Übersetzung zu sehen.\n3. Verwenden Sie 'Laut vorlesen', um der gesamten Seite fließend zu folgen.\n4. Nutzen Sie 'Seitenübersetzung', um die Inhaltsangabe zu lesen.",
+        "email_label": "Ihre E-Mail-Adresse:",
+        "login_btn": "Anmelden",
+        "email_warn": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        "welcome": "Willkommen",
+        "logout": "🚪 Abmelden",
+        "thanks_btn": "❤️ Danke senden",
+        "thanks_success": "Ihr Dank wurde an Tolga Küreç gesendet! Viel Spaß beim Lesen.",
+        "lib_title": "📖 Bibliothek",
+        "add_tab": "➕ Neues Buch hinzufügen",
+        "empty_lib": "Noch keine Bücher in der Bibliothek.",
+        "select_book": "Wählen Sie ein Buch zum Lesen:",
+        "open_read": "🚀 Öffnen & Lesen",
+        "edit_book": "✏️ Buch bearbeiten",
+        "delete_book": "🗑️ Löschen",
+        "delete_confirm": "Buch erfolgreich gelöscht.",
+        "save_changes": "💾 Änderungen speichern",
+        "save_and_read": "🚀 Speichern & Lesen",
+        "exit_editor": "✕ Verlassen",
+        "split_page_btn": "✂️ Doppelseite teilen (Links & Rechts)",
+        "split_success": "Seite erfolgreich in links und rechts geteilt!",
+        "saving_db": "Speichern in der Datenbank...",
+        "ocr_processing": "Bilder werden gescannt...",
+        "reading_lang_label": "Lese- & Übersetzungssprache:",
+        "zen_close": "✕ Schließen",
+        "zen_page": "Seite",
+        "zen_listen": "Laut vorlesen",
+        "zen_stop": "Stopp",
+        "zen_page_trans": "Seitenübersetzung",
+        "zen_loading_trans": "Übersetzung wird vorbereitet..."
+    },
+    "es": {
+        "title": "📚 Biblioteca de Cuentos en Francés",
+        "subtitle": "Explora cuentos en francés y aprendan juntos",
+        "created_by": "Esta aplicación fue creada por Tolga Küreç (Padre de Timuçin y Teoman)",
+        "purpose_title": "🎯 Propósito de la aplicación",
+        "purpose_text": "Esta biblioteca está diseñada para que las familias que no hablan francés pasen tiempo de calidad con sus hijos mientras leen. Ayuda a los padres a comprender la historia y los guía con la pronunciación en francés.",
+        "usage_title": "💡 ¿Cómo se usa?",
+        "usage_text": "1. Seleccione un libro de la biblioteca y ábralo.\n2. Toque las palabras en la página para escuchar la pronunciación y ver la traducción.\n3. Use 'Leer en voz alta' para escuchar toda la página.\n4. Use 'Traducción de página' para leer el significado de la historia.",
+        "email_label": "Su correo electrónico:",
+        "login_btn": "Iniciar sesión",
+        "email_warn": "Por favor, introduzca un correo electrónico válido.",
+        "welcome": "Bienvenido",
+        "logout": "🚪 Cerrar sesión",
+        "thanks_btn": "❤️ Enviar agradecimiento",
+        "thanks_success": "¡Su agradecimiento ha sido enviado a Tolga Küreç! Feliz lectura.",
+        "lib_title": "📖 Biblioteca",
+        "add_tab": "➕ Añadir nuevo libro",
+        "empty_lib": "Aún no hay libros en la biblioteca.",
+        "select_book": "Seleccione un libro para leer:",
+        "open_read": "🚀 Abrir y Leer",
+        "edit_book": "✏️ Editar libro",
+        "delete_book": "🗑️ Eliminar",
+        "delete_confirm": "Libro eliminado con éxito.",
+        "save_changes": "💾 Guardar cambios",
+        "save_and_read": "🚀 Guardar y Leer",
+        "exit_editor": "✕ Salir",
+        "split_page_btn": "✂️ Dividir página doble (Izquierda y Derecha)",
+        "split_success": "¡Página dividida con éxito!",
+        "saving_db": "Guardando en la base de datos...",
+        "ocr_processing": "Escaneando imágenes...",
+        "reading_lang_label": "Idioma de traducción:",
+        "zen_close": "✕ Cerrar",
+        "zen_page": "Página",
+        "zen_listen": "Leer en voz alta",
+        "zen_stop": "Detener",
+        "zen_page_trans": "Traducción de página",
+        "zen_loading_trans": "Preparando la traducción..."
+    },
+    "ru": {
+        "title": "📚 Библиотека французских сказок",
+        "subtitle": "Открывайте французские сказки и учитесь вместе",
+        "created_by": "Это приложение создал Толга Кюреч (отец Тимучина и Теомана)",
+        "purpose_title": "🎯 Цель приложения",
+        "purpose_text": "Эта библиотека создана для того, чтобы семьи, не говорящие по-французски, могли с пользой проводить время за чтением с детьми. Она помогает родителям понять сюжет и освоить французское произношение.",
+        "usage_title": "💡 Как использовать?",
+        "usage_text": "1. Выберите книгу из библиотеки и откройте ее.\n2. Нажимайте на слова, чтобы услышать французское произношение и увидеть перевод.\n3. Кнопка 'Слушать вслух' прочитает всю страницу.\n4. Кнопка 'Перевод страницы' покажет полный смысл текста.",
+        "email_label": "Ваш Email:",
+        "login_btn": "Войти",
+        "email_warn": "Пожалуйста, введите действительный Email.",
+        "welcome": "Добро пожаловать",
+        "logout": "🚪 Выйти",
+        "thanks_btn": "❤️ Отправить благодарность",
+        "thanks_success": "Ваша благодарность отправлена Толга Кюречу! Приятного чтения.",
+        "lib_title": "📖 Библиотека",
+        "add_tab": "➕ Добавить новую книгу",
+        "empty_lib": "В библиотеке пока нет книг.",
+        "select_book": "Выберите книгу для чтения:",
+        "open_read": "🚀 Открыть и читать",
+        "edit_book": "✏️ Редактировать книгу",
+        "delete_book": "🗑️ Удалить",
+        "delete_confirm": "Книга успешно удалена.",
+        "save_changes": "💾 Сохранить изменения",
+        "save_and_read": "🚀 Сохранить и читать",
+        "exit_editor": "✕ Выйти",
+        "split_page_btn": "✂️ Разделить двойную страницу (Левая и Правая)",
+        "split_success": "Страница успешно разделена!",
+        "saving_db": "Сохранение в базу данных...",
+        "ocr_processing": "Сканирование изображений...",
+        "reading_lang_label": "Язык чтения и перевода:",
+        "zen_close": "✕ Закрыть",
+        "zen_page": "Страница",
+        "zen_listen": "Слушать вслух",
+        "zen_stop": "Остановить",
+        "zen_page_trans": "Перевод страницы",
+        "zen_loading_trans": "Подготовка перевода..."
     }
 }
 
@@ -497,13 +584,6 @@ def clean_word_key(text):
     return cleaned
 
 def build_coherent_page_text(boxes):
-    """
-    Kelimeleri ve parçalanmış cümleleri birleştirerek anlam bütünlüğü olan tam bir sayfa metni üretir.
-    - Tek başına duran sayfa numaralarını eler.
-    - Büyük baş harfleri (Drop-cap: 'I' + 'L ÉTAIT' -> 'IL ÉTAIT') birleştirir.
-    - Satır sonu heceleme tirelerini (ar- riva -> arriva) düzeltir.
-    - Cümlelerin kopukluğunu giderir.
-    """
     if not boxes:
         return ""
     
@@ -512,7 +592,6 @@ def build_coherent_page_text(boxes):
         raw = b.get("text", "").strip()
         if not raw:
             continue
-        # Sayfa numaralarını ("11", " 6 ", "12.", "- 5 -") ana metne karıştırma
         if re.fullmatch(r'[\s\-\.–—]*\d{1,3}[\s\-\.–—]*', raw):
             continue
         filtered_texts.append(raw)
@@ -520,7 +599,6 @@ def build_coherent_page_text(boxes):
     if not filtered_texts:
         return ""
 
-    # Drop-cap birleştirme
     cleaned_list = []
     i = 0
     while i < len(filtered_texts):
@@ -535,10 +613,7 @@ def build_coherent_page_text(boxes):
         i += 1
 
     full_str = " ".join(cleaned_list)
-    # Satır sonu heceleme tirelerini birleştir
     full_str = re.sub(r'(\w+)[\-\–]\s+(\w+)', r'\1\2', full_str)
-    
-    # Noktalama ve boşluk normalizasyonu
     full_str = re.sub(r'\s+([,.;:!?])', r'\1', full_str)
     full_str = re.sub(r'([.!?])([A-Za-zÀ-ÿ])', r'\1 \2', full_str)
     full_str = re.sub(r'\s+', ' ', full_str).strip()
@@ -611,7 +686,6 @@ def ensure_reading_ready(pages, target_lang):
                     raw_texts.append(raw)
                     b["clean"] = clean_word_key(raw)
 
-            # Sayfayı tek parça halinde, edebi bütünlüğü korunarak birleştir
             full_str = build_coherent_page_text(boxes)
             page["full_text"] = full_str
             page["full_trans"] = translate_text(full_str, target_lang)
@@ -660,9 +734,9 @@ if not st.session_state.logged_in:
     with col_lang:
         selected_lang = st.selectbox(
             "Language / Dil / Език:",
-            options=["tr", "en", "bg"],
+            options=list(LANGUAGES.keys()),
             format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}",
-            index=["tr", "en", "bg"].index(st.session_state.app_lang) if st.session_state.app_lang in ["tr", "en", "bg"] else 0,
+            index=list(LANGUAGES.keys()).index(st.session_state.app_lang) if st.session_state.app_lang in LANGUAGES else 0,
             label_visibility="collapsed"
         )
         if selected_lang != st.session_state.app_lang:
@@ -759,7 +833,6 @@ elif st.session_state.reading_mode:
             .karaoke-lit {{ background: rgba(250,204,21,0.65) !important; outline: 2px solid #eab308 !important; }}
             .glass-pill {{ position: fixed; top: 10px; left: 18px; background: rgba(15,23,42,0.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; font-weight: 500; font-size: 13px; padding: 5px 14px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 1000; transition: opacity 0.35s ease; }}
             
-            /* Gelişmiş Whisper & Sayfa Çeviri Kartı */
             #whisper-card {{ 
                 position: fixed; 
                 bottom: 80px; 
@@ -867,7 +940,6 @@ elif st.session_state.reading_mode:
                     const d = document.createElement('div'); d.className = 'word-hitbox'; d.id = 'box_' + i;
                     d.style.left = b.left + '%'; d.style.top = b.top + '%'; d.style.width = b.width + '%'; d.style.height = b.height + '%';
                     
-                    // Kelimeye tıklandığında anlık telaffuz ve kelime çevirisi
                     d.onclick = () => {{
                         resetHudTimer(); 
                         clearTimeout(timer);
@@ -898,7 +970,6 @@ elif st.session_state.reading_mode:
             function nextPage() {{ resetHudTimer(); if (currentIndex < allPages.length - 1) loadPage(currentIndex + 1); }}
             function prevPage() {{ resetHudTimer(); if (currentIndex > 0) loadPage(currentIndex - 1); }}
 
-            // Sayfanın tümünü tek seferde, akıcı ve anlam bütünlüğüyle göster
             function toggleTranslation() {{
                 resetHudTimer();
                 clearTimeout(timer);
@@ -1003,10 +1074,10 @@ elif st.session_state.editor_mode:
 
         col_left, col_right = st.columns([1, 1.4])
         with col_left:
-            st.markdown(f"### 📄 Sayfa {p_idx + 1} / {total_p}")
+            st.markdown(f"### 📄 {T('zen_page')} {p_idx + 1} / {total_p}")
             row_sel, row_up, row_down, row_del = st.columns([2, 1, 1, 1])
             with row_sel:
-                new_idx = st.selectbox("Sayfaya Git:", options=list(range(total_p)), format_func=lambda i: f"Sayfa {i + 1}", index=p_idx, label_visibility="collapsed")
+                new_idx = st.selectbox("Sayfaya Git:", options=list(range(total_p)), format_func=lambda i: f"{T('zen_page')} {i + 1}", index=p_idx, label_visibility="collapsed")
                 if new_idx != p_idx:
                     st.session_state.editor_page_idx = new_idx
                     st.rerun()
@@ -1027,7 +1098,6 @@ elif st.session_state.editor_mode:
                         st.session_state.editor_page_idx = len(pages) - 1
                     st.rerun()
 
-            # TEK TIKLA ÇİFT SAYFAYI İKİYE BÖLME
             if st.button(T("split_page_btn"), type="primary", use_container_width=True):
                 with st.spinner("Görsel ortadan ikiye bölünüyor ve sayfalar ayrı ayrı taranıyor..."):
                     try:
@@ -1066,7 +1136,7 @@ elif st.session_state.editor_mode:
                 <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px;" /></div>"""
             st.markdown(img_html, unsafe_allow_html=True)
 
-            with st.expander("➕ Bu Kitaba Yeni Sayfa Ekle"):
+            with st.expander(T("add_tab")):
                 new_single_file = st.file_uploader("Ek Sayfa Seç (PNG/JPG):", type=["png", "jpg", "jpeg"], key="add_new_p")
                 if new_single_file and st.button("Taramaya Ekle"):
                     b_img = ImageOps.exif_transpose(Image.open(new_single_file)).convert("RGB")
@@ -1120,9 +1190,9 @@ else:
     with col_info2:
         new_lang = st.selectbox(
             T("reading_lang_label"),
-            options=["tr", "en", "bg"],
+            options=list(LANGUAGES.keys()),
             format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}",
-            index=["tr", "en", "bg"].index(st.session_state.app_lang) if st.session_state.app_lang in ["tr", "en", "bg"] else 0,
+            index=list(LANGUAGES.keys()).index(st.session_state.app_lang) if st.session_state.app_lang in LANGUAGES else 0,
             label_visibility="collapsed"
         )
         if new_lang != st.session_state.app_lang:
@@ -1168,7 +1238,7 @@ else:
                 col_r, col_e, col_d = st.columns([2, 2, 1])
                 with col_r:
                     if st.button(T("open_read"), type="primary", use_container_width=True):
-                        with st.spinner("Kitap yükleniyor..."):
+                        with st.spinner(T("ocr_processing")):
                             book_pages, l_err = load_book_content(selected_id)
                             if book_pages:
                                 st.session_state.uploaded_book_pages = book_pages
@@ -1179,7 +1249,7 @@ else:
                                 st.error(l_err)
                 with col_e:
                     if st.button(T("edit_book"), use_container_width=True):
-                        with st.spinner("Kitap yükleniyor..."):
+                        with st.spinner(T("ocr_processing")):
                             book_pages, l_err = load_book_content(selected_id)
                             if book_pages:
                                 st.session_state.editor_pages = book_pages
@@ -1198,7 +1268,7 @@ else:
                         st.rerun()
             else:
                 if st.button(T("open_read"), type="primary", use_container_width=True):
-                    with st.spinner("Kitap yükleniyor..."):
+                    with st.spinner(T("ocr_processing")):
                         book_pages, l_err = load_book_content(selected_id)
                         if book_pages:
                             st.session_state.uploaded_book_pages = book_pages
