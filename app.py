@@ -98,7 +98,7 @@ def get_gsheet_client():
     
     creds_dict = get_service_account_dict()
     if not creds_dict:
-        return None, "Google kimlik anahtarı bulunamadı! Streamlit Secrets (gcp_json) veya google_secret.json dosyasını kontrol edin.", ""
+        return None, "Google kimlik anahtarı bulunamadı! Streamlit Secrets veya google_secret.json dosyasını kontrol edin.", ""
     
     sa_email = creds_dict.get("client_email", "Bilinmeyen Servis Hesabı")
     try:
@@ -213,6 +213,7 @@ def save_hybrid_book(title, pages, old_book_id=None):
         return None, f"Pages sekmesine bağlanılamadı:\n{err2}"
     
     try:
+        # Eski kayıtları temizle
         if old_book_id:
             book_id = old_book_id
             lib_records = lib_sheet.get_all_records()
@@ -224,9 +225,11 @@ def save_hybrid_book(title, pages, old_book_id=None):
             rows_to_delete = [i + 2 for i, r in enumerate(page_records) if str(r.get("BookID", "")) == book_id]
             for row_idx in reversed(rows_to_delete):
                 pages_sheet.delete_rows(row_idx)
+                time.sleep(0.1) # Silme limitine karşı küçük bekleme
         else:
             book_id = str(uuid.uuid4())[:8]
             
+        # 1. Meta veriyi kaydet (1 İstek)
         lib_sheet.append_row([
             book_id,
             title,
@@ -234,18 +237,27 @@ def save_hybrid_book(title, pages, old_book_id=None):
             len(pages)
         ])
         
+        # 2. Sayfaları toplu kaydetmek için hazırla
+        all_page_rows = []
         for idx, page in enumerate(pages):
             ocr_json = json.dumps(page["boxes"], ensure_ascii=False)
-            pages_sheet.append_row([
+            all_page_rows.append([
                 book_id,
                 idx + 1,
                 page["img_b64"],
                 ocr_json
             ])
             
+        # 3. Google API 429 Kotasına takılmamak için 10'arlı gruplar (Batch) halinde gönder (Kritik Çözüm)
+        chunk_size = 10
+        for i in range(0, len(all_page_rows), chunk_size):
+            chunk = all_page_rows[i:i + chunk_size]
+            pages_sheet.append_rows(chunk)
+            time.sleep(0.5) # Güvenlik gecikmesi
+            
         return book_id, "Kitap Google Sheets veritabanına başarıyla kaydedildi!"
     except Exception as e:
-        return None, f"Google Sheets yazma hatası (Hücre sınırı veya bağlantı problemi): {str(e)}"
+        return None, f"Google Sheets yazma hatası: {str(e)}"
 
 def delete_hybrid_book(book_id):
     lib_sheet, _ = get_sheet("Library")
@@ -263,6 +275,7 @@ def delete_hybrid_book(book_id):
         rows_to_delete = [i + 2 for i, r in enumerate(records) if str(r.get("BookID", "")) == book_id]
         for row_idx in reversed(rows_to_delete):
             pages_sheet.delete_rows(row_idx)
+            time.sleep(0.1)
 
 # ==========================================
 # 3. OCR VE GÖRSEL SIKIŞTIRMA MOTORU
@@ -557,7 +570,7 @@ elif st.session_state.editor_mode:
         st.session_state.editor_book_title = st.text_input("Kitap Başlığı:", value=st.session_state.editor_book_title, label_visibility="collapsed")
     with col_t2:
         if st.button("💾 Değişiklikleri Kaydet (Veritabanına Ekle)", type="secondary", use_container_width=True):
-            with st.spinner("Google Sheets'e kaydediliyor..."):
+            with st.spinner("Google Sheets'e toplu olarak kaydediliyor... (Bu işlem birkaç saniye sürebilir)"):
                 saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
                 if saved_f:
                     st.session_state.editor_orig_book_id = saved_f
@@ -566,7 +579,7 @@ elif st.session_state.editor_mode:
                     st.error(msg)
     with col_t3:
         if st.button("🚀 Kaydet & Hemen Oku", type="primary", use_container_width=True):
-            with st.spinner("Google Sheets'e kaydediliyor..."):
+            with st.spinner("Google Sheets'e toplu olarak kaydediliyor..."):
                 saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
                 if saved_f:
                     st.session_state.uploaded_book_pages = st.session_state.editor_pages
@@ -623,6 +636,17 @@ elif st.session_state.editor_mode:
                 <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px;" /></div>"""
             st.markdown(img_html, unsafe_allow_html=True)
 
+            with st.expander("➕ Bu Kitaba Yeni Sayfa Ekle"):
+                new_single_file = st.file_uploader("Ek Sayfa Seç (PNG/JPG):", type=["png", "jpg", "jpeg"], key="add_new_p")
+                if new_single_file and st.button("Taramaya Ekle"):
+                    b_img = ImageOps.exif_transpose(Image.open(new_single_file)).convert("RGB")
+                    new_page_obj = process_single_image(b_img)
+                    pages.append(new_page_obj)
+                    del b_img
+                    gc.collect()
+                    st.session_state.editor_page_idx = len(pages) - 1
+                    st.rerun()
+
         with col_right:
             st.markdown("### 🔤 Tespit Edilen Kelimeler")
             if st.button("🧹 Sayfa Numaralarını Otomatik Kaldır"):
@@ -669,7 +693,6 @@ else:
             st.session_state.logged_in = False
             st.rerun()
 
-    # Admin için gerçek zamanlı veritabanı kontrol rozeti
     if st.session_state.user_role == "admin":
         _client, _err, _email = get_gsheet_client()
         if _client:
