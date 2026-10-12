@@ -27,6 +27,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ==========================================
+# 0. SABİTLER VE OTURUM DURUMU
+# ==========================================
 LANGUAGES = {
     "tr": {"name": "Türkçe", "flag": "🇹🇷"},
     "bg": {"name": "Български", "flag": "🇧🇬"},
@@ -50,27 +53,43 @@ if "editor_orig_book_id" not in st.session_state: st.session_state.editor_orig_b
 if "editor_page_idx" not in st.session_state: st.session_state.editor_page_idx = 0
 
 # ==========================================
-# 1. GOOGLE SHEETS ENTEGRASYONU VE TEŞHİS MOTORU
+# 1. GOOGLE SHEETS ENTEGRASYONU & ANAHTAR ONARIMI
 # ==========================================
+def clean_private_key(key_str):
+    """Windows satır sonlarını ve kaçış karakterlerini Google'ın kabul edeceği RSA formatına getirir."""
+    if not key_str or not isinstance(key_str, str):
+        return key_str
+    key_str = key_str.replace("\r\n", "\n").replace("\r", "\n")
+    if "\\n" in key_str:
+        key_str = key_str.replace("\\n", "\n")
+    return key_str.strip()
+
 def get_service_account_dict():
     """Tüm olası konumlardan Google Service Account anahtarını bulup çıkartır."""
+    creds_dict = None
     if hasattr(st, "secrets"):
         if "gcp_json" in st.secrets:
             raw = st.secrets["gcp_json"]
-            return json.loads(raw) if isinstance(raw, str) else dict(raw)
-        if "gcp_service_account" in st.secrets:
-            return dict(st.secrets["gcp_service_account"])
-        if "type" in st.secrets and st.secrets.get("type") == "service_account":
-            return dict(st.secrets)
+            creds_dict = json.loads(raw) if isinstance(raw, str) else dict(raw)
+        elif "gcp_service_account" in st.secrets:
+            creds_dict = dict(st.secrets["gcp_service_account"])
+        elif "type" in st.secrets and st.secrets.get("type") == "service_account":
+            creds_dict = dict(st.secrets)
             
-    for fname in ["google_secret.json", "secrets.json", "service_account.json"]:
-        if os.path.exists(fname):
-            try:
-                with open(fname, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except:
-                pass
-    return None
+    if not creds_dict:
+        for fname in ["google_secret.json", "secrets.json", "service_account.json"]:
+            if os.path.exists(fname):
+                try:
+                    with open(fname, "r", encoding="utf-8") as f:
+                        creds_dict = json.load(f)
+                        break
+                except:
+                    pass
+
+    if creds_dict and "private_key" in creds_dict:
+        creds_dict["private_key"] = clean_private_key(creds_dict["private_key"])
+        
+    return creds_dict
 
 @st.cache_resource
 def get_gsheet_client():
@@ -79,9 +98,9 @@ def get_gsheet_client():
     
     creds_dict = get_service_account_dict()
     if not creds_dict:
-        return None, "Google kimlik anahtarı bulunamadı! Lütfen Streamlit Secrets (gcp_json) veya depoda google_secret.json dosyasını kontrol edin.", ""
+        return None, "Google kimlik anahtarı bulunamadı! Streamlit Secrets (gcp_json) veya google_secret.json dosyasını kontrol edin.", ""
     
-    sa_email = creds_dict.get("client_email", "Bilinmeyen Servis E-postası")
+    sa_email = creds_dict.get("client_email", "Bilinmeyen Servis Hesabı")
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -97,13 +116,13 @@ def get_sheet(sheet_name):
     try:
         doc = client.open_by_key("1Ec0v2Oo-7BlILvb35TGgo5j-SOGivJwmf5xpF85oGoU")
     except Exception as e:
-        return None, f"Tablo açılamadı! Lütfen Google Drive'daki FrenchStorybookDB dosyasını şu e-posta ile 'Düzenleyen' (Editor) olarak PAYLAŞIN:\n👉 {sa_email}\n(Hata detayı: {str(e)})"
+        return None, f"Tablo açılamadı! Lütfen FrenchStorybookDB dosyasını şu hesaba 'Düzenleyen' (Editor) olarak yetkilendirin:\n👉 {sa_email}\n(Hata: {str(e)})"
     
     try:
         worksheet = doc.worksheet(sheet_name)
         return worksheet, None
     except Exception as e:
-        return None, f"'{sheet_name}' isimli sekme bulunamadı! Lütfen Google Sheets içinde bu sekmenin adını kontrol edin. (Hata detayı: {str(e)})"
+        return None, f"'{sheet_name}' isimli sekme bulunamadı! Google Sheets dosyanızı kontrol edin. (Hata: {str(e)})"
 
 def login_user(email):
     email = email.lower().strip()
@@ -126,7 +145,7 @@ def login_user(email):
         return False, None, f"Kayıt eklenemedi: {e}"
 
 # ==========================================
-# 2. VERİTABANI İŞLEMLERİ
+# 2. VERİTABANI İŞLEMLERİ (LIBRARY & PAGES)
 # ==========================================
 def get_saved_books():
     sheet, err = get_sheet("Library")
@@ -246,7 +265,7 @@ def delete_hybrid_book(book_id):
             pages_sheet.delete_rows(row_idx)
 
 # ==========================================
-# 3. SIKIŞTIRMA VE OCR MOTORU
+# 3. OCR VE GÖRSEL SIKIŞTIRMA MOTORU
 # ==========================================
 @st.cache_resource
 def load_ocr():
@@ -255,6 +274,7 @@ def load_ocr():
 reader = load_ocr()
 
 def compress_image_for_sheets(img):
+    """Google Sheets 50.000 karakter sınırına asla takılmamak için görseli hafifletir."""
     img.thumbnail((600, 800), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
     quality = 40
@@ -381,7 +401,7 @@ if not st.session_state.logged_in:
                 st.warning("Lütfen bir e-posta adresi girin.")
 
 # ==========================================
-# 5. OKUMA MODU
+# 5. OKUMA MODU (ZEN VIEWER)
 # ==========================================
 elif st.session_state.reading_mode:
     st.markdown(
@@ -655,7 +675,7 @@ else:
         if _client:
             _test_sheet, _sheet_err = get_sheet("Library")
             if _test_sheet:
-                st.caption(f"🟢 **Google Sheets Bağlantısı Aktif** (Bağlı Robot Hesap: `{_email}`)")
+                st.caption(f"🟢 **Google Sheets Bağlantısı Aktif** (Robot Hesap: `{_email}`)")
             else:
                 st.error(_sheet_err)
         else:
