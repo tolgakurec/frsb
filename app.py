@@ -78,7 +78,7 @@ UI_TRANSLATIONS = {
         "zen_listen": "Sesli Dinle",
         "zen_stop": "Durdur",
         "zen_page_trans": "Sayfa Çevirisi",
-        "zen_loading_trans": "Çeviri hazırlanıyor..."
+        "zen_loading_trans": "Sayfa çevirisi hazırlanıyor..."
     },
     "en": {
         "title": "📚 French Storybook Library",
@@ -125,7 +125,7 @@ UI_TRANSLATIONS = {
         "zen_listen": "Listen Aloud",
         "zen_stop": "Stop",
         "zen_page_trans": "Page Translation",
-        "zen_loading_trans": "Preparing translation..."
+        "zen_loading_trans": "Preparing page translation..."
     },
     "bg": {
         "title": "📚 Френска библиотека с приказки",
@@ -496,6 +496,54 @@ def clean_word_key(text):
     cleaned = re.sub(r"\s+", " ", cleaned)
     return cleaned
 
+def build_coherent_page_text(boxes):
+    """
+    Kelimeleri ve parçalanmış cümleleri birleştirerek anlam bütünlüğü olan tam bir sayfa metni üretir.
+    - Tek başına duran sayfa numaralarını eler.
+    - Büyük baş harfleri (Drop-cap: 'I' + 'L ÉTAIT' -> 'IL ÉTAIT') birleştirir.
+    - Satır sonu heceleme tirelerini (ar- riva -> arriva) düzeltir.
+    - Cümlelerin kopukluğunu giderir.
+    """
+    if not boxes:
+        return ""
+    
+    filtered_texts = []
+    for b in boxes:
+        raw = b.get("text", "").strip()
+        if not raw:
+            continue
+        # Sayfa numaralarını ("11", " 6 ", "12.", "- 5 -") ana metne karıştırma
+        if re.fullmatch(r'[\s\-\.–—]*\d{1,3}[\s\-\.–—]*', raw):
+            continue
+        filtered_texts.append(raw)
+        
+    if not filtered_texts:
+        return ""
+
+    # Drop-cap birleştirme
+    cleaned_list = []
+    i = 0
+    while i < len(filtered_texts):
+        curr = filtered_texts[i]
+        if i + 1 < len(filtered_texts):
+            nxt = filtered_texts[i+1]
+            if len(curr) == 1 and curr.isalpha() and nxt:
+                cleaned_list.append(curr + nxt)
+                i += 2
+                continue
+        cleaned_list.append(curr)
+        i += 1
+
+    full_str = " ".join(cleaned_list)
+    # Satır sonu heceleme tirelerini birleştir
+    full_str = re.sub(r'(\w+)[\-\–]\s+(\w+)', r'\1\2', full_str)
+    
+    # Noktalama ve boşluk normalizasyonu
+    full_str = re.sub(r'\s+([,.;:!?])', r'\1', full_str)
+    full_str = re.sub(r'([.!?])([A-Za-zÀ-ÿ])', r'\1 \2', full_str)
+    full_str = re.sub(r'\s+', ' ', full_str).strip()
+    return full_str
+
 @st.cache_data(show_spinner=False)
 def translate_text(text, target_lang):
     if not text or not text.strip(): return ""
@@ -511,7 +559,9 @@ def translate_text(text, target_lang):
                 for s in data[0]:
                     if s and s[0]:
                         translated_parts.append(s[0])
-            return "".join(translated_parts).strip()
+            res_str = "".join(translated_parts).strip()
+            if res_str:
+                return res_str
         except:
             continue
     return "-"
@@ -561,7 +611,8 @@ def ensure_reading_ready(pages, target_lang):
                     raw_texts.append(raw)
                     b["clean"] = clean_word_key(raw)
 
-            full_str = " ".join(raw_texts)
+            # Sayfayı tek parça halinde, edebi bütünlüğü korunarak birleştir
+            full_str = build_coherent_page_text(boxes)
             page["full_text"] = full_str
             page["full_trans"] = translate_text(full_str, target_lang)
             page["dictionary"] = get_words_dictionary(raw_texts, target_lang)
@@ -658,7 +709,7 @@ if not st.session_state.logged_in:
         )
 
 # ==========================================
-# 5. OKUMA MODU (ZEN VIEWER - ÇOK DİLLİ)
+# 5. OKUMA MODU (ZEN VIEWER - GELİŞMİŞ TERCÜME)
 # ==========================================
 elif st.session_state.reading_mode:
     st.markdown(
@@ -698,7 +749,7 @@ elif st.session_state.reading_mode:
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
             * {{ box-sizing: border-box; user-select: none; -webkit-user-select: none; }}
-            html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
+            html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
             #viewport-wrap {{ position: relative; width: 100vw; height: calc(100vh - 120px); margin-top: 48px; display: flex; align-items: center; justify-content: center; }}
             #stage {{ position: relative; max-width: 98vw; max-height: calc(100vh - 120px); display: inline-block; }}
             #book-img {{ max-width: 98vw; max-height: calc(100vh - 120px); width: auto; height: auto; display: block; margin: auto; object-fit: contain; box-shadow: 0 0 35px rgba(0,0,0,0.85); border-radius: 4px; }}
@@ -707,7 +758,42 @@ elif st.session_state.reading_mode:
             .word-hitbox:hover, .word-hitbox:active {{ background: rgba(254,240,138,0.45); outline: 2px solid #facc15; }}
             .karaoke-lit {{ background: rgba(250,204,21,0.65) !important; outline: 2px solid #eab308 !important; }}
             .glass-pill {{ position: fixed; top: 10px; left: 18px; background: rgba(15,23,42,0.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; font-weight: 500; font-size: 13px; padding: 5px 14px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 1000; transition: opacity 0.35s ease; }}
-            #whisper-card {{ position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: #ffffff; padding: 10px 22px; border-radius: 20px; font-size: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); display: none; z-index: 1001; text-align: center; max-width: 90vw; line-height: 1.4; }}
+            
+            /* Gelişmiş Whisper & Sayfa Çeviri Kartı */
+            #whisper-card {{ 
+                position: fixed; 
+                bottom: 80px; 
+                left: 50%; 
+                transform: translateX(-50%); 
+                background: rgba(15,23,42,0.92); 
+                backdrop-filter: blur(24px); 
+                -webkit-backdrop-filter: blur(24px); 
+                color: #ffffff; 
+                padding: 14px 22px; 
+                border-radius: 18px; 
+                font-size: 15px; 
+                box-shadow: 0 12px 40px rgba(0,0,0,0.7); 
+                border: 1px solid rgba(255,255,255,0.18); 
+                display: none; 
+                z-index: 1001; 
+                max-width: 680px; 
+                width: 90vw; 
+                line-height: 1.6;
+                transition: all 0.25s ease;
+            }}
+            .card-close-btn {{
+                position: absolute;
+                top: 8px;
+                right: 12px;
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                font-size: 16px;
+                cursor: pointer;
+                padding: 4px;
+            }}
+            .card-close-btn:hover {{ color: #ffffff; }}
+            
             .glass-dock {{ position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(15,23,42,0.5); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 35px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); z-index: 1000; max-width: 96vw; transition: opacity 0.35s ease; }}
             .glass-btn {{ background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); padding: 7px 14px; border-radius: 25px; font-weight: 500; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; white-space: nowrap; }}
             .glass-btn:hover {{ background: rgba(255,255,255,0.18); transform: translateY(-1px); color: #ffffff; }}
@@ -720,7 +806,12 @@ elif st.session_state.reading_mode:
     <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
         <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
         <div id="page-counter" class="glass-pill hud-item">{lbl_page} 1 / 1</div>
-        <div id="whisper-card"></div>
+        
+        <div id="whisper-card">
+            <button class="card-close-btn" onclick="dismissCard()">✕</button>
+            <div id="whisper-body"></div>
+        </div>
+
         <div id="main-dock" class="glass-dock hud-item">
             <button id="btn-prev" class="glass-btn" onclick="prevPage()">⬅️</button>
             <button id="btn-speed" class="glass-btn" onclick="cycleSpeed()" title="Speed">⚡ <span id="speed-text">0.8x</span></button>
@@ -742,32 +833,41 @@ elif st.session_state.reading_mode:
             function resetHudTimer() {{
                 document.querySelectorAll('.hud-item').forEach(el => el.classList.remove('hud-dimmed'));
                 clearTimeout(hudTimer);
-                hudTimer = setTimeout(() => {{ document.querySelectorAll('.hud-item').forEach(el => el.classList.add('hud-dimmed')); }}, 3500);
+                hudTimer = setTimeout(() => {{ document.querySelectorAll('.hud-item').forEach(el => el.classList.add('hud-dimmed')); }}, 4500);
             }}
             resetHudTimer();
 
             const speeds = [0.7, 0.8, 1.0]; let speedIdx = 1;
-            const imgEl = document.getElementById('book-img'), layer = document.getElementById('boxes-layer'), card = document.getElementById('whisper-card');
+            const imgEl = document.getElementById('book-img'), layer = document.getElementById('boxes-layer'), card = document.getElementById('whisper-card'), cardBody = document.getElementById('whisper-body');
             const pageCounter = document.getElementById('page-counter'), btnPrev = document.getElementById('btn-prev'), btnNext = document.getElementById('btn-next'), btnKaraoke = document.getElementById('btn-karaoke');
+
+            function dismissCard() {{
+                card.style.display = 'none';
+                card.dataset.type = '';
+                clearTimeout(timer);
+            }}
 
             function cycleSpeed() {{
                 resetHudTimer(); speedIdx = (speedIdx + 1) % speeds.length;
                 document.getElementById('speed-text').innerText = speeds[speedIdx] + "x";
                 if (isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke, 100); }}
             }}
+
             function loadPage(idx) {{
                 if (idx < 0 || idx >= allPages.length) return;
                 resetHudTimer(); stopKaraoke(); currentIndex = idx; const page = allPages[idx];
                 imgEl.src = "data:image/jpeg;base64," + page.img_b64;
                 pageCounter.innerText = `${{txtPage}} ${{idx + 1}} / ${{allPages.length}}`;
                 btnPrev.disabled = (idx === 0); btnNext.disabled = (idx === allPages.length - 1);
-                card.style.display = 'none'; card.dataset.type = ''; layer.innerHTML = ''; wordIndices = []; let charOffset = 0;
+                dismissCard(); layer.innerHTML = ''; wordIndices = []; let charOffset = 0;
                 
                 (page.boxes || []).forEach((b, i) => {{
                     wordIndices.push({{ idx: i, start: charOffset, end: charOffset + b.text.length }});
                     charOffset += b.text.length + 1;
                     const d = document.createElement('div'); d.className = 'word-hitbox'; d.id = 'box_' + i;
                     d.style.left = b.left + '%'; d.style.top = b.top + '%'; d.style.width = b.width + '%'; d.style.height = b.height + '%';
+                    
+                    // Kelimeye tıklandığında anlık telaffuz ve kelime çevirisi
                     d.onclick = () => {{
                         resetHudTimer(); 
                         clearTimeout(timer);
@@ -778,34 +878,48 @@ elif st.session_state.reading_mode:
                             let noPunct = b.text.replace(/^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$/g, "").trim().toLowerCase();
                             trans = dict[noPunct] || '-';
                         }}
-                        card.innerHTML = "🇫🇷 <b>" + b.text + "</b> ➔ " + targetFlag + " " + trans; 
+                        
+                        cardBody.innerHTML = "<div style='text-align: center; font-size: 15.5px;'>🇫🇷 <b>" + b.text + "</b> &nbsp;➔&nbsp; " + targetFlag + " <b>" + trans + "</b></div>";
                         card.style.display = 'block';
                         card.dataset.type = 'word';
+                        
                         window.speechSynthesis.cancel(); 
                         const u = new SpeechSynthesisUtterance(b.text); 
                         u.lang = 'fr-FR'; 
                         u.rate = speeds[speedIdx]; 
                         window.speechSynthesis.speak(u);
-                        timer = setTimeout(() => {{ card.style.display = 'none'; card.dataset.type = ''; }}, 4000);
+                        
+                        timer = setTimeout(dismissCard, 4000);
                     }};
                     layer.appendChild(d);
                 }});
             }}
+
             function nextPage() {{ resetHudTimer(); if (currentIndex < allPages.length - 1) loadPage(currentIndex + 1); }}
             function prevPage() {{ resetHudTimer(); if (currentIndex > 0) loadPage(currentIndex - 1); }}
+
+            // Sayfanın tümünü tek seferde, akıcı ve anlam bütünlüğüyle göster
             function toggleTranslation() {{
                 resetHudTimer();
                 clearTimeout(timer);
                 const transText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : txtLoading;
+                
                 if (card.style.display === 'block' && card.dataset.type === 'page') {{
-                    card.style.display = 'none';
-                    card.dataset.type = '';
+                    dismissCard();
                 }} else {{ 
-                    card.innerHTML = "📝 <b>" + txtPageTrans + ":</b> " + transText; 
+                    cardBody.innerHTML = `
+                        <div style="font-size: 13.5px; font-weight: 600; color: #93c5fd; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                            <span>📝 ${{txtPageTrans}} (${{targetFlag}})</span>
+                        </div>
+                        <div style="font-size: 15px; color: #f8fafc; text-align: left; line-height: 1.65; max-height: 40vh; overflow-y: auto; padding-right: 4px;">
+                            ${{transText}}
+                        </div>
+                    `;
                     card.style.display = 'block'; 
                     card.dataset.type = 'page';
                 }}
             }}
+
             function toggleKaraoke() {{ resetHudTimer(); if (isPlaying) stopKaraoke(); else playKaraoke(); }}
             function playKaraoke() {{
                 window.speechSynthesis.cancel(); isPlaying = true; btnKaraoke.classList.add('active'); document.getElementById('k-text').innerText = txtStop;
@@ -827,6 +941,7 @@ elif st.session_state.reading_mode:
                 u.onend = stopKaraoke; u.onerror = stopKaraoke; window.speechSynthesis.speak(u); stepFallback();
             }}
             function stopKaraoke() {{ isPlaying = false; clearTimeout(timer); window.speechSynthesis.cancel(); btnKaraoke.classList.remove('active'); document.getElementById('k-text').innerText = txtListen; document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); }}
+            
             window.addEventListener('keydown', (e) => {{ if (e.key === 'ArrowRight') nextPage(); if (e.key === 'ArrowLeft') prevPage(); }});
             let touchStartX = 0;
             window.addEventListener('touchstart', (e) => {{ touchStartX = e.changedTouches[0].screenX; }}, {{passive: true}});
@@ -912,9 +1027,9 @@ elif st.session_state.editor_mode:
                         st.session_state.editor_page_idx = len(pages) - 1
                     st.rerun()
 
-            # SEÇENEK 1: TEK TIKLA ÇİFT SAYFAYI İKİYE BÖLME BUTONU
+            # TEK TIKLA ÇİFT SAYFAYI İKİYE BÖLME
             if st.button(T("split_page_btn"), type="primary", use_container_width=True):
-                with st.spinner("Görsel ortadan ikiye bölünüyor ve iki sayfa ayrı ayrı taranıyor..."):
+                with st.spinner("Görsel ortadan ikiye bölünüyor ve sayfalar ayrı ayrı taranıyor..."):
                     try:
                         img_bytes = base64.b64decode(curr_page['img_b64'])
                         orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
@@ -925,7 +1040,6 @@ elif st.session_state.editor_mode:
                         left_img = orig_pil.crop((0, 0, mid_x, h))
                         right_img = orig_pil.crop((mid_x, 0, w, h))
                         
-                        # Net OCR için gerekirse 600px genişliğe ölçekle
                         if left_img.width < 600:
                             scale_l = 600 / left_img.width
                             left_img = left_img.resize((int(left_img.width * scale_l), int(left_img.height * scale_l)), Image.Resampling.LANCZOS)
@@ -936,7 +1050,6 @@ elif st.session_state.editor_mode:
                         left_page = process_single_image(left_img)
                         right_page = process_single_image(right_img)
                         
-                        # Mevcut sayfayı sol sayfa yap, hemen arkasına sağ sayfayı yerleştir
                         pages[p_idx] = left_page
                         pages.insert(p_idx + 1, right_page)
                         
@@ -1113,7 +1226,6 @@ else:
                         base_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
                         
                         sub_images = []
-                        # 1.05 eşiği ile kareye yakın çekilen çift sayfalar da otomatik bölünür
                         if split_spreads and (base_img.width / base_img.height) > 1.05:
                             mid_x = base_img.width // 2
                             sub_images.append(base_img.crop((0, 0, mid_x, base_img.height)))
