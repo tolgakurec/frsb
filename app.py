@@ -68,6 +68,8 @@ UI_TRANSLATIONS = {
         "save_changes": "💾 Değişiklikleri Kaydet (Veritabanına Ekle)",
         "save_and_read": "🚀 Kaydet & Hemen Oku",
         "exit_editor": "✕ Çık",
+        "split_page_btn": "✂️ Bu Çift Sayfayı İkiye Böl (Sol & Sağ)",
+        "split_success": "Sayfa başarıyla sol ve sağ olarak 2 sayfaya ayrıldı!",
         "saving_db": "Google Sheets'e kaydediliyor...",
         "ocr_processing": "Görseller taranıyor...",
         "reading_lang_label": "Okuma & Çeviri Dili:",
@@ -113,6 +115,8 @@ UI_TRANSLATIONS = {
         "save_changes": "💾 Save Changes (To Database)",
         "save_and_read": "🚀 Save & Read Now",
         "exit_editor": "✕ Exit",
+        "split_page_btn": "✂️ Split Double Page (Left & Right)",
+        "split_success": "Page successfully split into left and right pages!",
         "saving_db": "Saving to Google Sheets database...",
         "ocr_processing": "Processing pages with OCR...",
         "reading_lang_label": "Reading & Translation Language:",
@@ -158,6 +162,8 @@ UI_TRANSLATIONS = {
         "save_changes": "💾 Запази промените (В базата данни)",
         "save_and_read": "🚀 Запази и чети веднага",
         "exit_editor": "✕ Изход",
+        "split_page_btn": "✂️ Раздели двойната страница (Лява и дясна)",
+        "split_success": "Страницата бе успешно разделена на лява и дясна!",
         "saving_db": "Запазване в Google Sheets...",
         "ocr_processing": "Обработка на страниците...",
         "reading_lang_label": "Език за превод при четене:",
@@ -563,7 +569,6 @@ def ensure_reading_ready(pages, target_lang):
     return pages
 
 def process_single_image(img):
-    # RAM KORUMA: Çözünürlüğü OCR öncesi 1200 piksele indirerek bellek taşmasını önler
     img_opt = img.copy()
     img_opt.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
     
@@ -907,6 +912,43 @@ elif st.session_state.editor_mode:
                         st.session_state.editor_page_idx = len(pages) - 1
                     st.rerun()
 
+            # SEÇENEK 1: TEK TIKLA ÇİFT SAYFAYI İKİYE BÖLME BUTONU
+            if st.button(T("split_page_btn"), type="primary", use_container_width=True):
+                with st.spinner("Görsel ortadan ikiye bölünüyor ve iki sayfa ayrı ayrı taranıyor..."):
+                    try:
+                        img_bytes = base64.b64decode(curr_page['img_b64'])
+                        orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                        
+                        w, h = orig_pil.size
+                        mid_x = w // 2
+                        
+                        left_img = orig_pil.crop((0, 0, mid_x, h))
+                        right_img = orig_pil.crop((mid_x, 0, w, h))
+                        
+                        # Net OCR için gerekirse 600px genişliğe ölçekle
+                        if left_img.width < 600:
+                            scale_l = 600 / left_img.width
+                            left_img = left_img.resize((int(left_img.width * scale_l), int(left_img.height * scale_l)), Image.Resampling.LANCZOS)
+                        if right_img.width < 600:
+                            scale_r = 600 / right_img.width
+                            right_img = right_img.resize((int(right_img.width * scale_r), int(right_img.height * scale_r)), Image.Resampling.LANCZOS)
+                        
+                        left_page = process_single_image(left_img)
+                        right_page = process_single_image(right_img)
+                        
+                        # Mevcut sayfayı sol sayfa yap, hemen arkasına sağ sayfayı yerleştir
+                        pages[p_idx] = left_page
+                        pages.insert(p_idx + 1, right_page)
+                        
+                        del orig_pil, left_img, right_img
+                        gc.collect()
+                        
+                        st.success(T("split_success"))
+                        time.sleep(0.5)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Bölme hatası: {e}")
+
             img_html = f"""<div style="text-align: center; background: #0f172a; border-radius: 8px; padding: 10px; margin-top: 10px;">
                 <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px;" /></div>"""
             st.markdown(img_html, unsafe_allow_html=True)
@@ -1055,7 +1097,7 @@ else:
 
     if tab_ekle:
         with tab_ekle:
-            book_title_input = st.text_input("Kitabın Adı (Örn: Le Petit Poucet):", value="Yeni Kitap")
+            book_title_input = st.text_input("Kitabın Adı (Örn: Trois Petits Cochons):", value="Yeni Kitap")
             uploaded_files = st.file_uploader("Kitap sayfalarını seçin (PNG, JPG):", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
             split_spreads = st.checkbox("📖 Çift Sayfa Çekimlerini Otomatik İkiye Böl", value=True)
 
@@ -1071,7 +1113,8 @@ else:
                         base_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
                         
                         sub_images = []
-                        if split_spreads and (base_img.width / base_img.height) > 1.25:
+                        # 1.05 eşiği ile kareye yakın çekilen çift sayfalar da otomatik bölünür
+                        if split_spreads and (base_img.width / base_img.height) > 1.05:
                             mid_x = base_img.width // 2
                             sub_images.append(base_img.crop((0, 0, mid_x, base_img.height)))
                             sub_images.append(base_img.crop((mid_x, 0, base_img.width, base_img.height)))
