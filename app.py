@@ -70,7 +70,14 @@ UI_TRANSLATIONS = {
         "exit_editor": "✕ Çık",
         "saving_db": "Google Sheets'e kaydediliyor...",
         "ocr_processing": "Görseller taranıyor...",
-        "reading_lang_label": "Okuma & Çeviri Dili:"
+        "reading_lang_label": "Okuma & Çeviri Dili:",
+        # Okuma Modu (Zen Viewer) Metinleri
+        "zen_close": "✕ Kapat",
+        "zen_page": "Sayfa",
+        "zen_listen": "Sesli Dinle",
+        "zen_stop": "Durdur",
+        "zen_page_trans": "Sayfa Çevirisi",
+        "zen_loading_trans": "Çeviri hazırlanıyor..."
     },
     "en": {
         "title": "📚 French Storybook Library",
@@ -109,7 +116,14 @@ UI_TRANSLATIONS = {
         "exit_editor": "✕ Exit",
         "saving_db": "Saving to Google Sheets database...",
         "ocr_processing": "Processing pages with OCR...",
-        "reading_lang_label": "Reading & Translation Language:"
+        "reading_lang_label": "Reading & Translation Language:",
+        # Okuma Modu (Zen Viewer) Metinleri
+        "zen_close": "✕ Close",
+        "zen_page": "Page",
+        "zen_listen": "Listen Aloud",
+        "zen_stop": "Stop",
+        "zen_page_trans": "Page Translation",
+        "zen_loading_trans": "Preparing translation..."
     },
     "bg": {
         "title": "📚 Френска библиотека с приказки",
@@ -148,7 +162,14 @@ UI_TRANSLATIONS = {
         "exit_editor": "✕ Изход",
         "saving_db": "Запазване в Google Sheets...",
         "ocr_processing": "Обработка на страниците...",
-        "reading_lang_label": "Език за превод при четене:"
+        "reading_lang_label": "Език за превод при четене:",
+        # Okuma Modu (Zen Viewer) Metinleri
+        "zen_close": "✕ Затвори",
+        "zen_page": "Страница",
+        "zen_listen": "Слушай",
+        "zen_stop": "Спри",
+        "zen_page_trans": "Превод на страницата",
+        "zen_loading_trans": "Подготвя се превод..."
     }
 }
 
@@ -263,7 +284,6 @@ def login_user(email):
             if str(r.get("Email", "")).lower().strip() == email:
                 return True, r, "Giriş başarılı."
         
-        # Yeni veli ise otomatik kaydet
         sheet.append_row([email, "user"])
         return True, {"Email": email, "Role": "user"}, "Yeni hesap kaydedildi."
     except Exception as e:
@@ -379,7 +399,6 @@ def save_hybrid_book(title, pages, old_book_id=None):
                 ocr_json
             ])
             
-        # 10'arlı gruplarla kota korumalı kayıt (Batch append)
         chunk_size = 10
         for i in range(0, len(all_page_rows), chunk_size):
             chunk = all_page_rows[i:i + chunk_size]
@@ -576,7 +595,6 @@ def process_single_image(img):
 # 4. GİRİŞ EKRANI (AÇIKLAMA, DİL VE İMZA)
 # ==========================================
 if not st.session_state.logged_in:
-    # Üst Bar: Dil Seçimi
     col_t_empty, col_lang = st.columns([3.5, 1.5])
     with col_lang:
         selected_lang = st.selectbox(
@@ -593,7 +611,6 @@ if not st.session_state.logged_in:
     st.markdown(f"<h1 style='text-align: center; color: #1e3a8a; margin-bottom: 2px;'>{T('title')}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; color: #64748b; font-size: 16px; margin-bottom: 20px;'>{T('subtitle')}</p>", unsafe_allow_html=True)
     
-    # Bilgilendirme ve Amaç Kartı
     col_l1, col_center, col_l2 = st.columns([1, 2.2, 1])
     with col_center:
         st.markdown(
@@ -622,7 +639,6 @@ if not st.session_state.logged_in:
                 st.warning(T("email_warn"))
 
         st.markdown("<br>", unsafe_allow_html=True)
-        # Teşekkür ve İmza Alanı
         st.markdown(
             f"""
             <div style="text-align: center; color: #94a3b8; font-size: 13.5px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
@@ -632,7 +648,7 @@ if not st.session_state.logged_in:
         )
 
 # ==========================================
-# 5. OKUMA MODU (ZEN VIEWER)
+# 5. OKUMA MODU (ZEN VIEWER - ÇOK DİLLİ)
 # ==========================================
 elif st.session_state.reading_mode:
     st.markdown(
@@ -651,13 +667,19 @@ elif st.session_state.reading_mode:
         </style>
         """, unsafe_allow_html=True)
 
-    if st.button("✕ Kapat", key="btn_exit_zen"):
+    if st.button(T("zen_close"), key="btn_exit_zen"):
         st.session_state.reading_mode = False
         st.rerun()
 
     pages = ensure_reading_ready(st.session_state.uploaded_book_pages, st.session_state.app_lang)
     pages_json = json.dumps(pages)
     target_flag = LANGUAGES[st.session_state.app_lang]["flag"]
+    
+    lbl_page = T("zen_page")
+    lbl_listen = T("zen_listen")
+    lbl_stop = T("zen_stop")
+    lbl_page_trans = T("zen_page_trans")
+    lbl_loading_trans = T("zen_loading_trans")
 
     HTML_VIEWER = f"""
     <!DOCTYPE html>
@@ -687,18 +709,24 @@ elif st.session_state.reading_mode:
     </head>
     <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
         <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
-        <div id="page-counter" class="glass-pill hud-item">Sayfa 1 / 1</div>
+        <div id="page-counter" class="glass-pill hud-item">{lbl_page} 1 / 1</div>
         <div id="whisper-card"></div>
         <div id="main-dock" class="glass-dock hud-item">
             <button id="btn-prev" class="glass-btn" onclick="prevPage()">⬅️</button>
-            <button id="btn-speed" class="glass-btn" onclick="cycleSpeed()" title="Ses Hızı">⚡ <span id="speed-text">0.8x</span></button>
-            <button id="btn-karaoke" class="glass-btn" onclick="toggleKaraoke()">🎤 <span id="k-text">Sesli Dinle</span></button>
-            <button id="btn-trans" class="glass-btn" onclick="toggleTranslation()">{target_flag} <span id="t-text">Sayfa Çevirisi</span></button>
+            <button id="btn-speed" class="glass-btn" onclick="cycleSpeed()" title="Speed">⚡ <span id="speed-text">0.8x</span></button>
+            <button id="btn-karaoke" class="glass-btn" onclick="toggleKaraoke()">🎤 <span id="k-text">{lbl_listen}</span></button>
+            <button id="btn-trans" class="glass-btn" onclick="toggleTranslation()">{target_flag} <span id="t-text">{lbl_page_trans}</span></button>
             <button id="btn-next" class="glass-btn" onclick="nextPage()">➡️</button>
         </div>
         <script>
             const allPages = {pages_json};
             const targetFlag = "{target_flag}";
+            const txtPage = "{lbl_page}";
+            const txtListen = "{lbl_listen}";
+            const txtStop = "{lbl_stop}";
+            const txtPageTrans = "{lbl_page_trans}";
+            const txtLoading = "{lbl_loading_trans}";
+
             let currentIndex = 0, isPlaying = false, timer = null, wordIndices = [];
             let hudTimer = null;
             function resetHudTimer() {{
@@ -721,7 +749,7 @@ elif st.session_state.reading_mode:
                 if (idx < 0 || idx >= allPages.length) return;
                 resetHudTimer(); stopKaraoke(); currentIndex = idx; const page = allPages[idx];
                 imgEl.src = "data:image/jpeg;base64," + page.img_b64;
-                pageCounter.innerText = `Sayfa ${{idx + 1}} / ${{allPages.length}}`;
+                pageCounter.innerText = `${{txtPage}} ${{idx + 1}} / ${{allPages.length}}`;
                 btnPrev.disabled = (idx === 0); btnNext.disabled = (idx === allPages.length - 1);
                 card.style.display = 'none'; card.dataset.type = ''; layer.innerHTML = ''; wordIndices = []; let charOffset = 0;
                 
@@ -758,19 +786,19 @@ elif st.session_state.reading_mode:
             function toggleTranslation() {{
                 resetHudTimer();
                 clearTimeout(timer);
-                const transText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : "Çeviri hazırlanıyor...";
+                const transText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : txtLoading;
                 if (card.style.display === 'block' && card.dataset.type === 'page') {{
                     card.style.display = 'none';
                     card.dataset.type = '';
                 }} else {{ 
-                    card.innerHTML = "📝 <b>Sayfa Çevirisi:</b> " + transText; 
+                    card.innerHTML = "📝 <b>" + txtPageTrans + ":</b> " + transText; 
                     card.style.display = 'block'; 
                     card.dataset.type = 'page';
                 }}
             }}
             function toggleKaraoke() {{ resetHudTimer(); if (isPlaying) stopKaraoke(); else playKaraoke(); }}
             function playKaraoke() {{
-                window.speechSynthesis.cancel(); isPlaying = true; btnKaraoke.classList.add('active'); document.getElementById('k-text').innerText = "Durdur";
+                window.speechSynthesis.cancel(); isPlaying = true; btnKaraoke.classList.add('active'); document.getElementById('k-text').innerText = txtStop;
                 const page = allPages[currentIndex]; let fullSentence = (page.boxes || []).map(b => b.text).join(' ');
                 let u = new SpeechSynthesisUtterance(fullSentence); u.lang = 'fr-FR'; u.rate = speeds[speedIdx];
                 let usedBoundary = false;
@@ -788,7 +816,7 @@ elif st.session_state.reading_mode:
                 }}
                 u.onend = stopKaraoke; u.onerror = stopKaraoke; window.speechSynthesis.speak(u); stepFallback();
             }}
-            function stopKaraoke() {{ isPlaying = false; clearTimeout(timer); window.speechSynthesis.cancel(); btnKaraoke.classList.remove('active'); document.getElementById('k-text').innerText = "Sesli Dinle"; document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); }}
+            function stopKaraoke() {{ isPlaying = false; clearTimeout(timer); window.speechSynthesis.cancel(); btnKaraoke.classList.remove('active'); document.getElementById('k-text').innerText = txtListen; document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); }}
             window.addEventListener('keydown', (e) => {{ if (e.key === 'ArrowRight') nextPage(); if (e.key === 'ArrowLeft') prevPage(); }});
             let touchStartX = 0;
             window.addEventListener('touchstart', (e) => {{ touchStartX = e.changedTouches[0].screenX; }}, {{passive: true}});
@@ -921,7 +949,6 @@ elif st.session_state.editor_mode:
 # 7. ANA KÜTÜPHANE EKRANI (VELİ & ADMIN)
 # ==========================================
 else:
-    # Üst Bilgi ve Dil Çubuğu
     col_info1, col_thanks, col_info2, col_info3 = st.columns([2.5, 1.2, 1.8, 1])
     with col_info1:
         st.markdown(f"👤 **{T('welcome')}:** `{st.session_state.user_email}`")
@@ -946,7 +973,6 @@ else:
             st.session_state.logged_in = False
             st.rerun()
 
-    # Admin için rozet
     if st.session_state.user_role == "admin":
         _client, _err, _email = get_gsheet_client()
         if _client:
@@ -958,7 +984,6 @@ else:
         else:
             st.error(_err)
 
-    # Rol Yönetimi: Admin ise yükleme sekmesi açılır, veli ise sadece kitaplık
     if st.session_state.user_role == "admin":
         tabs = [T("lib_title"), T("add_tab")]
         app_tabs = st.tabs(tabs)
@@ -1066,7 +1091,6 @@ else:
                     st.session_state.editor_mode = True
                     st.rerun()
 
-    # Alt Bilgi / İmza
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown(
         f"""
