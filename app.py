@@ -71,7 +71,6 @@ UI_TRANSLATIONS = {
         "saving_db": "Google Sheets'e kaydediliyor...",
         "ocr_processing": "Görseller taranıyor...",
         "reading_lang_label": "Okuma & Çeviri Dili:",
-        # Okuma Modu (Zen Viewer) Metinleri
         "zen_close": "✕ Kapat",
         "zen_page": "Sayfa",
         "zen_listen": "Sesli Dinle",
@@ -117,7 +116,6 @@ UI_TRANSLATIONS = {
         "saving_db": "Saving to Google Sheets database...",
         "ocr_processing": "Processing pages with OCR...",
         "reading_lang_label": "Reading & Translation Language:",
-        # Okuma Modu (Zen Viewer) Metinleri
         "zen_close": "✕ Close",
         "zen_page": "Page",
         "zen_listen": "Listen Aloud",
@@ -163,7 +161,6 @@ UI_TRANSLATIONS = {
         "saving_db": "Запазване в Google Sheets...",
         "ocr_processing": "Обработка на страниците...",
         "reading_lang_label": "Език за превод при четене:",
-        # Okuma Modu (Zen Viewer) Metinleri
         "zen_close": "✕ Затвори",
         "zen_page": "Страница",
         "zen_listen": "Слушай",
@@ -566,8 +563,12 @@ def ensure_reading_ready(pages, target_lang):
     return pages
 
 def process_single_image(img):
-    w, h = img.size
-    ocr_raw = reader.readtext(np.array(img), detail=1, paragraph=False)
+    # RAM KORUMA: Çözünürlüğü OCR öncesi 1200 piksele indirerek bellek taşmasını önler
+    img_opt = img.copy()
+    img_opt.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+    
+    w, h = img_opt.size
+    ocr_raw = reader.readtext(np.array(img_opt), detail=1, paragraph=False)
     ordered_ocr = sort_reading_order(ocr_raw)
     
     boxes = []
@@ -586,8 +587,12 @@ def process_single_image(img):
             "height": ((max_y - min_y) / h) * 100
         })
     
+    b64_str = compress_image_for_sheets(img_opt)
+    del img_opt
+    gc.collect()
+    
     return {
-        "img_b64": compress_image_for_sheets(img),
+        "img_b64": b64_str,
         "boxes": boxes
     }
 
