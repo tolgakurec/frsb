@@ -8,6 +8,7 @@ import gc
 import uuid
 import urllib.request
 import urllib.parse
+from datetime import datetime
 from PIL import Image, ImageOps
 import numpy as np
 import easyocr
@@ -22,27 +23,148 @@ except ImportError:
     GSHEETS_INSTALLED = False
 
 st.set_page_config(
-    page_title="Lycée Victor Hugo - Kütüphane",
+    page_title="Fransızca Hikaye Kütüphanesi",
+    page_icon="📚",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# 0. SABİTLER VE OTURUM DURUMU
+# 0. ÇOK DİLLİ ARAYÜZ METİNLERİ (TR / EN / BG)
 # ==========================================
+UI_TRANSLATIONS = {
+    "tr": {
+        "title": "📚 Fransızca Hikaye Kütüphanesi",
+        "subtitle": "Fransızca Hikayeleri Keşfet ve Birlikte Öğren",
+        "created_by": "Bu uygulama Tolga Küreç tarafından oluşturulmuştur (Timuçin ve Teoman'ın Babası)",
+        "purpose_title": "🎯 Uygulamanın Amacı",
+        "purpose_text": (
+            "Bu kütüphane, Fransızca bilmeyen ailelerin kitap okurken çocukları ile kaliteli ve verimli "
+            "vakit geçirmelerini sağlamak; hikayelerin konusunu kavramada ve Fransızca telaffuz (prononciation) "
+            "konusunda velilere rehberlik etmek için tasarlanmıştır."
+        ),
+        "usage_title": "💡 Nasıl Kullanılır?",
+        "usage_text": (
+            "1. Okumak istediğiniz hikayeyi kütüphaneden seçin ve açın.\n"
+            "2. Sayfadaki kelimelere dokunarak doğru Fransızca sesli okunuşunu dinleyin ve anlık çevirisini görün.\n"
+            "3. 'Sesli Dinle' butonu ile sayfanın tamamını akıcı olarak takip edin.\n"
+            "4. 'Sayfa Çevirisi' butonu ile hikayenin Türkçe özet mealini okuyun."
+        ),
+        "email_label": "E-posta Adresiniz:",
+        "login_btn": "Giriş Yap",
+        "email_warn": "Lütfen geçerli bir e-posta adresi girin.",
+        "welcome": "Hoş Geldiniz",
+        "logout": "🚪 Çıkış Yap",
+        "thanks_btn": "❤️ Teşekkür Et",
+        "thanks_success": "Teşekkürünüz Tolga Küreç'e iletildi! İyi okumalar dileriz.",
+        "lib_title": "📖 Kütüphane Havuzu",
+        "add_tab": "➕ Yeni Kitap Ekle",
+        "empty_lib": "Kütüphanede henüz kitap bulunmuyor.",
+        "select_book": "Okumak istediğiniz kitabı seçin:",
+        "open_read": "🚀 Kitabı Aç ve Oku",
+        "edit_book": "✏️ Kitabı Düzenle",
+        "delete_book": "🗑️ Sil",
+        "delete_confirm": "Kitap silindi.",
+        "save_changes": "💾 Değişiklikleri Kaydet (Veritabanına Ekle)",
+        "save_and_read": "🚀 Kaydet & Hemen Oku",
+        "exit_editor": "✕ Çık",
+        "saving_db": "Google Sheets'e kaydediliyor...",
+        "ocr_processing": "Görseller taranıyor...",
+        "reading_lang_label": "Okuma & Çeviri Dili:"
+    },
+    "en": {
+        "title": "📚 French Storybook Library",
+        "subtitle": "Explore French Stories & Learn Together",
+        "created_by": "This application was created by Tolga Küreç (Father of Timuçin & Teoman)",
+        "purpose_title": "🎯 Purpose of the App",
+        "purpose_text": (
+            "This library is designed for non-French speaking families to spend productive, enjoyable reading "
+            "time with their children. It assists parents in understanding the storyline and mastering French "
+            "pronunciation alongside their kids."
+        ),
+        "usage_title": "💡 How to Use?",
+        "usage_text": (
+            "1. Select a storybook from the library pool and open it.\n"
+            "2. Tap any word or phrase on the page to hear genuine French pronunciation and view instant translation.\n"
+            "3. Use 'Listen Aloud' to experience karaoke audio playback of the whole page.\n"
+            "4. Use 'Page Translation' to reveal the full meaning of the page."
+        ),
+        "email_label": "Your Email Address:",
+        "login_btn": "Sign In",
+        "email_warn": "Please enter a valid email address.",
+        "welcome": "Welcome",
+        "logout": "🚪 Sign Out",
+        "thanks_btn": "❤️ Send Thanks",
+        "thanks_success": "Your thank-you note was sent to Tolga Küreç! Enjoy reading.",
+        "lib_title": "📖 Library Pool",
+        "add_tab": "➕ Add New Book",
+        "empty_lib": "There are no books in the library yet.",
+        "select_book": "Select a book to read:",
+        "open_read": "🚀 Open & Read",
+        "edit_book": "✏️ Edit Book",
+        "delete_book": "🗑️ Delete",
+        "delete_confirm": "Book deleted successfully.",
+        "save_changes": "💾 Save Changes (To Database)",
+        "save_and_read": "🚀 Save & Read Now",
+        "exit_editor": "✕ Exit",
+        "saving_db": "Saving to Google Sheets database...",
+        "ocr_processing": "Processing pages with OCR...",
+        "reading_lang_label": "Reading & Translation Language:"
+    },
+    "bg": {
+        "title": "📚 Френска библиотека с приказки",
+        "subtitle": "Открийте френските приказки и учете заедно",
+        "created_by": "Това приложение е създадено от Толга Кюреч (Бащата на Тимучин и Теоман)",
+        "purpose_title": "🎯 Цел на приложението",
+        "purpose_text": (
+            "Тази библиотека е създадена, за да помогне на семействата, които не говорят френски, "
+            "да прекарват пълноценно и приятно време с децата си по време на четене. Тя подпомага родителите "
+            "в разбирането на сюжета и правилното френско произношение."
+        ),
+        "usage_title": "💡 Как се използва?",
+        "usage_text": (
+            "1. Изберете приказка от библиотеката и я отворете.\n"
+            "2. Докоснете дума или фраза на страницата, за да чуете произношението ѝ и да видите превода.\n"
+            "3. Натиснете 'Слушай', за да чуете гладкото четене на цялата страница с караоке ефект.\n"
+            "4. Натиснете 'Превод на страницата', за да прочетете пълния смислов превод."
+        ),
+        "email_label": "Вашият имейл адрес:",
+        "login_btn": "Вход",
+        "email_warn": "Моля, въведете валиден имейл адрес.",
+        "welcome": "Добре дошли",
+        "logout": "🚪 Изход",
+        "thanks_btn": "❤️ Изпрати благодарност",
+        "thanks_success": "Вашата благодарност бе изпратена на Толга Кюреч! Приятно четене.",
+        "lib_title": "📖 Библиотека",
+        "add_tab": "➕ Добави нова книга",
+        "empty_lib": "В библиотеката все още няма добавени книги.",
+        "select_book": "Изберете книга за четене:",
+        "open_read": "🚀 Отвори и чети",
+        "edit_book": "✏️ Редактирай",
+        "delete_book": "🗑️ Изтрий",
+        "delete_confirm": "Книгата бе изтрита успешно.",
+        "save_changes": "💾 Запази промените (В базата данни)",
+        "save_and_read": "🚀 Запази и чети веднага",
+        "exit_editor": "✕ Изход",
+        "saving_db": "Запазване в Google Sheets...",
+        "ocr_processing": "Обработка на страниците...",
+        "reading_lang_label": "Език за превод при четене:"
+    }
+}
+
 LANGUAGES = {
     "tr": {"name": "Türkçe", "flag": "🇹🇷"},
-    "bg": {"name": "Български", "flag": "🇧🇬"},
     "en": {"name": "English", "flag": "🇬🇧"},
+    "bg": {"name": "Български", "flag": "🇧🇬"},
     "de": {"name": "Deutsch", "flag": "🇩🇪"},
     "es": {"name": "Español", "flag": "🇪🇸"},
     "ru": {"name": "Русский", "flag": "🇷🇺"},
 }
 
+if "app_lang" not in st.session_state: st.session_state.app_lang = "tr"
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_role" not in st.session_state: st.session_state.user_role = "user"
-if "app_lang" not in st.session_state: st.session_state.app_lang = "tr"
 if "reading_mode" not in st.session_state: st.session_state.reading_mode = False
 if "editor_mode" not in st.session_state: st.session_state.editor_mode = False
 if "uploaded_book_pages" not in st.session_state: st.session_state.uploaded_book_pages = []
@@ -51,6 +173,10 @@ if "editor_pages" not in st.session_state: st.session_state.editor_pages = []
 if "editor_book_title" not in st.session_state: st.session_state.editor_book_title = ""
 if "editor_orig_book_id" not in st.session_state: st.session_state.editor_orig_book_id = None
 if "editor_page_idx" not in st.session_state: st.session_state.editor_page_idx = 0
+
+def T(key):
+    lang = st.session_state.app_lang if st.session_state.app_lang in UI_TRANSLATIONS else "tr"
+    return UI_TRANSLATIONS[lang].get(key, UI_TRANSLATIONS["tr"].get(key, key))
 
 # ==========================================
 # 1. GOOGLE SHEETS ENTEGRASYONU & ANAHTAR ONARIMI
@@ -96,7 +222,7 @@ def get_gsheet_client():
     
     creds_dict = get_service_account_dict()
     if not creds_dict:
-        return None, "Google kimlik anahtarı bulunamadı! Streamlit Secrets veya google_secret.json dosyasını kontrol edin.", ""
+        return None, "Google kimlik anahtarı bulunamadı! Secrets (gcp_json) ayarlarını kontrol edin.", ""
     
     sa_email = creds_dict.get("client_email", "Bilinmeyen Servis Hesabı")
     try:
@@ -114,13 +240,13 @@ def get_sheet(sheet_name):
     try:
         doc = client.open_by_key("1Ec0v2Oo-7BlILvb35TGgo5j-SOGivJwmf5xpF85oGoU")
     except Exception as e:
-        return None, f"Tablo açılamadı! Lütfen FrenchStorybookDB dosyasını şu hesaba 'Düzenleyen' (Editor) olarak yetkilendirin:\n👉 {sa_email}\n(Hata: {str(e)})"
+        return None, f"Tablo açılamadı! Lütfen E-Tabloyu şu hesaba 'Düzenleyen' (Editor) olarak yetkilendirin:\n👉 {sa_email}\n(Hata: {str(e)})"
     
     try:
         worksheet = doc.worksheet(sheet_name)
         return worksheet, None
     except Exception as e:
-        return None, f"'{sheet_name}' isimli sekme bulunamadı! Google Sheets dosyanızı kontrol edin. (Hata: {str(e)})"
+        return None, f"'{sheet_name}' isimli sekme bulunamadı! (Hata: {str(e)})"
 
 def login_user(email):
     email = email.lower().strip()
@@ -131,16 +257,31 @@ def login_user(email):
     if not sheet:
         return False, None, f"Veritabanı hatası: {err}"
     
-    records = sheet.get_all_records()
-    for r in records:
-        if str(r.get("Email", "")).lower().strip() == email:
-            return True, r, "Giriş başarılı."
-            
     try:
+        records = sheet.get_all_records()
+        for r in records:
+            if str(r.get("Email", "")).lower().strip() == email:
+                return True, r, "Giriş başarılı."
+        
+        # Yeni veli ise otomatik kaydet
         sheet.append_row([email, "user"])
-        return True, {"Email": email, "Role": "user"}, "Yeni hesap oluşturuldu ve giriş yapıldı."
+        return True, {"Email": email, "Role": "user"}, "Yeni hesap kaydedildi."
     except Exception as e:
-        return False, None, f"Kayıt eklenemedi: {e}"
+        return False, None, f"Kayıt işlemi başarısız: {e}"
+
+def record_thanks(email):
+    sheet, err = get_sheet("Thanks")
+    if not sheet:
+        return False
+    try:
+        sheet.append_row([
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            email,
+            "Teşekkür Gönderildi"
+        ])
+        return True
+    except:
+        return False
 
 # ==========================================
 # 2. VERİTABANI İŞLEMLERİ (LIBRARY & PAGES)
@@ -149,49 +290,52 @@ def get_saved_books():
     sheet, err = get_sheet("Library")
     if not sheet:
         return [], err
-    records = sheet.get_all_records()
-    
-    books_list = []
-    seen_ids = set()
-    
-    for r in records:
-        b_id = str(r.get("BookID", ""))
-        if not b_id or b_id in seen_ids:
-            continue
-        seen_ids.add(b_id)
+    try:
+        records = sheet.get_all_records()
+        books_list = []
+        seen_ids = set()
         
-        books_list.append({
-            "book_id": b_id,
-            "title": r.get("BookName", "İsimsiz Kitap"),
-            "date": r.get("CreatedAt", ""),
-            "page_count": r.get("PageCount", 0)
-        })
-        
-    return sorted(books_list, key=lambda x: x["title"]), None
+        for r in records:
+            b_id = str(r.get("BookID", ""))
+            if not b_id or b_id in seen_ids:
+                continue
+            seen_ids.add(b_id)
+            
+            books_list.append({
+                "book_id": b_id,
+                "title": r.get("BookName", "İsimsiz Kitap"),
+                "date": r.get("CreatedAt", ""),
+                "page_count": r.get("PageCount", 0)
+            })
+        return sorted(books_list, key=lambda x: x["title"]), None
+    except Exception as e:
+        return [], str(e)
 
 def load_book_content(book_id):
     sheet, err = get_sheet("Pages")
     if not sheet:
         return None, err
-    records = sheet.get_all_records()
-    
-    pages = []
-    for r in records:
-        if str(r.get("BookID", "")) == book_id:
-            try:
-                boxes = json.loads(r.get("OCRText", "[]"))
-            except:
-                boxes = []
-            
-            pages.append({
-                "page_no": int(r.get("PageNo", 0)),
-                "img_b64": r.get("ImageBase64", ""),
-                "boxes": boxes
-            })
-            
-    if not pages:
-        return None, "Bu kitaba ait sayfa verisi bulunamadı."
-    return sorted(pages, key=lambda x: x["page_no"]), None
+    try:
+        records = sheet.get_all_records()
+        pages = []
+        for r in records:
+            if str(r.get("BookID", "")) == book_id:
+                try:
+                    boxes = json.loads(r.get("OCRText", "[]"))
+                except:
+                    boxes = []
+                
+                pages.append({
+                    "page_no": int(r.get("PageNo", 0)),
+                    "img_b64": r.get("ImageBase64", ""),
+                    "boxes": boxes
+                })
+                
+        if not pages:
+            return None, "Bu kitaba ait sayfa verisi bulunamadı."
+        return sorted(pages, key=lambda x: x["page_no"]), None
+    except Exception as e:
+        return None, str(e)
 
 def save_hybrid_book(title, pages, old_book_id=None):
     lib_sheet, err1 = get_sheet("Library")
@@ -221,7 +365,7 @@ def save_hybrid_book(title, pages, old_book_id=None):
         lib_sheet.append_row([
             book_id,
             title,
-            time.strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             len(pages)
         ])
         
@@ -235,6 +379,7 @@ def save_hybrid_book(title, pages, old_book_id=None):
                 ocr_json
             ])
             
+        # 10'arlı gruplarla kota korumalı kayıt (Batch append)
         chunk_size = 10
         for i in range(0, len(all_page_rows), chunk_size):
             chunk = all_page_rows[i:i + chunk_size]
@@ -324,18 +469,14 @@ def sort_reading_order(ocr_items):
     return sorted_items
 
 def clean_word_key(text):
-    """Kelimeler ve kelime öbekleri arasındaki boşlukları ve kesme işaretlerini korur, sadece uçlardaki noktalamaları temizler."""
-    if not text:
-        return ""
-    # Baş ve sondaki noktalama işaretlerini kaldır ama ortadaki boşluk ve kesme işaretlerini koru
+    if not text: return ""
     cleaned = re.sub(r"^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$", "", text).strip().lower()
     cleaned = re.sub(r"\s+", " ", cleaned)
     return cleaned
 
 @st.cache_data(show_spinner=False)
 def translate_text(text, target_lang):
-    if not text or not text.strip():
-        return ""
+    if not text or not text.strip(): return ""
     clients = ['gtx', 'dict-chrome-ex', 'te_lib']
     for client in clients:
         try:
@@ -355,7 +496,6 @@ def translate_text(text, target_lang):
 
 @st.cache_data(show_spinner=False)
 def get_words_dictionary(texts_list, target_lang):
-    """Tüm cümle öbeklerini ve içindeki her bir tekil kelimeyi eksiksiz çevirip eşleştirir."""
     trans_map = {}
     unique_items = set()
 
@@ -363,7 +503,6 @@ def get_words_dictionary(texts_list, target_lang):
         clean = clean_word_key(raw)
         if clean:
             unique_items.add(clean)
-        # Eğer öbek birden fazla kelimeden oluşuyorsa içindeki tekil kelimeleri de sözlüğe ekle
         for word in re.findall(r"[\wÀ-ÿ'-]+", raw):
             w_clean = clean_word_key(word)
             if len(w_clean) > 1:
@@ -373,8 +512,6 @@ def get_words_dictionary(texts_list, target_lang):
         return {}
 
     items_list = sorted(list(unique_items))
-
-    # Google API'yi yormamak için 15'erli gruplar halinde satır başı (\n) ile toplu çeviri
     batch_size = 15
     for i in range(0, len(items_list), batch_size):
         batch = items_list[i:i + batch_size]
@@ -386,14 +523,12 @@ def get_words_dictionary(texts_list, target_lang):
             for orig, trans in zip(batch, lines):
                 trans_map[orig] = trans
         else:
-            # Satır sayısında uyuşmazlık olursa her birini tekil olarak güvenle al
             for orig in batch:
                 trans_map[orig] = translate_text(orig, target_lang)
 
     return trans_map
 
 def ensure_reading_ready(pages, target_lang):
-    """Sayfaları okuma moduna tam hazır hale getirir; çevirileri ve kelime sözlüklerini eksiksiz bağlar."""
     for page in pages:
         if page.get("current_lang") != target_lang or "full_trans" not in page or "dictionary" not in page:
             boxes = page.get("boxes", [])
@@ -438,17 +573,43 @@ def process_single_image(img):
     }
 
 # ==========================================
-# 4. GİRİŞ EKRANI
+# 4. GİRİŞ EKRANI (AÇIKLAMA, DİL VE İMZA)
 # ==========================================
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center; color: #1e3a8a;'>📚 Victor Hugo Veli Kütüphanesi</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Lütfen kütüphaneye erişmek için e-posta adresinizi girin.</p>", unsafe_allow_html=True)
+    # Üst Bar: Dil Seçimi
+    col_t_empty, col_lang = st.columns([3.5, 1.5])
+    with col_lang:
+        selected_lang = st.selectbox(
+            "Language / Dil / Език:",
+            options=["tr", "en", "bg"],
+            format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}",
+            index=["tr", "en", "bg"].index(st.session_state.app_lang) if st.session_state.app_lang in ["tr", "en", "bg"] else 0,
+            label_visibility="collapsed"
+        )
+        if selected_lang != st.session_state.app_lang:
+            st.session_state.app_lang = selected_lang
+            st.rerun()
+
+    st.markdown(f"<h1 style='text-align: center; color: #1e3a8a; margin-bottom: 2px;'>{T('title')}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; color: #64748b; font-size: 16px; margin-bottom: 20px;'>{T('subtitle')}</p>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    with col2:
-        l_email = st.text_input("E-posta Adresiniz:", key="log_email")
-        if st.button("Giriş Yap", type="primary", use_container_width=True):
-            if l_email:
+    # Bilgilendirme ve Amaç Kartı
+    col_l1, col_center, col_l2 = st.columns([1, 2.2, 1])
+    with col_center:
+        st.markdown(
+            f"""
+            <div style="background: rgba(30, 58, 138, 0.05); border: 1px solid rgba(30, 58, 138, 0.18); border-radius: 12px; padding: 18px; margin-bottom: 22px;">
+                <h4 style="margin: 0 0 8px 0; color: #1e3a8a;">{T('purpose_title')}</h4>
+                <p style="margin: 0 0 14px 0; font-size: 14.5px; line-height: 1.5; color: #334155;">{T('purpose_text')}</p>
+                <h4 style="margin: 0 0 8px 0; color: #1e3a8a;">{T('usage_title')}</h4>
+                <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #475569; white-space: pre-line;">{T('usage_text')}</p>
+            </div>
+            """, unsafe_allow_html=True
+        )
+
+        l_email = st.text_input(T("email_label"), key="log_email", placeholder="ornek@email.com")
+        if st.button(T("login_btn"), type="primary", use_container_width=True):
+            if l_email and "@" in l_email:
                 success, user_data, msg = login_user(l_email)
                 if success:
                     st.session_state.logged_in = True
@@ -458,7 +619,17 @@ if not st.session_state.logged_in:
                 else:
                     st.error(msg)
             else:
-                st.warning("Lütfen bir e-posta adresi girin.")
+                st.warning(T("email_warn"))
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        # Teşekkür ve İmza Alanı
+        st.markdown(
+            f"""
+            <div style="text-align: center; color: #94a3b8; font-size: 13.5px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                ✍️ <b>{T('created_by')}</b>
+            </div>
+            """, unsafe_allow_html=True
+        )
 
 # ==========================================
 # 5. OKUMA MODU (ZEN VIEWER)
@@ -630,7 +801,7 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI
+# 6. DÜZENLEYİCİ EKRANI (ADMIN)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
@@ -639,8 +810,8 @@ elif st.session_state.editor_mode:
     with col_t1:
         st.session_state.editor_book_title = st.text_input("Kitap Başlığı:", value=st.session_state.editor_book_title, label_visibility="collapsed")
     with col_t2:
-        if st.button("💾 Değişiklikleri Kaydet (Veritabanına Ekle)", type="secondary", use_container_width=True):
-            with st.spinner("Google Sheets'e toplu olarak kaydediliyor..."):
+        if st.button(T("save_changes"), type="secondary", use_container_width=True):
+            with st.spinner(T("saving_db")):
                 saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
                 if saved_f:
                     st.session_state.editor_orig_book_id = saved_f
@@ -648,21 +819,20 @@ elif st.session_state.editor_mode:
                 else:
                     st.error(msg)
     with col_t3:
-        if st.button("🚀 Kaydet & Hemen Oku", type="primary", use_container_width=True):
-            with st.spinner("Google Sheets'e kaydediliyor ve çeviriler hazırlanıyor..."):
+        if st.button(T("save_and_read"), type="primary", use_container_width=True):
+            with st.spinner(T("saving_db")):
                 saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
                 if saved_f:
                     prepared = ensure_reading_ready(st.session_state.editor_pages, st.session_state.app_lang)
                     st.session_state.uploaded_book_pages = prepared
                     st.session_state.current_book_title = st.session_state.editor_book_title
                     st.session_state.editor_mode = False
-                    st.reading_mode = True
                     st.session_state.reading_mode = True
                     st.rerun()
                 else:
                     st.error(msg)
     with col_t4:
-        if st.button("✕ Çık", use_container_width=True):
+        if st.button(T("exit_editor"), use_container_width=True):
             st.session_state.editor_mode = False
             st.rerun()
 
@@ -748,42 +918,54 @@ elif st.session_state.editor_mode:
                 st.rerun()
 
 # ==========================================
-# 7. ANA KÜTÜPHANE EKRANI
+# 7. ANA KÜTÜPHANE EKRANI (VELİ & ADMIN)
 # ==========================================
 else:
-    col_info1, col_info2, col_info3 = st.columns([2, 2, 1])
+    # Üst Bilgi ve Dil Çubuğu
+    col_info1, col_thanks, col_info2, col_info3 = st.columns([2.5, 1.2, 1.8, 1])
     with col_info1:
-        st.markdown(f"👤 **Hesap:** {st.session_state.user_email}")
+        st.markdown(f"👤 **{T('welcome')}:** `{st.session_state.user_email}`")
+    with col_thanks:
+        if st.button(T("thanks_btn"), use_container_width=True):
+            if record_thanks(st.session_state.user_email):
+                st.balloons()
+                st.toast(T("thanks_success"), icon="❤️")
     with col_info2:
-        st.session_state.app_lang = st.selectbox(
-            "Sayfa İçi Çeviri Dili:", options=list(LANGUAGES.keys()),
+        new_lang = st.selectbox(
+            T("reading_lang_label"),
+            options=["tr", "en", "bg"],
             format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}",
-            index=list(LANGUAGES.keys()).index(st.session_state.app_lang),
+            index=["tr", "en", "bg"].index(st.session_state.app_lang) if st.session_state.app_lang in ["tr", "en", "bg"] else 0,
             label_visibility="collapsed"
         )
+        if new_lang != st.session_state.app_lang:
+            st.session_state.app_lang = new_lang
+            st.rerun()
     with col_info3:
-        if st.button("🚪 Çıkış Yap", use_container_width=True):
+        if st.button(T("logout"), use_container_width=True):
             st.session_state.logged_in = False
             st.rerun()
 
+    # Admin için rozet
     if st.session_state.user_role == "admin":
         _client, _err, _email = get_gsheet_client()
         if _client:
             _test_sheet, _sheet_err = get_sheet("Library")
             if _test_sheet:
-                st.caption(f"🟢 **Google Sheets Bağlantısı Aktif** (Robot Hesap: `{_email}`)")
+                st.caption(f"🟢 **Google Sheets Bağlantısı Aktif** (Admin Modu)")
             else:
                 st.error(_sheet_err)
         else:
             st.error(_err)
 
+    # Rol Yönetimi: Admin ise yükleme sekmesi açılır, veli ise sadece kitaplık
     if st.session_state.user_role == "admin":
-        tabs = ["📖 Kütüphane Havuzu", "➕ Yeni Kitap Ekle"]
+        tabs = [T("lib_title"), T("add_tab")]
         app_tabs = st.tabs(tabs)
         tab_havuz = app_tabs[0]
         tab_ekle = app_tabs[1]
     else:
-        st.markdown("<h2 style='text-align: center; color: #1e3a8a; margin-top:20px;'>📖 Kitaplık</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center; color: #1e3a8a; margin-top:15px;'>{T('lib_title')}</h2>", unsafe_allow_html=True)
         tab_havuz = st.container()
         tab_ekle = None
 
@@ -792,15 +974,15 @@ else:
         if b_err:
             st.error(f"Kitap listesi yüklenemedi: {b_err}")
         elif not saved_books:
-            st.info("Kütüphanede henüz kitap bulunmuyor.")
+            st.info(T("empty_lib"))
         else:
             book_titles = {b["book_id"]: f"{b['title']} ({b['page_count']} sayfa)" for b in saved_books}
-            selected_id = st.selectbox("Okumak istediğiniz kitabı seçin:", options=list(book_titles.keys()), format_func=lambda x: book_titles[x])
+            selected_id = st.selectbox(T("select_book"), options=list(book_titles.keys()), format_func=lambda x: book_titles[x])
             
             if st.session_state.user_role == "admin":
                 col_r, col_e, col_d = st.columns([2, 2, 1])
                 with col_r:
-                    if st.button("🚀 Kitabı Aç ve Oku", type="primary", use_container_width=True):
+                    if st.button(T("open_read"), type="primary", use_container_width=True):
                         with st.spinner("Kitap yükleniyor..."):
                             book_pages, l_err = load_book_content(selected_id)
                             if book_pages:
@@ -811,7 +993,7 @@ else:
                             else:
                                 st.error(l_err)
                 with col_e:
-                    if st.button("✏️ Kitabı Düzenle", use_container_width=True):
+                    if st.button(T("edit_book"), use_container_width=True):
                         with st.spinner("Kitap yükleniyor..."):
                             book_pages, l_err = load_book_content(selected_id)
                             if book_pages:
@@ -824,14 +1006,14 @@ else:
                             else:
                                 st.error(l_err)
                 with col_d:
-                    if st.button("🗑️ Sil", use_container_width=True):
+                    if st.button(T("delete_book"), use_container_width=True):
                         delete_hybrid_book(selected_id)
-                        st.success("Kitap silindi.")
+                        st.success(T("delete_confirm"))
                         time.sleep(0.5)
                         st.rerun()
             else:
-                if st.button("🚀 Kitabı Aç ve Oku", type="primary", use_container_width=True):
-                    with st.spinner("Kitap çevirileriyle birlikte yükleniyor..."):
+                if st.button(T("open_read"), type="primary", use_container_width=True):
+                    with st.spinner("Kitap yükleniyor..."):
                         book_pages, l_err = load_book_content(selected_id)
                         if book_pages:
                             st.session_state.uploaded_book_pages = book_pages
@@ -843,7 +1025,7 @@ else:
 
     if tab_ekle:
         with tab_ekle:
-            book_title_input = st.text_input("Kitabın Adı (Örn: Le Petit Prince):", value="Yeni Kitap")
+            book_title_input = st.text_input("Kitabın Adı (Örn: Le Petit Poucet):", value="Yeni Kitap")
             uploaded_files = st.file_uploader("Kitap sayfalarını seçin (PNG, JPG):", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
             split_spreads = st.checkbox("📖 Çift Sayfa Çekimlerini Otomatik İkiye Böl", value=True)
 
@@ -883,3 +1065,13 @@ else:
                     st.session_state.editor_page_idx = 0
                     st.session_state.editor_mode = True
                     st.rerun()
+
+    # Alt Bilgi / İmza
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div style="text-align: center; color: #94a3b8; font-size: 13.5px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+            ✍️ <b>{T('created_by')}</b>
+        </div>
+        """, unsafe_allow_html=True
+    )
