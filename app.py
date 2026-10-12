@@ -56,7 +56,6 @@ if "editor_page_idx" not in st.session_state: st.session_state.editor_page_idx =
 # 1. GOOGLE SHEETS ENTEGRASYONU & ANAHTAR ONARIMI
 # ==========================================
 def clean_private_key(key_str):
-    """Windows satır sonlarını ve kaçış karakterlerini Google'ın kabul edeceği RSA formatına getirir."""
     if not key_str or not isinstance(key_str, str):
         return key_str
     key_str = key_str.replace("\r\n", "\n").replace("\r", "\n")
@@ -65,7 +64,6 @@ def clean_private_key(key_str):
     return key_str.strip()
 
 def get_service_account_dict():
-    """Tüm olası konumlardan Google Service Account anahtarını bulup çıkartır."""
     creds_dict = None
     if hasattr(st, "secrets"):
         if "gcp_json" in st.secrets:
@@ -185,18 +183,10 @@ def load_book_content(book_id):
             except:
                 boxes = []
             
-            words = [b["text"].strip() for b in boxes if b.get("text", "").strip()]
-            full_str = " ".join(words)
-            full_trans = translate_text(full_str, st.session_state.app_lang)
-            dictionary = get_words_dictionary(words, st.session_state.app_lang)
-            
             pages.append({
                 "page_no": int(r.get("PageNo", 0)),
                 "img_b64": r.get("ImageBase64", ""),
-                "boxes": boxes,
-                "full_text": full_str,
-                "full_trans": full_trans,
-                "dictionary": dictionary
+                "boxes": boxes
             })
             
     if not pages:
@@ -213,7 +203,6 @@ def save_hybrid_book(title, pages, old_book_id=None):
         return None, f"Pages sekmesine bağlanılamadı:\n{err2}"
     
     try:
-        # Eski kayıtları temizle
         if old_book_id:
             book_id = old_book_id
             lib_records = lib_sheet.get_all_records()
@@ -225,11 +214,10 @@ def save_hybrid_book(title, pages, old_book_id=None):
             rows_to_delete = [i + 2 for i, r in enumerate(page_records) if str(r.get("BookID", "")) == book_id]
             for row_idx in reversed(rows_to_delete):
                 pages_sheet.delete_rows(row_idx)
-                time.sleep(0.1) # Silme limitine karşı küçük bekleme
+                time.sleep(0.1)
         else:
             book_id = str(uuid.uuid4())[:8]
             
-        # 1. Meta veriyi kaydet (1 İstek)
         lib_sheet.append_row([
             book_id,
             title,
@@ -237,7 +225,6 @@ def save_hybrid_book(title, pages, old_book_id=None):
             len(pages)
         ])
         
-        # 2. Sayfaları toplu kaydetmek için hazırla
         all_page_rows = []
         for idx, page in enumerate(pages):
             ocr_json = json.dumps(page["boxes"], ensure_ascii=False)
@@ -248,12 +235,11 @@ def save_hybrid_book(title, pages, old_book_id=None):
                 ocr_json
             ])
             
-        # 3. Google API 429 Kotasına takılmamak için 10'arlı gruplar (Batch) halinde gönder (Kritik Çözüm)
         chunk_size = 10
         for i in range(0, len(all_page_rows), chunk_size):
             chunk = all_page_rows[i:i + chunk_size]
             pages_sheet.append_rows(chunk)
-            time.sleep(0.5) # Güvenlik gecikmesi
+            time.sleep(0.5)
             
         return book_id, "Kitap Google Sheets veritabanına başarıyla kaydedildi!"
     except Exception as e:
@@ -278,7 +264,7 @@ def delete_hybrid_book(book_id):
             time.sleep(0.1)
 
 # ==========================================
-# 3. OCR VE GÖRSEL SIKIŞTIRMA MOTORU
+# 3. OCR, ÇEVİRİ VE DİNAMİK HAZIRLIK MOTORU
 # ==========================================
 @st.cache_resource
 def load_ocr():
@@ -287,7 +273,6 @@ def load_ocr():
 reader = load_ocr()
 
 def compress_image_for_sheets(img):
-    """Google Sheets 50.000 karakter sınırına asla takılmamak için görseli hafifletir."""
     img.thumbnail((600, 800), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
     quality = 40
@@ -364,6 +349,24 @@ def get_words_dictionary(words_list, target_lang):
         trans_map[word] = parts[i] if i < len(parts) else "-"
     return trans_map
 
+def clean_word_key(text):
+    return re.sub(r"[^\wÀ-ÿ'-]", "", text).strip().lower()
+
+def ensure_reading_ready(pages, target_lang):
+    """Sayfaları seçilen dilde okumaya hazır hale getirir; çevirileri ve sözlükleri eksiksiz bağlar."""
+    for page in pages:
+        if page.get("current_lang") != target_lang or "full_trans" not in page:
+            words = [b["text"].strip() for b in page.get("boxes", []) if b.get("text", "").strip()]
+            full_str = " ".join(words)
+            page["full_text"] = full_str
+            page["full_trans"] = translate_text(full_str, target_lang)
+            page["dictionary"] = get_words_dictionary(words, target_lang)
+            page["current_lang"] = target_lang
+            
+            for b in page.get("boxes", []):
+                b["clean"] = clean_word_key(b.get("text", ""))
+    return pages
+
 def process_single_image(img):
     w, h = img.size
     ocr_raw = reader.readtext(np.array(img), detail=1, paragraph=False)
@@ -378,7 +381,7 @@ def process_single_image(img):
         boxes.append({
             "id": f"b_{len(boxes)}",
             "text": text,
-            "clean": text.lower().strip(),
+            "clean": clean_word_key(text),
             "left": (min_x / w) * 100,
             "top": (min_y / h) * 100,
             "width": ((max_x - min_x) / w) * 100,
@@ -437,7 +440,8 @@ elif st.session_state.reading_mode:
         st.session_state.reading_mode = False
         st.rerun()
 
-    pages = st.session_state.uploaded_book_pages
+    # Sayfaların çevirilerini seçili dilde doğrula ve garantile
+    pages = ensure_reading_ready(st.session_state.uploaded_book_pages, st.session_state.app_lang)
     pages_json = json.dumps(pages)
     target_flag = LANGUAGES[st.session_state.app_lang]["flag"]
 
@@ -506,16 +510,26 @@ elif st.session_state.reading_mode:
                 pageCounter.innerText = `Sayfa ${{idx + 1}} / ${{allPages.length}}`;
                 btnPrev.disabled = (idx === 0); btnNext.disabled = (idx === allPages.length - 1);
                 card.style.display = 'none'; layer.innerHTML = ''; wordIndices = []; let charOffset = 0;
-                page.boxes.forEach((b, i) => {{
+                
+                (page.boxes || []).forEach((b, i) => {{
                     wordIndices.push({{ idx: i, start: charOffset, end: charOffset + b.text.length }});
                     charOffset += b.text.length + 1;
                     const d = document.createElement('div'); d.className = 'word-hitbox'; d.id = 'box_' + i;
                     d.style.left = b.left + '%'; d.style.top = b.top + '%'; d.style.width = b.width + '%'; d.style.height = b.height + '%';
                     d.onclick = () => {{
-                        resetHudTimer(); const trans = page.dictionary[b.clean] || '-';
-                        card.innerHTML = "🇫🇷 <b>" + b.text + "</b> ➔ " + targetFlag + " " + trans; card.style.display = 'block';
-                        window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(b.text); u.lang = 'fr-FR'; u.rate = speeds[speedIdx]; window.speechSynthesis.speak(u);
-                        clearTimeout(timer); timer = setTimeout(() => {{ card.style.display = 'none'; }}, 3500);
+                        resetHudTimer(); 
+                        const dict = page.dictionary || {{}};
+                        const cleanKey = b.clean || b.text.replace(/[^\\p{{L}}\\p{{N}}'-]/gu, '').toLowerCase().trim();
+                        const trans = dict[cleanKey] || dict[b.clean] || dict[b.text.toLowerCase().trim()] || '-';
+                        card.innerHTML = "🇫🇷 <b>" + b.text + "</b> ➔ " + targetFlag + " " + trans; 
+                        card.style.display = 'block';
+                        window.speechSynthesis.cancel(); 
+                        const u = new SpeechSynthesisUtterance(b.text); 
+                        u.lang = 'fr-FR'; 
+                        u.rate = speeds[speedIdx]; 
+                        window.speechSynthesis.speak(u);
+                        clearTimeout(timer); 
+                        timer = setTimeout(() => {{ card.style.display = 'none'; }}, 3500);
                     }};
                     layer.appendChild(d);
                 }});
@@ -524,13 +538,18 @@ elif st.session_state.reading_mode:
             function prevPage() {{ resetHudTimer(); if (currentIndex > 0) loadPage(currentIndex - 1); }}
             function toggleTranslation() {{
                 resetHudTimer();
-                if (card.style.display === 'block') card.style.display = 'none';
-                else {{ card.innerHTML = "📝 <b>Sayfa Çevirisi:</b> " + allPages[currentIndex].full_trans; card.style.display = 'block'; }}
+                const transText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : "Çeviri yükleniyor...";
+                if (card.style.display === 'block') {{
+                    card.style.display = 'none';
+                }} else {{ 
+                    card.innerHTML = "📝 <b>Sayfa Çevirisi:</b> " + transText; 
+                    card.style.display = 'block'; 
+                }}
             }}
             function toggleKaraoke() {{ resetHudTimer(); if (isPlaying) stopKaraoke(); else playKaraoke(); }}
             function playKaraoke() {{
                 window.speechSynthesis.cancel(); isPlaying = true; btnKaraoke.classList.add('active'); document.getElementById('k-text').innerText = "Durdur";
-                const page = allPages[currentIndex]; let fullSentence = page.boxes.map(b => b.text).join(' ');
+                const page = allPages[currentIndex]; let fullSentence = (page.boxes || []).map(b => b.text).join(' ');
                 let u = new SpeechSynthesisUtterance(fullSentence); u.lang = 'fr-FR'; u.rate = speeds[speedIdx];
                 let usedBoundary = false;
                 u.onboundary = function(e) {{
@@ -541,7 +560,7 @@ elif st.session_state.reading_mode:
                 }};
                 let fallbackIdx = 0;
                 function stepFallback() {{
-                    if (!isPlaying || fallbackIdx >= page.boxes.length) return;
+                    if (!isPlaying || !page.boxes || fallbackIdx >= page.boxes.length) return;
                     if (!usedBoundary) {{ document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); const el = document.getElementById('box_' + fallbackIdx); if (el) el.classList.add('karaoke-lit'); }}
                     let dur = ((page.boxes[fallbackIdx].text.length * 60) + 50) / speeds[speedIdx]; fallbackIdx++; timer = setTimeout(stepFallback, dur);
                 }}
@@ -570,7 +589,7 @@ elif st.session_state.editor_mode:
         st.session_state.editor_book_title = st.text_input("Kitap Başlığı:", value=st.session_state.editor_book_title, label_visibility="collapsed")
     with col_t2:
         if st.button("💾 Değişiklikleri Kaydet (Veritabanına Ekle)", type="secondary", use_container_width=True):
-            with st.spinner("Google Sheets'e toplu olarak kaydediliyor... (Bu işlem birkaç saniye sürebilir)"):
+            with st.spinner("Google Sheets'e toplu olarak kaydediliyor..."):
                 saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
                 if saved_f:
                     st.session_state.editor_orig_book_id = saved_f
@@ -579,10 +598,12 @@ elif st.session_state.editor_mode:
                     st.error(msg)
     with col_t3:
         if st.button("🚀 Kaydet & Hemen Oku", type="primary", use_container_width=True):
-            with st.spinner("Google Sheets'e toplu olarak kaydediliyor..."):
+            with st.spinner("Google Sheets'e kaydediliyor ve çeviriler hazırlanıyor..."):
                 saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
                 if saved_f:
-                    st.session_state.uploaded_book_pages = st.session_state.editor_pages
+                    # Çevirileri okuma modu öncesinde hazırla
+                    prepared = ensure_reading_ready(st.session_state.editor_pages, st.session_state.app_lang)
+                    st.session_state.uploaded_book_pages = prepared
                     st.session_state.current_book_title = st.session_state.editor_book_title
                     st.session_state.editor_mode = False
                     st.session_state.reading_mode = True
@@ -668,6 +689,7 @@ elif st.session_state.editor_mode:
                     if not row["Kaldır 🗑️"] and row["Metin (Fransızca)"].strip():
                         orig_box = curr_page["boxes"][row_idx]
                         orig_box["text"] = row["Metin (Fransızca)"].strip()
+                        orig_box["clean"] = clean_word_key(orig_box["text"])
                         new_boxes.append(orig_box)
                 curr_page["boxes"] = new_boxes
                 st.success("Güncellendi!")
