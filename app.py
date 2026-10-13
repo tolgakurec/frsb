@@ -42,17 +42,75 @@ st.set_page_config(
 )
 
 # ==========================================
-# 0. ÇOK DİLLİ ARAYÜZ METİNLERİ (TR / EN / BG / DE / ES / RU)
+# 0. HİKAYE METİNLERİ VE ARAYÜZ ÇEVİRİLERİ
 # ==========================================
+STORY_TR = """Sofya’da Kalan Gençlik: Bir İmparatorluğun İhtişamı ve Yarım Kalan Bir Aşk
+Yıl 1914. Balkan Savaşları'nın barut kokusu henüz dağılmamış, Avrupa'nın üzerinde yaklaşan Büyük Savaş'ın kara bulutları toplanırken, Sofya'nın soğuk sokakları o gece Askerî Kulüp'ten yükselen vals ezgileriyle ısınıyordu. 11 Mayıs gecesi, Bulgar Kralı Ferdinand'ın ev sahipliğinde düzenlenen bu görkemli maskeli balo, sıradan bir diplomatik davet değil; tarihin en zarif meydan okumalarından birine ve son nefese kadar unutulmayacak, kalpleri sızlatan bir aşka sahne olacaktı.
+
+Salonda Bir Yeniçeri Ağası
+Avrupalı diplomatlar, generaller ve elitler frakları, smokinleri ve şatafatlı elbiseleriyle salonu doldurmuşken, devasa kapılar ağır ağır açıldı. İçeriye adım atan adam, henüz 32 yaşında genç ve karizmatik bir Osmanlı Kurmay Yarbayı olan Mustafa Kemal'di. Ancak o gece üzerinde alışıldık bir üniforma yoktu. Balkan Savaşları'nda zedelenen milletinin gururunu ayağa kaldırmak istercesine, İstanbul'dan, Harbiye Askerî Müzesi'nden gizlice getirttiği orijinal bir Yeniçeri Ağası kıyafetiyle salona girmişti. Börk serpuşu, gösterişli kuşağı ve belindeki kılıcıyla adeta geçmişin kudretli imparatorluğunun ete kemiğe bürünmüş haliydi.
+
+O an salona derin, büyüleyici bir sessizlik çöktü; ardından bu sessizlik yerini devasa bir hayranlığa bıraktı. İşte yanda yer alan ve o tarihi balodaki büyüleyici anı yansıtan kareden de hissedilebileceği üzere, bu görkemli kostümün içindeki genç ataşe herkesi büyülemiş ve gecenin yıldızı olmuştu.
+
+Mavi Tuna'nın Sularında Süzülen Bir Aşk: "Bulgar Gülü" Miti
+Bu ihtişamlı gece, Mustafa Kemal için sadece bir diplomatik zafer değil, kalbinin derinliklerine kazınan bir sevdanın da en güzel sahnesiydi. Gecenin ilerleyen saatlerinde Johann Strauss'un "Güzel Mavi Tuna" valsi çalmaya başladığında, Mustafa Kemal Bulgaristan’ın eski Savunma Bakanı General Kovaçev’in kızı Dimitrina Kovaçeva'ya, namıdiğer "Miti"ye doğru ilerledi. İsviçre'de eğitim almış, yüksek kültürü ve eşsiz güzelliğiyle "Bulgar Gülü" olarak anılan Miti ile Mustafa Kemal dansa kalktığında, Sofya sosyetesi için zaman adeta durdu.
+
+Bu dans, aslında alevlenmiş bir aşkın toplum önündeki cesur bir ilanıydı. Boris Parkı'nda yaptıkları uzun romantik yürüyüşlerin, buz pateni pistindeki gizli bakışmaların taçlandığı andı. Mustafa Kemal, bu büyük aşka teslim olmuş ve Miti'ye evlenme teklif etmiş, genç kızdan tereddütsüz bir "Evet" almıştı.
+
+Vatan Borcu ve Kırık Bir Kalp
+Fakat tarih, büyük aşkları genellikle büyük trajedilerle sınar. İki eski düşman millet... Biri Çatalca'ya kadar ilerlemiş bir Bulgar generalinin kızı, diğeri ise vatanının kurtuluşunu omuzlarında taşıyan bir Osmanlı subayı. General Kovaçev, din ve siyaset duvarlarını örerek bu aşka iki kez kesin bir dille karşı çıktı. General, kızını apar topar bir mühendisle nişanlayıp bu sevdayı koparıp atmaya çalışırken, Mustafa Kemal'in içindeki fırtınalar, yalnız geçirdiği günlerde dostu Salih Bozok'a yazdığı mektuptaki şu dizelere dökülüyordu:
+
+"Hayat kısacık... birazcık umut, birazcık aşk ve sonra elveda..."
+
+Genç yarbay, Madam Corinne'e yazdığı mektuplarda ise acısını ve yaralı kalbini büyük bir ideale gömdüğünü fısıldıyordu: "Benim ihtiraslarım var, hem de pek büyükleri... Ben bu ihtirasların gerçekleşmesini vatanıma büyük bir hizmet borcu olarak görüyorum." Mustafa Kemal, yaklaşan cihan harbinin ayak seslerini duyuyor ve vatanı için kendi kalbinden vazgeçiyordu. Savaş tamtamları çalmaya başladığında, yarım kalan aşkını Sofya'da bırakarak Çanakkale Cephesi'ne, dünya tarihini değiştireceği o destana doğru yola çıktı.
+
+"Gençliğimi Bıraktım Sofya'da..."
+Yıllar su gibi aktı. Mustafa Kemal bir imparatorluğun küllerinden yepyeni bir cumhuriyet kurup dünyanın saygı duyduğu bir lider oldu. Miti ise ailesinin zoruyla evlenip saygın bir eş ve anne olarak hayatına devam etti. Ancak ikisinin de kalbindeki o ince sızı, o Mavi Tuna valsinde yarım kalan melodi hiç susmadı. Miti, yıllarca Atatürk'ün her başarısını Bulgar gazetelerinden yaşlı gözlerle takip etti. Atatürk ise yıllar sonra Ankara'da o günleri anımsadığında, içindeki sönmeyen hüznü şu sözlerle itiraf edecekti:
+
+"Bir kız sevdim ataşeyken, vermediler. Gençliğimi bıraktım Sofya'da..."
+
+Bu destansı sevdanın son perdesi ise, Ağustos 1966'da, sofya rüzgarlarından çok uzakta kapandı. Miti, ölüm döşeğinde son nefesini vermeden hemen önce, başucunda bekleyen kız kardeşine şu sarsıcı cümleyi fısıldadı:
+
+"Biliyor musun? Rüyamda onu gördüm. Sanıyorum ki nihayet Mustafa Kemal’e kavuşacağım..."
+
+Kıranlık Kulüp'teki o büyülü vals ve ölümsüz aşk, bugün tarihin sayfalarında sadece askeri bir dehanın değil; vatanı için en derin sevgisinden vazgeçmek zorunda kalan bir devin en insani, en hüzünlü hatırası olarak yankılanmaya devam ediyor."""
+
+STORY_FR = """La Jeunesse laissée à Sofia : La splendeur d'un empire et un amour inachevé
+L'année 1914. L'odeur de poudre des guerres balkaniques ne s'était pas encore dissipée et les sombres nuages de la Grande Guerre imminente s'amoncelaient sur l'Europe, tandis que les rues froides de Sofia étaient réchauffées par les airs de valse s'échappant du Club Militaire ce soir-là. Ce grand bal masqué, organisé par le roi Ferdinand de Bulgarie dans la nuit du 11 mai, n'était pas une simple invitation diplomatique ; il allait être le théâtre de l'un des défis les plus élégants de l'histoire et d'un amour déchirant qui ne serait jamais oublié jusqu'au dernier souffle.
+
+Un Agha Janissaire dans le Salon
+Alors que les diplomates, les généraux et l'élite européenne remplissaient la salle avec leurs queues-de-pie, leurs smokings et leurs robes flamboyantes, les portes géantes s'ouvrirent lentement. L'homme qui y entra était Mustafa Kemal, un jeune et charismatique lieutenant-colonel d'état-major ottoman âgé de 32 ans à peine. Cependant, il ne portait pas d'uniforme habituel ce soir-là. Comme pour relever la fierté de sa nation ébranlée par les guerres des Balkans, il était entré dans la salle avec une tenue originale d'Agha janissaire qu'il avait secrètement ramenée d'Istanbul, du Musée militaire de Harbiye. Avec sa coiffe en feutre, sa ceinture ostentatoire et l'épée à sa taille, il incarnait le puissant empire du passé.
+
+À ce moment-là, un silence profond et fascinant tomba sur la salle ; puis ce silence fit place à une immense admiration. Comme on peut le voir sur la photo ci-contre qui reflète ce moment magique de ce bal historique, le jeune attaché dans ce magnifique costume avait fasciné tout le monde et était devenu la star de la soirée.
+
+Un amour planant sur les eaux du Danube bleu : Miti, la "Rose Bulgare"
+Cette magnifique soirée ne fut pas seulement un triomphe diplomatique pour Mustafa Kemal, ce fut aussi la plus belle scène d'un amour gravé au fond de son cœur. Plus tard dans la nuit, lorsque la valse du "Beau Danube bleu" de Johann Strauss a commencé à jouer, Mustafa Kemal s'est avancé vers Dimitrina Kovacheva, fille de l'ancien ministre bulgare de la Défense, le général Kovachev, alias "Miti". Éduquée en Suisse et connue sous le nom de "Rose bulgare" pour sa grande culture et sa beauté inégalée, lorsque Miti et Mustafa Kemal se sont levés pour danser, le temps s'est arrêté pour la haute société de Sofia.
+
+Cette danse était en fait la déclaration courageuse devant la société d'un amour enflammé. C'était le couronnement de leurs longues promenades romantiques dans le parc Boris et de leurs regards secrets sur la patinoire. Mustafa Kemal, s'abandonnant à ce grand amour, avait demandé Miti en mariage et avait reçu un "Oui" sans hésitation de la jeune fille.
+
+Le Devoir de la Patrie et un Cœur Brisé
+Mais l'histoire met souvent les grands amours à l'épreuve des grandes tragédies. Deux anciennes nations ennemies... L'une est la fille d'un général bulgare qui a avancé jusqu'à Çatalca, l'autre est un officier ottoman qui porte la libération de sa patrie sur ses épaules. Le général Kovachev s'est opposé à cet amour à deux reprises avec un ton catégorique, construisant des murs de religion et de politique. Alors que le général tentait d'arracher cet amour en fiançant précipitamment sa fille à un ingénieur, les tempêtes intérieures de Mustafa Kemal se déversaient dans les lignes suivantes d'une lettre qu'il écrivit à son ami Salih Bozok pendant ses jours de solitude :
+
+"La vie est très courte... un peu d'espoir, un peu d'amour et puis adieu..."
+
+Dans ses lettres à Madame Corinne, le jeune lieutenant-colonel murmurait qu'il enterrait sa douleur et son cœur blessé dans un grand idéal : "J'ai des ambitions, et des très grandes... Je considère la réalisation de ces ambitions comme un grand devoir envers ma patrie." Mustafa Kemal entendait les bruits de pas de la guerre mondiale imminente et renonçait à son propre cœur pour sa patrie. Lorsque les tambours de guerre commencèrent à battre, il laissa son amour inachevé à Sofia et partit pour le front des Dardanelles, pour l'épopée où il allait changer l'histoire du monde.
+
+"J'ai laissé ma jeunesse à Sofia..."
+Les années passèrent comme de l'eau. Mustafa Kemal a construit une toute nouvelle république sur les cendres d'un empire et est devenu un leader respecté du monde entier. Miti, en revanche, a été forcée de se marier par sa famille et a poursuivi sa vie en tant qu'épouse et mère respectée. Mais la fine douleur dans leurs deux cœurs, la mélodie inachevée de cette valse du Danube bleu ne s'est jamais tue. Pendant des années, Miti a suivi chaque succès d'Atatürk dans les journaux bulgares, les larmes aux yeux. Atatürk, d'autre part, lorsqu'il s'est souvenu de ces jours à Ankara des années plus tard, confessait sa tristesse inextinguible avec ces mots :
+
+"J'ai aimé une fille quand j'étais attaché, ils ne me l'ont pas donnée. J'ai laissé ma jeunesse à Sofia..."
+
+Le dernier acte de cet amour épique s'est clos en août 1966, loin des vents de Sofia. Miti, juste avant de rendre son dernier souffle sur son lit de mort, a murmuré cette phrase bouleversante à sa sœur qui l'attendait à son chevet :
+
+"Tu sais ? Je l'ai vu dans mon rêve. Je pense que je vais enfin retrouver Mustafa Kemal..."
+
+Cette valse magique au Club et cet amour immortel continuent de résonner aujourd'hui dans les pages de l'histoire, non seulement comme le souvenir d'un génie militaire, mais aussi comme le souvenir le plus humain et le plus triste d'un géant qui a dû renoncer à son amour le plus profond pour sa patrie."""
+
 UI_TRANSLATIONS = {
     "tr": {
         "title": "📚 Fransızca Hikaye Kütüphanesi",
         "subtitle": "Fransızca Hikayeleri Keşfet ve Birlikte Öğren",
         "created_by": "Bu uygulama Tolga Küreç tarafından oluşturulmuştur (Timuçin ve Teoman'ın Babası)",
-        "purpose_title": "🎯 Uygulamanın Amacı",
-        "purpose_text": "Bu kütüphane, Fransızca bilmeyen ailelerin kitap okurken çocukları ile kaliteli ve verimli vakit geçirmelerini sağlamak; hikayelerin konusunu kavramada ve Fransızca telaffuz (prononciation) konusunda velilere rehberlik etmek için tasarlanmıştır.",
-        "usage_title": "💡 Nasıl Kullanılır?",
-        "usage_text": "1. Okumak istediğiniz hikayeyi kütüphaneden seçin ve açın.\n2. Sayfadaki kelimelere dokunarak doğru Fransızca sesli okunuşunu dinleyin ve anlık çevirisini görün.\n3. 'Sesli Dinle' butonu ile sayfanın tamamını akıcı olarak takip edin.\n4. 'Sayfa Çevirisi' butonu ile hikayenin Türkçe özet mealini okuyun.",
         "email_label": "E-posta Adresiniz:",
         "login_btn": "Giriş Yap",
         "email_warn": "Lütfen geçerli bir e-posta adresi girin.",
@@ -71,9 +129,7 @@ UI_TRANSLATIONS = {
         "save_changes": "💾 Değişiklikleri Kaydet (Veritabanına Ekle)",
         "save_and_read": "🚀 Kaydet & Hemen Oku",
         "exit_editor": "✕ Çık",
-        "split_page_btn": "✂️ Bu Çift Sayfayı İkiye Böl (Sol & Sağ)",
-        "split_success": "Sayfa başarıyla sol ve sağ olarak 2 sayfaya ayrıldı!",
-        "saving_db": "Google Sheets'e kaydediliyor...",
+        "split_page_btn": "✂️ Bu Çift Sayfayı İkiye Böl",
         "ocr_processing": "Görseller taranıyor...",
         "reading_lang_label": "Okuma & Çeviri Dili:",
         "zen_close": "✕ Kapat",
@@ -81,23 +137,20 @@ UI_TRANSLATIONS = {
         "zen_listen": "Sesli Dinle",
         "zen_stop": "Durdur",
         "zen_page_trans": "Sayfa Çevirisi",
-        "zen_loading_trans": "Sayfa çevirisi hazırlanıyor..."
+        "miti_title": "Sofya’da Kalan Gençlik: Bir İmparatorluğun İhtişamı ve Yarım Kalan Bir Aşk",
+        "miti_exit": "✕ Çıkış Yap"
     },
     "en": {
         "title": "📚 French Storybook Library",
         "subtitle": "Explore French Stories & Learn Together",
         "created_by": "This application was created by Tolga Küreç (Father of Timuçin & Teoman)",
-        "purpose_title": "🎯 Purpose of the App",
-        "purpose_text": "This library is designed for non-French speaking families to spend productive, enjoyable reading time with their children. It assists parents in understanding the storyline and mastering French pronunciation alongside their kids.",
-        "usage_title": "💡 How to Use?",
-        "usage_text": "1. Select a storybook from the library pool and open it.\n2. Tap any word or phrase on the page to hear genuine French pronunciation and view instant translation.\n3. Use 'Listen Aloud' to experience karaoke audio playback of the whole page.\n4. Use 'Page Translation' to reveal the full meaning of the page.",
         "email_label": "Your Email Address:",
         "login_btn": "Sign In",
         "email_warn": "Please enter a valid email address.",
         "welcome": "Welcome",
         "logout": "🚪 Sign Out",
         "thanks_btn": "❤️ Send Thanks",
-        "thanks_success": "Your thank-you note was sent to Tolga Küreç! Enjoy reading.",
+        "thanks_success": "Your thank-you note was sent to Tolga Küreç!",
         "lib_title": "📖 Library Pool",
         "add_tab": "➕ Add New Book",
         "empty_lib": "There are no books in the library yet.",
@@ -106,36 +159,31 @@ UI_TRANSLATIONS = {
         "edit_book": "✏️ Edit Book",
         "delete_book": "🗑️ Delete",
         "delete_confirm": "Book deleted successfully.",
-        "save_changes": "💾 Save Changes (To Database)",
+        "save_changes": "💾 Save Changes",
         "save_and_read": "🚀 Save & Read Now",
         "exit_editor": "✕ Exit",
-        "split_page_btn": "✂️ Split Double Page (Left & Right)",
-        "split_success": "Page successfully split into left and right pages!",
-        "saving_db": "Saving to Google Sheets database...",
+        "split_page_btn": "✂️ Split Double Page",
         "ocr_processing": "Processing pages with OCR...",
-        "reading_lang_label": "Reading & Translation Language:",
+        "reading_lang_label": "Translation Language:",
         "zen_close": "✕ Close",
         "zen_page": "Page",
         "zen_listen": "Listen Aloud",
         "zen_stop": "Stop",
         "zen_page_trans": "Page Translation",
-        "zen_loading_trans": "Preparing page translation..."
+        "miti_title": "The Youth Left in Sofia: The Splendor of an Empire and an Unfinished Love",
+        "miti_exit": "✕ Exit"
     },
     "bg": {
         "title": "📚 Френска библиотека с приказки",
         "subtitle": "Открийте френските приказки и учете заедно",
         "created_by": "Това приложение е създадено от Толга Кюреч (Бащата на Тимучин и Теоман)",
-        "purpose_title": "🎯 Цел на приложението",
-        "purpose_text": "Тази библиотека е създадена, за да помогне на семействата, които не говорят френски, да прекарват пълноценно и приятно време с децата си по време на четене. Тя подпомага родителите в разбирането на сюжета и правилното френско произношение.",
-        "usage_title": "💡 Как се използва?",
-        "usage_text": "1. Изберете приказка от библиотеката и я отворете.\n2. Докоснете дума или фраза на страницата, за да чуете произношението ѝ и да видите превода.\n3. Натиснете 'Слушай', за да чуете гладкото четене на цялата страница с караоке ефект.\n4. Натиснете 'Превод на страницата', за да прочетете пълния смислов превод.",
         "email_label": "Вашият имейл адрес:",
         "login_btn": "Вход",
         "email_warn": "Моля, въведете валиден имейл адрес.",
         "welcome": "Добре дошли",
         "logout": "🚪 Изход",
         "thanks_btn": "❤️ Изпрати благодарност",
-        "thanks_success": "Вашата благодарност бе изпратена на Толга Кюреч! Приятно четене.",
+        "thanks_success": "Вашата благодарност бе изпратена на Толга Кюреч!",
         "lib_title": "📖 Библиотека",
         "add_tab": "➕ Добави нова книга",
         "empty_lib": "В библиотеката все още няма добавени книги.",
@@ -144,144 +192,26 @@ UI_TRANSLATIONS = {
         "edit_book": "✏️ Редактирай",
         "delete_book": "🗑️ Изтрий",
         "delete_confirm": "Книгата бе изтрита успешно.",
-        "save_changes": "💾 Запази промените (В базата данни)",
+        "save_changes": "💾 Запази промените",
         "save_and_read": "🚀 Запази и чети веднага",
         "exit_editor": "✕ Изход",
-        "split_page_btn": "✂️ Раздели двойната страница (Лява и дясна)",
-        "split_success": "Страницата бе успешно разделена на лява и дясна!",
-        "saving_db": "Запазване в Google Sheets...",
+        "split_page_btn": "✂️ Раздели двойната страница",
         "ocr_processing": "Обработка на страниците...",
-        "reading_lang_label": "Език за превод при четене:",
+        "reading_lang_label": "Език за превод:",
         "zen_close": "✕ Затвори",
         "zen_page": "Страница",
         "zen_listen": "Слушай",
         "zen_stop": "Спри",
         "zen_page_trans": "Превод на страницата",
-        "zen_loading_trans": "Подготвя се превод..."
-    },
-    "de": {
-        "title": "📚 Französische Märchenbibliothek",
-        "subtitle": "Entdecken Sie französische Geschichten & lernen Sie gemeinsam",
-        "created_by": "Diese App wurde von Tolga Küreç (Vater von Timuçin & Teoman) erstellt",
-        "purpose_title": "🎯 Zweck der App",
-        "purpose_text": "Diese Bibliothek wurde entwickelt, damit nicht französischsprachige Familien beim Vorlesen qualitativ hochwertige Zeit mit ihren Kindern verbringen können.",
-        "usage_title": "💡 Wie funktioniert es?",
-        "usage_text": "1. Wählen Sie ein Buch aus und öffnen Sie es.\n2. Tippen Sie auf Wörter für Aussprache und Übersetzung.\n3. Nutzen Sie 'Laut vorlesen'.\n4. Nutzen Sie 'Seitenübersetzung'.",
-        "email_label": "Ihre E-Mail-Adresse:",
-        "login_btn": "Anmelden",
-        "email_warn": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
-        "welcome": "Willkommen",
-        "logout": "🚪 Abmelden",
-        "thanks_btn": "❤️ Danke senden",
-        "thanks_success": "Ihr Dank wurde an Tolga Küreç gesendet! Viel Spaß beim Lesen.",
-        "lib_title": "📖 Bibliothek",
-        "add_tab": "➕ Neues Buch hinzufügen",
-        "empty_lib": "Noch keine Bücher in der Bibliothek.",
-        "select_book": "Wählen Sie ein Buch zum Lesen:",
-        "open_read": "🚀 Öffnen & Lesen",
-        "edit_book": "✏️ Buch bearbeiten",
-        "delete_book": "🗑️ Löschen",
-        "delete_confirm": "Buch erfolgreich gelöscht.",
-        "save_changes": "💾 Änderungen speichern",
-        "save_and_read": "🚀 Speichern & Lesen",
-        "exit_editor": "✕ Verlassen",
-        "split_page_btn": "✂️ Doppelseite teilen (Links & Rechts)",
-        "split_success": "Seite erfolgreich geteilt!",
-        "saving_db": "Speichern...",
-        "ocr_processing": "Verarbeitung...",
-        "reading_lang_label": "Lese- & Übersetzungssprache:",
-        "zen_close": "✕ Schließen",
-        "zen_page": "Seite",
-        "zen_listen": "Laut vorlesen",
-        "zen_stop": "Stopp",
-        "zen_page_trans": "Seitenübersetzung",
-        "zen_loading_trans": "Übersetzung wird vorbereitet..."
-    },
-    "es": {
-        "title": "📚 Biblioteca de Cuentos en Francés",
-        "subtitle": "Explora cuentos en francés y aprendan juntos",
-        "created_by": "Esta aplicación fue creada por Tolga Küreç (Padre de Timuçin y Teoman)",
-        "purpose_title": "🎯 Propósito de la aplicación",
-        "purpose_text": "Esta biblioteca está diseñada para que las familias pasen tiempo de calidad con sus hijos mientras leen.",
-        "usage_title": "💡 ¿Cómo se usa?",
-        "usage_text": "1. Seleccione un libro y ábralo.\n2. Toque las palabras para escuchar la pronunciación y ver la traducción.\n3. Use 'Leer en voz alta'.\n4. Use 'Traducción de página'.",
-        "email_label": "Su correo electrónico:",
-        "login_btn": "Iniciar sesión",
-        "email_warn": "Por favor, introduzca un correo electrónico válido.",
-        "welcome": "Bienvenido",
-        "logout": "🚪 Cerrar sesión",
-        "thanks_btn": "❤️ Enviar agradecimiento",
-        "thanks_success": "¡Su agradecimiento ha sido enviado a Tolga Küreç! Feliz lectura.",
-        "lib_title": "📖 Biblioteca",
-        "add_tab": "➕ Añadir nuevo libro",
-        "empty_lib": "Aún no hay libros en la biblioteca.",
-        "select_book": "Seleccione un libro para leer:",
-        "open_read": "🚀 Abrir y Leer",
-        "edit_book": "✏️ Editar libro",
-        "delete_book": "🗑️ Eliminar",
-        "delete_confirm": "Libro eliminado con éxito.",
-        "save_changes": "💾 Guardar cambios",
-        "save_and_read": "🚀 Guardar y Leer",
-        "exit_editor": "✕ Salir",
-        "split_page_btn": "✂️ Dividir página doble (Izquierda y Derecha)",
-        "split_success": "¡Página dividida con éxito!",
-        "saving_db": "Guardando...",
-        "ocr_processing": "Escaneando...",
-        "reading_lang_label": "Idioma de traducción:",
-        "zen_close": "✕ Cerrar",
-        "zen_page": "Página",
-        "zen_listen": "Leer en voz alta",
-        "zen_stop": "Detener",
-        "zen_page_trans": "Traducción de página",
-        "zen_loading_trans": "Preparando traducción..."
-    },
-    "ru": {
-        "title": "📚 Библиотека французских сказок",
-        "subtitle": "Открывайте французские сказки и учитесь вместе",
-        "created_by": "Это приложение создал Толга Кюреч (отец Тимучина и Теомана)",
-        "purpose_title": "🎯 Цель приложения",
-        "purpose_text": "Эта библиотека создана для того, чтобы семьи могли с пользой проводить время за чтением с детьми.",
-        "usage_title": "💡 Как использовать?",
-        "usage_text": "1. Выберите книгу и откройте ее.\n2. Нажимайте на слова для произношения и перевода.\n3. Кнопка 'Слушать вслух'.\n4. Кнопка 'Перевод страницы'.",
-        "email_label": "Ваш Email:",
-        "login_btn": "Войти",
-        "email_warn": "Пожалуйста, введите действительный Email.",
-        "welcome": "Добро пожаловать",
-        "logout": "🚪 Выйти",
-        "thanks_btn": "❤️ Отправить благодарность",
-        "thanks_success": "Ваша благодарность отправлена Толга Кюречу! Приятного чтения.",
-        "lib_title": "📖 Библиотека",
-        "add_tab": "➕ Добавить новую книгу",
-        "empty_lib": "В библиотеке пока нет книг.",
-        "select_book": "Выберите книгу для чтения:",
-        "open_read": "🚀 Открыть и читать",
-        "edit_book": "✏️ Редактировать книгу",
-        "delete_book": "🗑️ Удалить",
-        "delete_confirm": "Книга успешно удалена.",
-        "save_changes": "💾 Сохранить изменения",
-        "save_and_read": "🚀 Сохранить и читать",
-        "exit_editor": "✕ Выйти",
-        "split_page_btn": "✂️ Разделить двойную страницу (Левая и Правая)",
-        "split_success": "Страница успешно разделена!",
-        "saving_db": "Сохранение...",
-        "ocr_processing": "Обработка...",
-        "reading_lang_label": "Язык чтения и перевода:",
-        "zen_close": "✕ Закрыть",
-        "zen_page": "Страница",
-        "zen_listen": "Слушать вслух",
-        "zen_stop": "Остановить",
-        "zen_page_trans": "Перевод страницы",
-        "zen_loading_trans": "Подготовка перевода..."
+        "miti_title": "Младостта, оставена в София: Великолепието на една империя и една недовършена любов",
+        "miti_exit": "✕ Изход"
     }
 }
 
 LANGUAGES = {
     "tr": {"name": "Türkçe", "flag": "🇹🇷"},
     "en": {"name": "English", "flag": "🇬🇧"},
-    "bg": {"name": "Български", "flag": "🇧🇬"},
-    "de": {"name": "Deutsch", "flag": "🇩🇪"},
-    "es": {"name": "Español", "flag": "🇪🇸"},
-    "ru": {"name": "Русский", "flag": "🇷🇺"},
+    "bg": {"name": "Български", "flag": "🇧🇬"}
 }
 
 if "app_lang" not in st.session_state: st.session_state.app_lang = "tr"
@@ -289,6 +219,7 @@ if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_role" not in st.session_state: st.session_state.user_role = "user"
 if "reading_mode" not in st.session_state: st.session_state.reading_mode = False
+if "miti_mode" not in st.session_state: st.session_state.miti_mode = False
 if "editor_mode" not in st.session_state: st.session_state.editor_mode = False
 if "uploaded_book_pages" not in st.session_state: st.session_state.uploaded_book_pages = []
 if "current_book_title" not in st.session_state: st.session_state.current_book_title = ""
@@ -302,343 +233,14 @@ def T(key):
     lang = st.session_state.app_lang if st.session_state.app_lang in UI_TRANSLATIONS else "tr"
     return UI_TRANSLATIONS[lang].get(key, UI_TRANSLATIONS["tr"].get(key, key))
 
-# ==========================================
-# 1. GOOGLE SHEETS ENTEGRASYONU
-# ==========================================
-def clean_private_key(key_str):
-    if not key_str or not isinstance(key_str, str):
-        return key_str
-    key_str = key_str.replace("\r\n", "\n").replace("\r", "\n")
-    if "\\n" in key_str:
-        key_str = key_str.replace("\\n", "\n")
-    return key_str.strip()
-
-def get_service_account_dict():
-    creds_dict = None
-    if hasattr(st, "secrets"):
-        if "gcp_json" in st.secrets:
-            raw = st.secrets["gcp_json"]
-            creds_dict = json.loads(raw) if isinstance(raw, str) else dict(raw)
-        elif "gcp_service_account" in st.secrets:
-            creds_dict = dict(st.secrets["gcp_service_account"])
-        elif "type" in st.secrets and st.secrets.get("type") == "service_account":
-            creds_dict = dict(st.secrets)
-            
-    if not creds_dict:
-        for fname in ["google_secret.json", "secrets.json", "service_account.json"]:
-            if os.path.exists(fname):
-                try:
-                    with open(fname, "r", encoding="utf-8") as f:
-                        creds_dict = json.load(f)
-                        break
-                except:
-                    pass
-
-    if creds_dict and "private_key" in creds_dict:
-        creds_dict["private_key"] = clean_private_key(creds_dict["private_key"])
-        
-    return creds_dict
-
-@st.cache_resource
-def get_gsheet_client():
-    if not GSHEETS_INSTALLED:
-        return None, "gspread veya oauth2client kütüphaneleri eksik.", ""
-    
-    creds_dict = get_service_account_dict()
-    if not creds_dict:
-        return None, "Google kimlik anahtarı bulunamadı! Secrets (gcp_json) ayarlarını kontrol edin.", ""
-    
-    sa_email = creds_dict.get("client_email", "Bilinmeyen Servis Hesabı")
-    try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        client = gspread.authorize(creds)
-        return client, None, sa_email
-    except Exception as e:
-        return None, f"Yetkilendirme Hatası: {str(e)}", sa_email
-
-def get_sheet(sheet_name):
-    client, err, sa_email = get_gsheet_client()
-    if not client:
-        return None, err
-    try:
-        doc = client.open_by_key("1Ec0v2Oo-7BlILvb35TGgo5j-SOGivJwmf5xpF85oGoU")
-    except Exception as e:
-        return None, f"Tablo açılamadı! Lütfen E-Tabloyu şu hesaba 'Düzenleyen' (Editor) olarak yetkilendirin:\n👉 {sa_email}\n(Hata: {str(e)})"
-    
-    try:
-        worksheet = doc.worksheet(sheet_name)
-        return worksheet, None
-    except Exception as e:
-        return None, f"'{sheet_name}' isimli sekme bulunamadı! (Hata: {str(e)})"
-
-def login_user(email):
-    email = email.lower().strip()
-    if email == "tolgakurec@gmail.com":
-        return True, {"Email": email, "Role": "admin"}, "Giriş Başarılı"
-    
-    sheet, err = get_sheet("Users")
-    if not sheet:
-        return False, None, f"Veritabanı hatası: {err}"
-    
-    try:
-        records = sheet.get_all_records()
-        for r in records:
-            if str(r.get("Email", "")).lower().strip() == email:
-                return True, r, "Giriş başarılı."
-        
-        sheet.append_row([email, "user"])
-        return True, {"Email": email, "Role": "user"}, "Yeni hesap kaydedildi."
-    except Exception as e:
-        return False, None, f"Kayıt işlemi başarısız: {e}"
-
-def record_thanks(email):
-    sheet, err = get_sheet("Thanks")
-    if not sheet:
-        return False
-    try:
-        sheet.append_row([
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            email,
-            "Teşekkür Gönderildi"
-        ])
-        return True
-    except:
-        return False
-
-# ==========================================
-# 2. VERİTABANI İŞLEMLERİ (LIBRARY & PAGES)
-# ==========================================
-def get_saved_books():
-    sheet, err = get_sheet("Library")
-    if not sheet:
-        return [], err
-    try:
-        records = sheet.get_all_records()
-        books_list = []
-        seen_ids = set()
-        
-        for r in records:
-            b_id = str(r.get("BookID", ""))
-            if not b_id or b_id in seen_ids:
-                continue
-            seen_ids.add(b_id)
-            
-            books_list.append({
-                "book_id": b_id,
-                "title": r.get("BookName", "İsimsiz Kitap"),
-                "date": r.get("CreatedAt", ""),
-                "page_count": r.get("PageCount", 0)
-            })
-        return sorted(books_list, key=lambda x: x["title"]), None
-    except Exception as e:
-        return [], str(e)
-
-def load_book_content(book_id):
-    sheet, err = get_sheet("Pages")
-    if not sheet:
-        return None, err
-    try:
-        records = sheet.get_all_records()
-        pages = []
-        for r in records:
-            if str(r.get("BookID", "")) == book_id:
-                try:
-                    boxes = json.loads(r.get("OCRText", "[]"))
-                except:
-                    boxes = []
-                
-                pages.append({
-                    "page_no": int(r.get("PageNo", 0)),
-                    "img_b64": r.get("ImageBase64", ""),
-                    "boxes": boxes
-                })
-                
-        if not pages:
-            return None, "Bu kitaba ait sayfa verisi bulunamadı."
-        return sorted(pages, key=lambda x: x["page_no"]), None
-    except Exception as e:
-        return None, str(e)
-
-def save_hybrid_book(title, pages, old_book_id=None):
-    lib_sheet, err1 = get_sheet("Library")
-    if not lib_sheet:
-        return None, f"Library sekmesine bağlanılamadı:\n{err1}"
-    
-    pages_sheet, err2 = get_sheet("Pages")
-    if not pages_sheet:
-        return None, f"Pages sekmesine bağlanılamadı:\n{err2}"
-    
-    try:
-        if old_book_id:
-            book_id = old_book_id
-            lib_records = lib_sheet.get_all_records()
-            for i, r in enumerate(lib_records):
-                if str(r.get("BookID", "")) == book_id:
-                    lib_sheet.delete_rows(i + 2)
-                    break
-            page_records = pages_sheet.get_all_records()
-            rows_to_delete = [i + 2 for i, r in enumerate(page_records) if str(r.get("BookID", "")) == book_id]
-            for row_idx in reversed(rows_to_delete):
-                pages_sheet.delete_rows(row_idx)
-                time.sleep(0.1)
-        else:
-            book_id = str(uuid.uuid4())[:8]
-            
-        lib_sheet.append_row([
-            book_id,
-            title,
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            len(pages)
-        ])
-        
-        all_page_rows = []
-        for idx, page in enumerate(pages):
-            ocr_json = json.dumps(page["boxes"], ensure_ascii=False)
-            all_page_rows.append([
-                book_id,
-                idx + 1,
-                page["img_b64"],
-                ocr_json
-            ])
-            
-        chunk_size = 10
-        for i in range(0, len(all_page_rows), chunk_size):
-            chunk = all_page_rows[i:i + chunk_size]
-            pages_sheet.append_rows(chunk)
-            time.sleep(0.5)
-            
-        return book_id, "Kitap Google Sheets veritabanına başarıyla kaydedildi!"
-    except Exception as e:
-        return None, f"Google Sheets yazma hatası: {str(e)}"
-
-def delete_hybrid_book(book_id):
-    lib_sheet, _ = get_sheet("Library")
-    pages_sheet, _ = get_sheet("Pages")
-    
-    if lib_sheet:
-        records = lib_sheet.get_all_records()
-        for i, r in enumerate(records):
-            if str(r.get("BookID", "")) == book_id:
-                lib_sheet.delete_rows(i + 2)
-                break
-                
-    if pages_sheet:
-        records = pages_sheet.get_all_records()
-        rows_to_delete = [i + 2 for i, r in enumerate(records) if str(r.get("BookID", "")) == book_id]
-        for row_idx in reversed(rows_to_delete):
-            pages_sheet.delete_rows(row_idx)
-            time.sleep(0.1)
-
-# ==========================================
-# 3. OCR, ÇEVİRİ VE DİNAMİK SÖZLÜK MOTORU
-# ==========================================
-@st.cache_resource
-def load_ocr():
-    return easyocr.Reader(['fr', 'en'], gpu=False)
-
-reader = load_ocr()
-
-def compress_image_for_sheets(img):
-    img.thumbnail((600, 800), Image.Resampling.LANCZOS)
-    buf = io.BytesIO()
-    quality = 40
-    img.save(buf, format="JPEG", quality=quality)
-    
-    while len(buf.getvalue()) > 35000 and quality > 10:
-        quality -= 5
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=quality)
-        
-    return base64.b64encode(buf.getvalue()).decode("utf-8")
-
-def sort_reading_order(ocr_items):
-    if not ocr_items: return []
-    parsed = []
-    for item in ocr_items:
-        box, text, conf = item
-        if not text.strip(): continue
-        xs = [p[0] for p in box]; ys = [p[1] for p in box]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        cy = (min_y + max_y) / 2.0
-        h = max(max_y - min_y, 1.0)
-        parsed.append({'item': item, 'min_x': min_x, 'max_x': max_x, 'min_y': min_y, 'max_y': max_y, 'cy': cy, 'h': h})
-    
-    if not parsed: return []
-    parsed.sort(key=lambda p: p['cy'])
-    
-    lines = []
-    for p in parsed:
-        matched_line = None
-        for line in lines:
-            avg_cy = sum(k['cy'] for k in line) / len(line)
-            avg_h = sum(k['h'] for k in line) / len(line)
-            if abs(p['cy'] - avg_cy) < (max(avg_h, p['h']) * 0.65):
-                matched_line = line
-                break
-        if matched_line is not None:
-            matched_line.append(p)
-        else:
-            lines.append([p])
-            
-    lines.sort(key=lambda line: sum(k['cy'] for k in line) / len(line))
-    sorted_items = []
-    for line in lines:
-        line.sort(key=lambda p: p['min_x'])
-        for p in line:
-            sorted_items.append(p['item'])
-    return sorted_items
-
-def clean_word_key(text):
-    if not text: return ""
-    cleaned = re.sub(r"^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$", "", text).strip().lower()
-    cleaned = re.sub(r"\s+", " ", cleaned)
-    return cleaned
-
-def build_coherent_page_text(boxes):
-    if not boxes:
-        return ""
-    
-    filtered_texts = []
-    for b in boxes:
-        raw = b.get("text", "").strip()
-        if not raw:
-            continue
-        if re.fullmatch(r'[\s\-\.–—]*\d{1,3}[\s\-\.–—]*', raw):
-            continue
-        filtered_texts.append(raw)
-        
-    if not filtered_texts:
-        return ""
-
-    cleaned_list = []
-    i = 0
-    while i < len(filtered_texts):
-        curr = filtered_texts[i]
-        if i + 1 < len(filtered_texts):
-            nxt = filtered_texts[i+1]
-            if len(curr) == 1 and curr.isalpha() and nxt:
-                cleaned_list.append(curr + nxt)
-                i += 2
-                continue
-        cleaned_list.append(curr)
-        i += 1
-
-    full_str = " ".join(cleaned_list)
-    full_str = re.sub(r'(\w+)[\-\–]\s+(\w+)', r'\1\2', full_str)
-    full_str = re.sub(r'\s+([,.;:!?])', r'\1', full_str)
-    full_str = re.sub(r'([.!?])([A-Za-zÀ-ÿ])', r'\1 \2', full_str)
-    full_str = re.sub(r'\s+', ' ', full_str).strip()
-    return full_str
-
 @st.cache_data(show_spinner=False)
-def translate_text(text, target_lang):
+def translate_ui_text(text, target_lang):
+    if target_lang == "tr": return text
     if not text or not text.strip(): return ""
-    clients = ['gtx', 'dict-chrome-ex', 'te_lib']
+    clients = ['gtx', 'dict-chrome-ex']
     for client in clients:
         try:
-            url = f"https://translate.googleapis.com/translate_a/single?client={client}&sl=fr&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
+            url = f"https://translate.googleapis.com/translate_a/single?client={client}&sl=tr&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             res = urllib.request.urlopen(req, timeout=5)
             data = json.loads(res.read().decode('utf-8'))
@@ -648,60 +250,228 @@ def translate_text(text, target_lang):
                     if s and s[0]:
                         translated_parts.append(s[0])
             res_str = "".join(translated_parts).strip()
-            if res_str:
-                return res_str
-        except:
+            if res_str: return res_str
+        except Exception:
             continue
-    return "-"
+    return text
+
+# ==========================================
+# 1. GOOGLE SHEETS ENTEGRASYONU
+# ==========================================
+def clean_private_key(key_str):
+    if not key_str or not isinstance(key_str, str): return key_str
+    return key_str.replace("\r\n", "\n").replace("\r", "\n").replace("\\n", "\n").strip()
+
+def get_service_account_dict():
+    creds_dict = None
+    if hasattr(st, "secrets"):
+        if "gcp_json" in st.secrets:
+            raw = st.secrets["gcp_json"]
+            creds_dict = json.loads(raw) if isinstance(raw, str) else dict(raw)
+        elif "gcp_service_account" in st.secrets:
+            creds_dict = dict(st.secrets["gcp_service_account"])
+    if not creds_dict:
+        for fname in ["google_secret.json", "secrets.json", "service_account.json"]:
+            if os.path.exists(fname):
+                try:
+                    with open(fname, "r", encoding="utf-8") as f: creds_dict = json.load(f); break
+                except: pass
+    if creds_dict and "private_key" in creds_dict:
+        creds_dict["private_key"] = clean_private_key(creds_dict["private_key"])
+    return creds_dict
+
+@st.cache_resource
+def get_gsheet_client():
+    if not GSHEETS_INSTALLED: return None, "gspread veya oauth2client eksik.", ""
+    creds_dict = get_service_account_dict()
+    if not creds_dict: return None, "Google kimlik anahtarı bulunamadı!", ""
+    sa_email = creds_dict.get("client_email", "Bilinmeyen Servis Hesabı")
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        client = gspread.authorize(creds)
+        return client, None, sa_email
+    except Exception as e: return None, f"Yetkilendirme Hatası: {str(e)}", sa_email
+
+def get_sheet(sheet_name):
+    client, err, sa_email = get_gsheet_client()
+    if not client: return None, err
+    try: doc = client.open_by_key("1Ec0v2Oo-7BlILvb35TGgo5j-SOGivJwmf5xpF85oGoU")
+    except Exception as e: return None, f"Tablo açılamadı! (Hata: {str(e)})"
+    try: return doc.worksheet(sheet_name), None
+    except Exception as e: return None, f"'{sheet_name}' sekmesi bulunamadı!"
+
+def login_user(email):
+    email = email.lower().strip()
+    if email == "tolgakurec@gmail.com": return True, {"Email": email, "Role": "admin"}, "Giriş Başarılı"
+    sheet, err = get_sheet("Users")
+    if not sheet: return False, None, err
+    try:
+        records = sheet.get_all_records()
+        for r in records:
+            if str(r.get("Email", "")).lower().strip() == email: return True, r, "Giriş başarılı."
+        sheet.append_row([email, "user"])
+        return True, {"Email": email, "Role": "user"}, "Kayıt edildi."
+    except Exception as e: return False, None, str(e)
+
+def record_thanks(email):
+    sheet, err = get_sheet("Thanks")
+    if not sheet: return False
+    try:
+        sheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, "Teşekkür Gönderildi"])
+        return True
+    except: return False
+
+def get_saved_books():
+    sheet, err = get_sheet("Library")
+    if not sheet: return [], err
+    try:
+        records = sheet.get_all_records()
+        books_list, seen_ids = [], set()
+        for r in records:
+            b_id = str(r.get("BookID", ""))
+            if not b_id or b_id in seen_ids: continue
+            seen_ids.add(b_id)
+            books_list.append({"book_id": b_id, "title": r.get("BookName", "İsimsiz"), "page_count": r.get("PageCount", 0)})
+        return sorted(books_list, key=lambda x: x["title"]), None
+    except Exception as e: return [], str(e)
+
+def load_book_content(book_id):
+    sheet, err = get_sheet("Pages")
+    if not sheet: return None, err
+    try:
+        records = sheet.get_all_records()
+        pages = []
+        for r in records:
+            if str(r.get("BookID", "")) == book_id:
+                try: boxes = json.loads(r.get("OCRText", "[]"))
+                except: boxes = []
+                pages.append({"page_no": int(r.get("PageNo", 0)), "img_b64": r.get("ImageBase64", ""), "boxes": boxes})
+        if not pages: return None, "Sayfa verisi yok."
+        return sorted(pages, key=lambda x: x["page_no"]), None
+    except Exception as e: return None, str(e)
+
+def save_hybrid_book(title, pages, old_book_id=None):
+    lib_sheet, err1 = get_sheet("Library")
+    pages_sheet, err2 = get_sheet("Pages")
+    if not lib_sheet or not pages_sheet: return None, "Veritabanı hatası."
+    try:
+        if old_book_id:
+            book_id = old_book_id
+            for i, r in enumerate(lib_sheet.get_all_records()):
+                if str(r.get("BookID", "")) == book_id: lib_sheet.delete_rows(i + 2); break
+            page_records = pages_sheet.get_all_records()
+            rows_to_del = [i + 2 for i, r in enumerate(page_records) if str(r.get("BookID", "")) == book_id]
+            for row_idx in reversed(rows_to_del): pages_sheet.delete_rows(row_idx); time.sleep(0.1)
+        else: book_id = str(uuid.uuid4())[:8]
+        
+        lib_sheet.append_row([book_id, title, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(pages)])
+        all_page_rows = [[book_id, idx + 1, page["img_b64"], json.dumps(page["boxes"], ensure_ascii=False)] for idx, page in enumerate(pages)]
+        for i in range(0, len(all_page_rows), 10): pages_sheet.append_rows(all_page_rows[i:i + 10]); time.sleep(0.5)
+        return book_id, "Kitap kaydedildi!"
+    except Exception as e: return None, str(e)
+
+def delete_hybrid_book(book_id):
+    lib_sheet, _ = get_sheet("Library")
+    pages_sheet, _ = get_sheet("Pages")
+    if lib_sheet:
+        for i, r in enumerate(lib_sheet.get_all_records()):
+            if str(r.get("BookID", "")) == book_id: lib_sheet.delete_rows(i + 2); break
+    if pages_sheet:
+        rows_to_delete = [i + 2 for i, r in enumerate(pages_sheet.get_all_records()) if str(r.get("BookID", "")) == book_id]
+        for row_idx in reversed(rows_to_delete): pages_sheet.delete_rows(row_idx); time.sleep(0.1)
+
+# ==========================================
+# 3. OCR, ÇEVİRİ VE DİNAMİK SÖZLÜK MOTORU
+# ==========================================
+@st.cache_resource
+def load_ocr(): return easyocr.Reader(['fr', 'en'], gpu=False)
+reader = load_ocr()
+
+def compress_image_for_sheets(img):
+    img.thumbnail((600, 800), Image.Resampling.LANCZOS)
+    buf = io.BytesIO()
+    quality = 40
+    img.save(buf, format="JPEG", quality=quality)
+    while len(buf.getvalue()) > 35000 and quality > 10:
+        quality -= 5
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=quality)
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
+
+def sort_reading_order(ocr_items):
+    if not ocr_items: return []
+    parsed = []
+    for item in ocr_items:
+        box, text, conf = item
+        if not text.strip(): continue
+        xs, ys = [p[0] for p in box], [p[1] for p in box]
+        min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
+        parsed.append({'item': item, 'min_x': min_x, 'cy': (min_y + max_y) / 2.0, 'h': max(max_y - min_y, 1.0)})
+    parsed.sort(key=lambda p: p['cy'])
+    lines = []
+    for p in parsed:
+        matched_line = None
+        for line in lines:
+            avg_cy = sum(k['cy'] for k in line) / len(line)
+            avg_h = sum(k['h'] for k in line) / len(line)
+            if abs(p['cy'] - avg_cy) < (max(avg_h, p['h']) * 0.65): matched_line = line; break
+        if matched_line: matched_line.append(p)
+        else: lines.append([p])
+    lines.sort(key=lambda line: sum(k['cy'] for k in line) / len(line))
+    return [p['item'] for line in lines for p in sorted(line, key=lambda p: p['min_x'])]
+
+def clean_word_key(text):
+    if not text: return ""
+    return re.sub(r"\s+", " ", re.sub(r"^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$", "", text).strip().lower())
+
+def build_coherent_page_text(boxes):
+    if not boxes: return ""
+    filtered = [b.get("text", "").strip() for b in boxes if b.get("text", "").strip() and not re.fullmatch(r'[\s\-\.–—]*\d{1,3}[\s\-\.–—]*', b.get("text", "").strip())]
+    if not filtered: return ""
+    cleaned, i = [], 0
+    while i < len(filtered):
+        curr = filtered[i]
+        if i + 1 < len(filtered) and len(curr) == 1 and curr.isalpha() and filtered[i+1]:
+            cleaned.append(curr + filtered[i+1]); i += 2; continue
+        cleaned.append(curr); i += 1
+    fs = " ".join(cleaned)
+    fs = re.sub(r'(\w+)[\-\–]\s+(\w+)', r'\1\2', fs)
+    fs = re.sub(r'\s+([,.;:!?])', r'\1', fs)
+    return re.sub(r'\s+', ' ', re.sub(r'([.!?])([A-Za-zÀ-ÿ])', r'\1 \2', fs)).strip()
+
+@st.cache_data(show_spinner=False)
+def translate_text(text, target_lang):
+    return translate_ui_text(text, target_lang)
 
 @st.cache_data(show_spinner=False)
 def get_words_dictionary(texts_list, target_lang):
-    trans_map = {}
-    unique_items = set()
-
+    trans_map, unique_items = {}, set()
     for raw in texts_list:
         clean = clean_word_key(raw)
-        if clean:
-            unique_items.add(clean)
+        if clean: unique_items.add(clean)
         for word in re.findall(r"[\wÀ-ÿ'-]+", raw):
             w_clean = clean_word_key(word)
-            if len(w_clean) > 1:
-                unique_items.add(w_clean)
-
-    if not unique_items:
-        return {}
-
+            if len(w_clean) > 1: unique_items.add(w_clean)
     items_list = sorted(list(unique_items))
-    batch_size = 15
-    for i in range(0, len(items_list), batch_size):
-        batch = items_list[i:i + batch_size]
+    for i in range(0, len(items_list), 15):
+        batch = items_list[i:i + 15]
         combined = "\n".join(batch)
-        translated_combined = translate_text(combined, target_lang)
-
-        lines = [line.strip() for line in translated_combined.split("\n") if line.strip()]
+        t_combined = translate_text(combined, target_lang)
+        lines = [line.strip() for line in t_combined.split("\n") if line.strip()]
         if len(lines) == len(batch):
-            for orig, trans in zip(batch, lines):
-                trans_map[orig] = trans
+            for orig, trans in zip(batch, lines): trans_map[orig] = trans
         else:
-            for orig in batch:
-                trans_map[orig] = translate_text(orig, target_lang)
-
+            for orig in batch: trans_map[orig] = translate_text(orig, target_lang)
     return trans_map
 
 def ensure_reading_ready(pages, target_lang):
     for page in pages:
         if page.get("current_lang") != target_lang or "full_trans" not in page or "dictionary" not in page:
-            boxes = page.get("boxes", [])
-            raw_texts = []
-            for b in boxes:
-                raw = b.get("text", "").strip()
-                if raw:
-                    raw_texts.append(raw)
-                    b["clean"] = clean_word_key(raw)
-
-            full_str = build_coherent_page_text(boxes)
-            page["full_text"] = full_str
-            page["full_trans"] = translate_text(full_str, target_lang)
+            raw_texts = [b.get("text", "").strip() for b in page.get("boxes", []) if b.get("text", "").strip()]
+            for b in page.get("boxes", []): b["clean"] = clean_word_key(b.get("text", ""))
+            full_str = build_coherent_page_text(page.get("boxes", []))
+            page["full_text"], page["full_trans"] = full_str, translate_text(full_str, target_lang)
             page["dictionary"] = get_words_dictionary(raw_texts, target_lang)
             page["current_lang"] = target_lang
     return pages
@@ -709,69 +479,35 @@ def ensure_reading_ready(pages, target_lang):
 def process_single_image(img):
     img_opt = img.copy()
     img_opt.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
-    
     w, h = img_opt.size
-    ocr_raw = reader.readtext(np.array(img_opt), detail=1, paragraph=False)
-    ordered_ocr = sort_reading_order(ocr_raw)
-    
+    ordered_ocr = sort_reading_order(reader.readtext(np.array(img_opt), detail=1, paragraph=False))
     boxes = []
     for box, text, conf in ordered_ocr:
-        x_pts = [p[0] for p in box]; y_pts = [p[1] for p in box]
-        min_x, max_x = min(x_pts), max(x_pts)
-        min_y, max_y = min(y_pts), max(y_pts)
-        
+        x_pts, y_pts = [p[0] for p in box], [p[1] for p in box]
+        min_x, max_x, min_y, max_y = min(x_pts), max(x_pts), min(y_pts), max(y_pts)
         boxes.append({
-            "id": f"b_{len(boxes)}",
-            "text": text,
-            "clean": clean_word_key(text),
-            "left": (min_x / w) * 100,
-            "top": (min_y / h) * 100,
-            "width": ((max_x - min_x) / w) * 100,
-            "height": ((max_y - min_y) / h) * 100
+            "id": f"b_{len(boxes)}", "text": text, "clean": clean_word_key(text),
+            "left": (min_x / w) * 100, "top": (min_y / h) * 100,
+            "width": ((max_x - min_x) / w) * 100, "height": ((max_y - min_y) / h) * 100
         })
-    
     b64_str = compress_image_for_sheets(img_opt)
-    del img_opt
-    gc.collect()
-    
-    return {
-        "img_b64": b64_str,
-        "boxes": boxes
-    }
+    del img_opt; gc.collect()
+    return {"img_b64": b64_str, "boxes": boxes}
 
 # ==========================================
-# 4. GİRİŞ EKRANI (AÇIKLAMA, DİL VE İMZA)
+# 4. GİRİŞ EKRANI
 # ==========================================
 if not st.session_state.logged_in:
     col_t_empty, col_lang = st.columns([3.5, 1.5])
     with col_lang:
-        selected_lang = st.selectbox(
-            "Language / Dil / Език:",
-            options=list(LANGUAGES.keys()),
-            format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}",
-            index=list(LANGUAGES.keys()).index(st.session_state.app_lang) if st.session_state.app_lang in LANGUAGES else 0,
-            label_visibility="collapsed"
-        )
-        if selected_lang != st.session_state.app_lang:
-            st.session_state.app_lang = selected_lang
-            st.rerun()
+        selected_lang = st.selectbox("Language:", options=list(LANGUAGES.keys()), format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}", index=list(LANGUAGES.keys()).index(st.session_state.app_lang) if st.session_state.app_lang in LANGUAGES else 0, label_visibility="collapsed")
+        if selected_lang != st.session_state.app_lang: st.session_state.app_lang = selected_lang; st.rerun()
 
     st.markdown(f"<h1 style='text-align: center; color: #1e3a8a; margin-bottom: 2px;'>{T('title')}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; color: #64748b; font-size: 16px; margin-bottom: 20px;'>{T('subtitle')}</p>", unsafe_allow_html=True)
     
     col_l1, col_center, col_l2 = st.columns([1, 2.2, 1])
     with col_center:
-        st.markdown(
-            f"""
-            <div style="background: rgba(30, 58, 138, 0.05); border: 1px solid rgba(30, 58, 138, 0.18); border-radius: 12px; padding: 18px; margin-bottom: 22px;">
-                <h4 style="margin: 0 0 8px 0; color: #1e3a8a;">{T('purpose_title')}</h4>
-                <p style="margin: 0 0 14px 0; font-size: 14.5px; line-height: 1.5; color: #334155;">{T('purpose_text')}</p>
-                <h4 style="margin: 0 0 8px 0; color: #1e3a8a;">{T('usage_title')}</h4>
-                <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #475569; white-space: pre-line;">{T('usage_text')}</p>
-            </div>
-            """, unsafe_allow_html=True
-        )
-
         l_email = st.text_input(T("email_label"), key="log_email", placeholder="ornek@email.com")
         if st.button(T("login_btn"), type="primary", use_container_width=True):
             if l_email and "@" in l_email:
@@ -781,22 +517,161 @@ if not st.session_state.logged_in:
                     st.session_state.user_email = user_data.get("Email")
                     st.session_state.user_role = str(user_data.get("Role", "user")).lower()
                     st.rerun()
-                else:
-                    st.error(msg)
-            else:
-                st.warning(T("email_warn"))
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown(
-            f"""
-            <div style="text-align: center; color: #94a3b8; font-size: 13.5px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
-                ✍️ <b>{T('created_by')}</b>
-            </div>
-            """, unsafe_allow_html=True
-        )
+                else: st.error(msg)
+            else: st.warning(T("email_warn"))
 
 # ==========================================
-# 5. OKUMA MODU (ZEN VIEWER - GELİŞMİŞ TERCÜME)
+# 4.1. MİTİ & ATATÜRK ANMA HİKAYESİ EKRANI (TAM EKRAN YILDIZ SAVAŞLARI KONSEPTİ)
+# ==========================================
+elif st.session_state.miti_mode:
+    target_lang = st.session_state.app_lang
+    t_title = translate_ui_text(T("miti_title"), target_lang)
+    t_story = translate_ui_text(STORY_TR, target_lang)
+    
+    st.markdown(
+        """
+        <style>
+            [data-testid="stSidebar"], header, footer { display: none !important; }
+            .block-container { padding: 0 !important; margin: 0 !important; max-width: 100vw !important; height: 100vh !important; overflow: hidden !important; background: #000000 !important; }
+            iframe { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; border: none !important; z-index: 1 !important; }
+            div[data-testid="stButton"] { position: fixed !important; top: 15px !important; right: 20px !important; z-index: 999999 !important; }
+            div[data-testid="stButton"] button {
+                background: rgba(15, 23, 42, 0.6) !important; backdrop-filter: blur(14px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: #f8fafc !important; border-radius: 25px !important; padding: 6px 18px !important; font-weight: bold !important; transition: all 0.3s ease !important;
+            }
+            div[data-testid="stButton"] button:hover { background: #ef4444 !important; }
+        </style>
+        """, unsafe_allow_html=True)
+
+    if st.button(T("miti_exit")):
+        st.session_state.miti_mode = False
+        st.rerun()
+
+    MITI_HTML = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ margin: 0; overflow: hidden; background-color: #000; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
+            
+            #left-pane {{ width: 33.33%; height: 100vh; position: relative; background: #000; display: flex; align-items: center; justify-content: center; }}
+            #left-pane img {{ width: 100%; height: 100%; object-fit: cover; opacity: 0.85; filter: grayscale(20%) contrast(1.1); box-shadow: inset -30px 0 50px #000; }}
+            
+            #center-pane, #right-pane {{ width: 33.33%; height: 100vh; position: relative; perspective: 400px; overflow: hidden; padding: 0 4%; }}
+            
+            .star-wars-scroll {{
+                position: absolute;
+                bottom: -100%;
+                width: 92%;
+                text-align: justify;
+                font-size: 1.4rem;
+                line-height: 1.8;
+                font-weight: 500;
+                transform-origin: 50% 100%;
+                transform: rotateX(20deg);
+                animation: scrollText 120s linear forwards;
+            }}
+            .star-wars-scroll h1 {{ text-align: center; color: #fbbf24; font-size: 1.8rem; margin-bottom: 2rem; text-shadow: 0 0 10px rgba(251,191,36,0.5); }}
+            
+            @keyframes scrollText {{
+                0% {{ bottom: -100%; }}
+                100% {{ bottom: 120%; }}
+            }}
+
+            #dock {{ position: fixed; bottom: 20px; left: 66%; transform: translateX(-50%); z-index: 1000; background: rgba(0,0,0,0.7); border: 1px solid #333; padding: 10px 20px; border-radius: 30px; display: flex; gap: 15px; }}
+            .dock-btn {{ background: transparent; color: #fbbf24; border: 1px solid #fbbf24; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; }}
+            .dock-btn:hover {{ background: #fbbf24; color: #000; }}
+            
+            .highlight {{ background-color: rgba(251,191,36,0.7); color: #000; border-radius: 3px; }}
+        </style>
+    </head>
+    <body>
+        <audio id="bgMusic" src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Johann_Strauss_II_-_The_Blue_Danube_Waltz.ogg" autoplay loop volume="0.3"></audio>
+
+        <div id="left-pane">
+            <img src="https://media.licdn.com/dms/image/v2/D4D12AQH640P3304U_Q/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1715694242630?e=2147483647&v=beta&t=7b2h1D13H_146O8T_l3-K7z_xH-6-4N-4u2F2E4xX0E" alt="Ataturk and Miti">
+        </div>
+
+        <div id="center-pane">
+            <div class="star-wars-scroll">
+                <h1>(Français) La Jeunesse laissée à Sofia</h1>
+                <div id="fr-content"></div>
+            </div>
+        </div>
+
+        <div id="right-pane">
+            <div class="star-wars-scroll" style="animation-delay: 0.5s;">
+                <h1>{t_title}</h1>
+                <div id="target-content"></div>
+            </div>
+        </div>
+
+        <div id="dock">
+            <button class="dock-btn" id="listenBtn" onclick="toggleRead()">🎤 Dinle / Listen</button>
+        </div>
+
+        <script>
+            const frText = `{STORY_FR.replace('`', "'")}`;
+            const tgText = `{t_story.replace('`', "'")}`;
+            const frDiv = document.getElementById("fr-content");
+            const tgDiv = document.getElementById("target-content");
+            const music = document.getElementById("bgMusic");
+            music.volume = 0.2;
+
+            function wrapWords(text, container) {{
+                container.innerHTML = text.split(/(\\s+)/).map((w, i) => w.trim() ? `<span id="w_${{container.id}}_${{i}}">${{w}}</span>` : w).join("");
+            }}
+            wrapWords(frText, frDiv);
+            wrapWords(tgText, tgDiv);
+
+            let isReading = false;
+            let utterance = null;
+
+            function toggleRead() {{
+                if(isReading) {{
+                    window.speechSynthesis.cancel();
+                    music.play();
+                    isReading = false;
+                    document.getElementById("listenBtn").innerText = "🎤 Dinle / Listen";
+                }} else {{
+                    music.pause();
+                    utterance = new SpeechSynthesisUtterance(tgText);
+                    utterance.lang = '{target_lang}';
+                    if('{target_lang}' === 'tr') utterance.lang = 'tr-TR';
+                    if('{target_lang}' === 'en') utterance.lang = 'en-US';
+                    if('{target_lang}' === 'bg') utterance.lang = 'bg-BG';
+                    
+                    utterance.onend = () => {{ music.play(); isReading = false; document.getElementById("listenBtn").innerText = "🎤 Dinle / Listen"; }};
+                    
+                    let charOffset = 0;
+                    const spans = Array.from(tgDiv.querySelectorAll('span'));
+                    const wordMap = spans.map(s => {{
+                        let start = charOffset;
+                        charOffset += s.innerText.length + 1; // plus space
+                        return {{ span: s, start: start, end: charOffset }};
+                    }});
+
+                    utterance.onboundary = (e) => {{
+                        if (e.name === 'word') {{
+                            spans.forEach(s => s.classList.remove('highlight'));
+                            const match = wordMap.find(w => e.charIndex >= w.start && e.charIndex <= w.end);
+                            if (match) match.span.classList.add('highlight');
+                        }}
+                    }};
+
+                    window.speechSynthesis.speak(utterance);
+                    isReading = true;
+                    document.getElementById("listenBtn").innerText = "⏹ Durdur / Stop";
+                }}
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    components.html(MITI_HTML, height=850, scrolling=False)
+
+# ==========================================
+# 5. OKUMA MODU (ZEN VIEWER)
 # ==========================================
 elif st.session_state.reading_mode:
     st.markdown(
@@ -809,26 +684,15 @@ elif st.session_state.reading_mode:
             div[data-testid="stButton"] button {
                 background: rgba(15, 23, 42, 0.45) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
                 border: 1px solid rgba(255, 255, 255, 0.15) !important; color: #cbd5e1 !important; border-radius: 25px !important; padding: 5px 14px !important;
-                font-weight: 500 !important; font-size: 13px !important; opacity: 0.75 !important; transition: all 0.25s ease !important;
+                font-weight: 500 !important; font-size: 13px !important; transition: all 0.25s ease !important;
             }
-            div[data-testid="stButton"] button:hover { background: rgba(220, 38, 38, 0.8) !important; border-color: #ef4444 !important; color: #ffffff !important; opacity: 1.0 !important; transform: scale(1.04) !important; }
+            div[data-testid="stButton"] button:hover { background: rgba(220, 38, 38, 0.8) !important; border-color: #ef4444 !important; color: #ffffff !important; transform: scale(1.04) !important; }
         </style>
         """, unsafe_allow_html=True)
 
-    if st.button(T("zen_close"), key="btn_exit_zen"):
-        st.session_state.reading_mode = False
-        st.rerun()
+    if st.button(T("zen_close"), key="btn_exit_zen"): st.session_state.reading_mode = False; st.rerun()
 
     pages = ensure_reading_ready(st.session_state.uploaded_book_pages, st.session_state.app_lang)
-    pages_json = json.dumps(pages)
-    target_flag = LANGUAGES[st.session_state.app_lang]["flag"]
-    
-    lbl_page = T("zen_page")
-    lbl_listen = T("zen_listen")
-    lbl_stop = T("zen_stop")
-    lbl_page_trans = T("zen_page_trans")
-    lbl_loading_trans = T("zen_loading_trans")
-
     HTML_VIEWER = f"""
     <!DOCTYPE html>
     <html>
@@ -836,116 +700,48 @@ elif st.session_state.reading_mode:
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
             * {{ box-sizing: border-box; user-select: none; -webkit-user-select: none; }}
-            html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
+            html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
             #viewport-wrap {{ position: relative; width: 100vw; height: calc(100vh - 120px); margin-top: 48px; display: flex; align-items: center; justify-content: center; }}
             #stage {{ position: relative; max-width: 98vw; max-height: calc(100vh - 120px); display: inline-block; }}
             #book-img {{ max-width: 98vw; max-height: calc(100vh - 120px); width: auto; height: auto; display: block; margin: auto; object-fit: contain; box-shadow: 0 0 35px rgba(0,0,0,0.85); border-radius: 4px; }}
             #boxes-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }}
-            .word-hitbox {{ position: absolute; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.01); pointer-events: auto; transition: background 0.15s ease, outline 0.15s ease; }}
+            .word-hitbox {{ position: absolute; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.01); pointer-events: auto; transition: 0.15s; }}
             .word-hitbox:hover, .word-hitbox:active {{ background: rgba(254,240,138,0.45); outline: 2px solid #facc15; }}
             .karaoke-lit {{ background: rgba(250,204,21,0.65) !important; outline: 2px solid #eab308 !important; }}
-            .glass-pill {{ position: fixed; top: 10px; left: 18px; background: rgba(15,23,42,0.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; font-weight: 500; font-size: 13px; padding: 5px 14px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 1000; transition: opacity 0.35s ease; }}
-            
-            #whisper-card {{ 
-                position: fixed; 
-                bottom: 80px; 
-                left: 50%; 
-                transform: translateX(-50%); 
-                background: rgba(15,23,42,0.92); 
-                backdrop-filter: blur(24px); 
-                -webkit-backdrop-filter: blur(24px); 
-                color: #ffffff; 
-                padding: 14px 22px; 
-                border-radius: 18px; 
-                font-size: 15px; 
-                box-shadow: 0 12px 40px rgba(0,0,0,0.7); 
-                border: 1px solid rgba(255,255,255,0.18); 
-                display: none; 
-                z-index: 1001; 
-                max-width: 680px; 
-                width: 90vw; 
-                line-height: 1.6;
-                transition: all 0.25s ease;
-            }}
-            .card-close-btn {{
-                position: absolute;
-                top: 8px;
-                right: 12px;
-                background: transparent;
-                border: none;
-                color: #94a3b8;
-                font-size: 16px;
-                cursor: pointer;
-                padding: 4px;
-            }}
-            .card-close-btn:hover {{ color: #ffffff; }}
-            
-            .glass-dock {{ position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(15,23,42,0.5); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 35px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); z-index: 1000; max-width: 96vw; transition: opacity 0.35s ease; }}
-            .glass-btn {{ background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); padding: 7px 14px; border-radius: 25px; font-weight: 500; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; white-space: nowrap; }}
-            .glass-btn:hover {{ background: rgba(255,255,255,0.18); transform: translateY(-1px); color: #ffffff; }}
-            .glass-btn:active {{ transform: scale(0.96); }}
-            .glass-btn.active {{ background: #2563eb !important; border-color: #60a5fa !important; box-shadow: 0 0 12px rgba(37,99,255,0.6); }}
-            .glass-btn:disabled {{ opacity: 0.25; cursor: not-allowed; transform: none !important; }}
-            .hud-dimmed {{ opacity: 0.18 !important; }}
+            .glass-pill {{ position: fixed; top: 10px; left: 18px; background: rgba(15,23,42,0.45); backdrop-filter: blur(14px); color: #94a3b8; font-weight: 500; font-size: 13px; padding: 5px 14px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 1000; }}
+            #whisper-card {{ position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.92); backdrop-filter: blur(24px); color: #ffffff; padding: 14px 22px; border-radius: 18px; box-shadow: 0 12px 40px rgba(0,0,0,0.7); display: none; z-index: 1001; max-width: 680px; width: 90vw; line-height: 1.6; }}
+            .card-close-btn {{ position: absolute; top: 8px; right: 12px; background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; }}
+            .glass-dock {{ position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(15,23,42,0.5); backdrop-filter: blur(16px); padding: 6px 12px; border-radius: 35px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); z-index: 1000; }}
+            .glass-btn {{ background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); padding: 7px 14px; border-radius: 25px; font-weight: 500; font-size: 13.5px; cursor: pointer; }}
+            .glass-btn.active {{ background: #2563eb !important; border-color: #60a5fa !important; }}
         </style>
     </head>
-    <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
+    <body>
         <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
-        <div id="page-counter" class="glass-pill hud-item">{lbl_page} 1 / 1</div>
-        
-        <div id="whisper-card">
-            <button class="card-close-btn" onclick="dismissCard()">✕</button>
-            <div id="whisper-body"></div>
-        </div>
-
-        <div id="main-dock" class="glass-dock hud-item">
+        <div id="page-counter" class="glass-pill">{T('zen_page')} 1 / 1</div>
+        <div id="whisper-card"><button class="card-close-btn" onclick="dismissCard()">✕</button><div id="whisper-body"></div></div>
+        <div id="main-dock" class="glass-dock">
             <button id="btn-prev" class="glass-btn" onclick="prevPage()">⬅️</button>
-            <button id="btn-speed" class="glass-btn" onclick="cycleSpeed()" title="Speed">⚡ <span id="speed-text">0.8x</span></button>
-            <button id="btn-karaoke" class="glass-btn" onclick="toggleKaraoke()">🎤 <span id="k-text">{lbl_listen}</span></button>
-            <button id="btn-trans" class="glass-btn" onclick="toggleTranslation()">{target_flag} <span id="t-text">{lbl_page_trans}</span></button>
+            <button id="btn-speed" class="glass-btn" onclick="cycleSpeed()">⚡ <span id="speed-text">0.8x</span></button>
+            <button id="btn-karaoke" class="glass-btn" onclick="toggleKaraoke()">🎤 <span id="k-text">{T('zen_listen')}</span></button>
+            <button id="btn-trans" class="glass-btn" onclick="toggleTranslation()">{LANGUAGES[st.session_state.app_lang]['flag']} <span>{T('zen_page_trans')}</span></button>
             <button id="btn-next" class="glass-btn" onclick="nextPage()">➡️</button>
         </div>
         <script>
-            const allPages = {pages_json};
-            const targetFlag = "{target_flag}";
-            const txtPage = "{lbl_page}";
-            const txtListen = "{lbl_listen}";
-            const txtStop = "{lbl_stop}";
-            const txtPageTrans = "{lbl_page_trans}";
-            const txtLoading = "{lbl_loading_trans}";
-
+            const allPages = {json.dumps(pages)};
+            const targetFlag = "{LANGUAGES[st.session_state.app_lang]['flag']}";
             let currentIndex = 0, isPlaying = false, timer = null, wordIndices = [];
-            let hudTimer = null;
-            function resetHudTimer() {{
-                document.querySelectorAll('.hud-item').forEach(el => el.classList.remove('hud-dimmed'));
-                clearTimeout(hudTimer);
-                hudTimer = setTimeout(() => {{ document.querySelectorAll('.hud-item').forEach(el => el.classList.add('hud-dimmed')); }}, 4500);
-            }}
-            resetHudTimer();
-
             const speeds = [0.7, 0.8, 1.0]; let speedIdx = 1;
-            const imgEl = document.getElementById('book-img'), layer = document.getElementById('boxes-layer'), card = document.getElementById('whisper-card'), cardBody = document.getElementById('whisper-body');
-            const pageCounter = document.getElementById('page-counter'), btnPrev = document.getElementById('btn-prev'), btnNext = document.getElementById('btn-next'), btnKaraoke = document.getElementById('btn-karaoke');
 
-            function dismissCard() {{
-                card.style.display = 'none';
-                card.dataset.type = '';
-                clearTimeout(timer);
-            }}
-
-            function cycleSpeed() {{
-                resetHudTimer(); speedIdx = (speedIdx + 1) % speeds.length;
-                document.getElementById('speed-text').innerText = speeds[speedIdx] + "x";
-                if (isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke, 100); }}
-            }}
+            function dismissCard() {{ document.getElementById('whisper-card').style.display = 'none'; clearTimeout(timer); }}
+            function cycleSpeed() {{ speedIdx = (speedIdx + 1) % speeds.length; document.getElementById('speed-text').innerText = speeds[speedIdx] + "x"; if(isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke,100); }} }}
 
             function loadPage(idx) {{
                 if (idx < 0 || idx >= allPages.length) return;
-                resetHudTimer(); stopKaraoke(); currentIndex = idx; const page = allPages[idx];
-                imgEl.src = "data:image/jpeg;base64," + page.img_b64;
-                pageCounter.innerText = `${{txtPage}} ${{idx + 1}} / ${{allPages.length}}`;
-                btnPrev.disabled = (idx === 0); btnNext.disabled = (idx === allPages.length - 1);
-                dismissCard(); layer.innerHTML = ''; wordIndices = []; let charOffset = 0;
+                stopKaraoke(); currentIndex = idx; const page = allPages[idx];
+                document.getElementById('book-img').src = "data:image/jpeg;base64," + page.img_b64;
+                document.getElementById('page-counter').innerText = `{T('zen_page')} ${{idx + 1}} / ${{allPages.length}}`;
+                dismissCard(); document.getElementById('boxes-layer').innerHTML = ''; wordIndices = []; let charOffset = 0;
                 
                 (page.boxes || []).forEach((b, i) => {{
                     wordIndices.push({{ idx: i, start: charOffset, end: charOffset + b.text.length }});
@@ -954,82 +750,48 @@ elif st.session_state.reading_mode:
                     d.style.left = b.left + '%'; d.style.top = b.top + '%'; d.style.width = b.width + '%'; d.style.height = b.height + '%';
                     
                     d.onclick = () => {{
-                        resetHudTimer(); 
                         clearTimeout(timer);
                         const dict = page.dictionary || {{}};
                         const cleanKey = b.clean || b.text.toLowerCase().trim();
-                        let trans = dict[cleanKey] || dict[b.text.toLowerCase().trim()] || dict[b.text] || '-';
-                        if (trans === '-' || !trans) {{
-                            let noPunct = b.text.replace(/^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$/g, "").trim().toLowerCase();
-                            trans = dict[noPunct] || '-';
-                        }}
-                        
-                        cardBody.innerHTML = "<div style='text-align: center; font-size: 15.5px;'>🇫🇷 <b>" + b.text + "</b> &nbsp;➔&nbsp; " + targetFlag + " <b>" + trans + "</b></div>";
-                        card.style.display = 'block';
-                        card.dataset.type = 'word';
-                        
+                        let trans = dict[cleanKey] || dict[b.text] || '-';
+                        document.getElementById('whisper-body').innerHTML = "<div style='text-align: center;'>🇫🇷 <b>" + b.text + "</b> &nbsp;➔&nbsp; " + targetFlag + " <b>" + trans + "</b></div>";
+                        document.getElementById('whisper-card').style.display = 'block';
                         window.speechSynthesis.cancel(); 
-                        const u = new SpeechSynthesisUtterance(b.text); 
-                        u.lang = 'fr-FR'; 
-                        u.rate = speeds[speedIdx]; 
-                        window.speechSynthesis.speak(u);
-                        
+                        const u = new SpeechSynthesisUtterance(b.text); u.lang = 'fr-FR'; u.rate = speeds[speedIdx]; window.speechSynthesis.speak(u);
                         timer = setTimeout(dismissCard, 4000);
                     }};
-                    layer.appendChild(d);
+                    document.getElementById('boxes-layer').appendChild(d);
                 }});
             }}
-
-            function nextPage() {{ resetHudTimer(); if (currentIndex < allPages.length - 1) loadPage(currentIndex + 1); }}
-            function prevPage() {{ resetHudTimer(); if (currentIndex > 0) loadPage(currentIndex - 1); }}
+            function nextPage() {{ if (currentIndex < allPages.length - 1) loadPage(currentIndex + 1); }}
+            function prevPage() {{ if (currentIndex > 0) loadPage(currentIndex - 1); }}
 
             function toggleTranslation() {{
-                resetHudTimer();
                 clearTimeout(timer);
-                const transText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : txtLoading;
-                
-                if (card.style.display === 'block' && card.dataset.type === 'page') {{
-                    dismissCard();
-                }} else {{ 
-                    cardBody.innerHTML = `
-                        <div style="font-size: 13.5px; font-weight: 600; color: #93c5fd; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                            <span>📝 ${{txtPageTrans}} (${{targetFlag}})</span>
-                        </div>
-                        <div style="font-size: 15px; color: #f8fafc; text-align: left; line-height: 1.65; max-height: 40vh; overflow-y: auto; padding-right: 4px;">
-                            ${{transText}}
-                        </div>
-                    `;
-                    card.style.display = 'block'; 
-                    card.dataset.type = 'page';
+                const tText = allPages[currentIndex].full_trans || "...";
+                if (document.getElementById('whisper-card').style.display === 'block') dismissCard();
+                else {{ 
+                    document.getElementById('whisper-body').innerHTML = `<div style="color: #93c5fd; margin-bottom: 6px;">📝 {T('zen_page_trans')}</div><div>${{tText}}</div>`;
+                    document.getElementById('whisper-card').style.display = 'block'; 
                 }}
             }}
 
-            function toggleKaraoke() {{ resetHudTimer(); if (isPlaying) stopKaraoke(); else playKaraoke(); }}
+            function toggleKaraoke() {{ if (isPlaying) stopKaraoke(); else playKaraoke(); }}
             function playKaraoke() {{
-                window.speechSynthesis.cancel(); isPlaying = true; btnKaraoke.classList.add('active'); document.getElementById('k-text').innerText = txtStop;
-                const page = allPages[currentIndex]; let fullSentence = (page.boxes || []).map(b => b.text).join(' ');
-                let u = new SpeechSynthesisUtterance(fullSentence); u.lang = 'fr-FR'; u.rate = speeds[speedIdx];
-                let usedBoundary = false;
-                u.onboundary = function(e) {{
+                window.speechSynthesis.cancel(); isPlaying = true; document.getElementById('btn-karaoke').classList.add('active'); document.getElementById('k-text').innerText = "{T('zen_stop')}";
+                const page = allPages[currentIndex]; let fSent = (page.boxes || []).map(b => b.text).join(' ');
+                let u = new SpeechSynthesisUtterance(fSent); u.lang = 'fr-FR'; u.rate = speeds[speedIdx];
+                u.onboundary = (e) => {{
                     if (e.name === 'word') {{
-                        usedBoundary = true; const match = wordIndices.find(w => e.charIndex >= w.start && e.charIndex <= w.end);
-                        if (match) {{ document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); const el = document.getElementById('box_' + match.idx); if (el) el.classList.add('karaoke-lit'); }}
+                        const match = wordIndices.find(w => e.charIndex >= w.start && e.charIndex <= w.end);
+                        if (match) {{ document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); document.getElementById('box_' + match.idx).classList.add('karaoke-lit'); }}
                     }}
                 }};
-                let fallbackIdx = 0;
-                function stepFallback() {{
-                    if (!isPlaying || !page.boxes || fallbackIdx >= page.boxes.length) return;
-                    if (!usedBoundary) {{ document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); const el = document.getElementById('box_' + fallbackIdx); if (el) el.classList.add('karaoke-lit'); }}
-                    let dur = ((page.boxes[fallbackIdx].text.length * 60) + 50) / speeds[speedIdx]; fallbackIdx++; timer = setTimeout(stepFallback, dur);
-                }}
-                u.onend = stopKaraoke; u.onerror = stopKaraoke; window.speechSynthesis.speak(u); stepFallback();
+                u.onend = stopKaraoke; u.onerror = stopKaraoke; window.speechSynthesis.speak(u);
             }}
-            function stopKaraoke() {{ isPlaying = false; clearTimeout(timer); window.speechSynthesis.cancel(); btnKaraoke.classList.remove('active'); document.getElementById('k-text').innerText = txtListen; document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); }}
+            function stopKaraoke() {{ isPlaying = false; window.speechSynthesis.cancel(); document.getElementById('btn-karaoke').classList.remove('active'); document.getElementById('k-text').innerText = "{T('zen_listen')}"; document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); }}
             
             window.addEventListener('keydown', (e) => {{ if (e.key === 'ArrowRight') nextPage(); if (e.key === 'ArrowLeft') prevPage(); }});
-            let touchStartX = 0;
-            window.addEventListener('touchstart', (e) => {{ touchStartX = e.changedTouches[0].screenX; }}, {{passive: true}});
-            window.addEventListener('touchend', (e) => {{ let diff = e.changedTouches[0].screenX - touchStartX; if (diff < -50) nextPage(); if (diff > 50) prevPage(); }}, {{passive: true}});
             loadPage(0);
         </script>
     </body>
@@ -1038,427 +800,180 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI (ADMIN)
+# 6. DÜZENLEYİCİ EKRANI
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
-    
     col_t1, col_t2, col_t3, col_t4 = st.columns([2.5, 1.5, 1.5, 1])
-    with col_t1:
-        st.session_state.editor_book_title = st.text_input("Kitap Başlığı:", value=st.session_state.editor_book_title, label_visibility="collapsed")
+    with col_t1: st.session_state.editor_book_title = st.text_input("Kitap Başlığı:", value=st.session_state.editor_book_title, label_visibility="collapsed")
     with col_t2:
         if st.button(T("save_changes"), type="secondary", use_container_width=True):
-            with st.spinner(T("saving_db")):
-                saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
-                if saved_f:
-                    st.session_state.editor_orig_book_id = saved_f
-                    st.success(msg)
-                else:
-                    st.error(msg)
+            saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
+            if saved_f: st.session_state.editor_orig_book_id = saved_f; st.success(msg)
+            else: st.error(msg)
     with col_t3:
         if st.button(T("save_and_read"), type="primary", use_container_width=True):
-            with st.spinner(T("saving_db")):
-                saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
-                if saved_f:
-                    prepared = ensure_reading_ready(st.session_state.editor_pages, st.session_state.app_lang)
-                    st.session_state.uploaded_book_pages = prepared
-                    st.session_state.current_book_title = st.session_state.editor_book_title
-                    st.session_state.editor_mode = False
-                    st.session_state.reading_mode = True
-                    st.rerun()
-                else:
-                    st.error(msg)
+            saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
+            if saved_f:
+                st.session_state.uploaded_book_pages = ensure_reading_ready(st.session_state.editor_pages, st.session_state.app_lang)
+                st.session_state.current_book_title = st.session_state.editor_book_title
+                st.session_state.editor_mode = False; st.session_state.reading_mode = True; st.rerun()
     with col_t4:
-        if st.button(T("exit_editor"), use_container_width=True):
-            st.session_state.editor_mode = False
-            st.rerun()
+        if st.button(T("exit_editor"), use_container_width=True): st.session_state.editor_mode = False; st.rerun()
 
     st.divider()
     pages = st.session_state.editor_pages
     total_p = len(pages)
-
-    if total_p == 0:
-        st.warning("Bu kitapta sayfa bulunmuyor.")
+    if total_p == 0: st.warning("Bu kitapta sayfa bulunmuyor.")
     else:
-        if st.session_state.editor_page_idx >= total_p:
-            st.session_state.editor_page_idx = total_p - 1
+        if st.session_state.editor_page_idx >= total_p: st.session_state.editor_page_idx = total_p - 1
         p_idx = st.session_state.editor_page_idx
         curr_page = pages[p_idx]
 
         col_left, col_right = st.columns([1, 1.4])
         with col_left:
-            st.markdown(f"### 📄 {T('zen_page')} {p_idx + 1} / {total_p}")
             row_sel, row_up, row_down, row_del = st.columns([2, 1, 1, 1])
             with row_sel:
-                new_idx = st.selectbox("Sayfaya Git:", options=list(range(total_p)), format_func=lambda i: f"{T('zen_page')} {i + 1}", index=p_idx, label_visibility="collapsed")
-                if new_idx != p_idx:
-                    st.session_state.editor_page_idx = new_idx
-                    st.rerun()
-            with row_up:
-                if st.button("⬆️", disabled=(p_idx == 0)):
-                    pages[p_idx], pages[p_idx - 1] = pages[p_idx - 1], pages[p_idx]
-                    st.session_state.editor_page_idx -= 1
-                    st.rerun()
-            with row_down:
-                if st.button("⬇️", disabled=(p_idx == total_p - 1)):
-                    pages[p_idx], pages[p_idx + 1] = pages[p_idx + 1], pages[p_idx]
-                    st.session_state.editor_page_idx += 1
-                    st.rerun()
+                new_idx = st.selectbox("Sayfa Git:", list(range(total_p)), index=p_idx, label_visibility="collapsed")
+                if new_idx != p_idx: st.session_state.editor_page_idx = new_idx; st.rerun()
             with row_del:
                 if st.button("🗑️"):
-                    pages.pop(p_idx)
-                    if st.session_state.editor_page_idx >= len(pages) and len(pages) > 0:
-                        st.session_state.editor_page_idx = len(pages) - 1
-                    st.rerun()
+                    pages.pop(p_idx); st.session_state.editor_page_idx = max(0, min(p_idx, len(pages)-1)); st.rerun()
 
             if st.button(T("split_page_btn"), type="primary", use_container_width=True):
-                with st.spinner("Görsel ortadan ikiye bölünüyor ve sayfalar ayrı ayrı taranıyor..."):
-                    try:
-                        img_bytes = base64.b64decode(curr_page['img_b64'])
-                        orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                        
-                        w, h = orig_pil.size
-                        mid_x = w // 2
-                        
-                        left_img = orig_pil.crop((0, 0, mid_x, h))
-                        right_img = orig_pil.crop((mid_x, 0, w, h))
-                        
-                        if left_img.width < 600:
-                            scale_l = 600 / left_img.width
-                            left_img = left_img.resize((int(left_img.width * scale_l), int(left_img.height * scale_l)), Image.Resampling.LANCZOS)
-                        if right_img.width < 600:
-                            scale_r = 600 / right_img.width
-                            right_img = right_img.resize((int(right_img.width * scale_r), int(right_img.height * scale_r)), Image.Resampling.LANCZOS)
-                        
-                        left_page = process_single_image(left_img)
-                        right_page = process_single_image(right_img)
-                        
-                        pages[p_idx] = left_page
-                        pages.insert(p_idx + 1, right_page)
-                        
-                        del orig_pil, left_img, right_img
-                        gc.collect()
-                        
-                        st.success(T("split_success"))
-                        time.sleep(0.5)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Bölme hatası: {e}")
+                img_bytes = base64.b64decode(curr_page['img_b64'])
+                orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                w, h = orig_pil.size; mid_x = w // 2
+                lp, rp = orig_pil.crop((0,0,mid_x,h)), orig_pil.crop((mid_x,0,w,h))
+                pages[p_idx] = process_single_image(lp)
+                pages.insert(p_idx + 1, process_single_image(rp))
+                st.rerun()
 
-            img_html = f"""<div style="text-align: center; background: #0f172a; border-radius: 8px; padding: 10px; margin-top: 10px;">
-                <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px;" /></div>"""
-            st.markdown(img_html, unsafe_allow_html=True)
-
-            with st.expander("➕ Tek Sayfa Ekle"):
-                new_single_file = st.file_uploader("Ek Sayfa Seç (PNG/JPG):", type=["png", "jpg", "jpeg"], key="add_new_p")
-                if new_single_file and st.button("Taramaya Ekle"):
-                    b_img = ImageOps.exif_transpose(Image.open(new_single_file)).convert("RGB")
-                    new_page_obj = process_single_image(b_img)
-                    pages.append(new_page_obj)
-                    del b_img
-                    gc.collect()
-                    st.session_state.editor_page_idx = len(pages) - 1
-                    st.rerun()
+            st.markdown(f"""<div style="text-align: center; background: #0f172a; padding: 10px;"><img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-height: 400px;" /></div>""", unsafe_allow_html=True)
 
         with col_right:
             st.markdown("### 🔤 Tespit Edilen Kelimeler")
-            if st.button("🧹 Sayfa Numaralarını Otomatik Kaldır"):
-                curr_page["boxes"] = [b for b in curr_page["boxes"] if not b["text"].strip().isdigit()]
-                st.rerun()
-            
-            table_data = [{"Kaldır 🗑️": False, "Metin (Fransızca)": b["text"]} for b in curr_page["boxes"]]
-            edited_table = st.data_editor(
-                table_data, key=f"editor_table_{p_idx}", use_container_width=True, height=380,
-                column_config={
-                    "Kaldır 🗑️": st.column_config.CheckboxColumn("Kaldır 🗑️", default=False),
-                    "Metin (Fransızca)": st.column_config.TextColumn("Metin (Fransızca)", required=True)
-                }
-            )
-
-            if st.button("🔄 Değişiklikleri Bu Sayfaya Uygula", type="primary", use_container_width=True):
-                new_boxes = []
-                for row_idx, row in enumerate(edited_table):
-                    if not row["Kaldır 🗑️"] and row["Metin (Fransızca)"].strip():
-                        orig_box = curr_page["boxes"][row_idx]
-                        orig_box["text"] = row["Metin (Fransızca)"].strip()
-                        orig_box["clean"] = clean_word_key(orig_box["text"])
-                        new_boxes.append(orig_box)
-                curr_page["boxes"] = new_boxes
-                st.success("Güncellendi!")
-                time.sleep(0.4)
+            table_data = [{"Kaldır 🗑️": False, "Metin": b["text"]} for b in curr_page["boxes"]]
+            edited_table = st.data_editor(table_data, key=f"tbl_{p_idx}", use_container_width=True, height=380)
+            if st.button("🔄 Değişiklikleri Uygula", type="primary"):
+                curr_page["boxes"] = [b for i, b in enumerate(curr_page["boxes"]) if not edited_table[i]["Kaldır 🗑️"] and edited_table[i]["Metin"].strip()]
+                for i, b in enumerate(curr_page["boxes"]): b["text"] = edited_table[i]["Metin"].strip(); b["clean"] = clean_word_key(b["text"])
                 st.rerun()
 
 # ==========================================
-# 7. ANA KÜTÜPHANE EKRANI (VELİ & ADMIN)
+# 7. ANA KÜTÜPHANE EKRANI
 # ==========================================
 else:
     col_info1, col_thanks, col_info2, col_info3 = st.columns([2.5, 1.2, 1.8, 1])
-    with col_info1:
-        st.markdown(f"👤 **{T('welcome')}:** `{st.session_state.user_email}`")
+    with col_info1: st.markdown(f"👤 `{st.session_state.user_email}`")
     with col_thanks:
-        if st.button(T("thanks_btn"), use_container_width=True):
-            if record_thanks(st.session_state.user_email):
-                st.balloons()
-                st.toast(T("thanks_success"), icon="❤️")
+        if st.button(T("thanks_btn"), use_container_width=True): record_thanks(st.session_state.user_email); st.toast(T("thanks_success"))
     with col_info2:
-        new_lang = st.selectbox(
-            T("reading_lang_label"),
-            options=list(LANGUAGES.keys()),
-            format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}",
-            index=list(LANGUAGES.keys()).index(st.session_state.app_lang) if st.session_state.app_lang in LANGUAGES else 0,
-            label_visibility="collapsed"
-        )
-        if new_lang != st.session_state.app_lang:
-            st.session_state.app_lang = new_lang
-            st.rerun()
+        new_lang = st.selectbox("Dil", options=list(LANGUAGES.keys()), format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}", index=list(LANGUAGES.keys()).index(st.session_state.app_lang), label_visibility="collapsed")
+        if new_lang != st.session_state.app_lang: st.session_state.app_lang = new_lang; st.rerun()
     with col_info3:
-        if st.button(T("logout"), use_container_width=True):
-            st.session_state.logged_in = False
-            st.rerun()
+        if st.button(T("logout"), use_container_width=True): st.session_state.logged_in = False; st.rerun()
 
-    if st.session_state.user_role == "admin":
-        _client, _err, _email = get_gsheet_client()
-        if _client:
-            _test_sheet, _sheet_err = get_sheet("Library")
-            if _test_sheet:
-                st.caption(f"🟢 **Google Sheets Bağlantısı Aktif** (Admin Modu)")
-            else:
-                st.error(_sheet_err)
-        else:
-            st.error(_err)
-
-    if st.session_state.user_role == "admin":
-        tabs = [T("lib_title"), T("add_tab")]
-        app_tabs = st.tabs(tabs)
-        tab_havuz = app_tabs[0]
-        tab_ekle = app_tabs[1]
+    st.markdown(f"<h2 style='text-align: center; color: #1e3a8a;'>{T('lib_title')}</h2>", unsafe_allow_html=True)
+    
+    saved_books, b_err = get_saved_books()
+    if not saved_books: st.info(T("empty_lib"))
     else:
-        st.markdown(f"<h2 style='text-align: center; color: #1e3a8a; margin-top:15px;'>{T('lib_title')}</h2>", unsafe_allow_html=True)
-        tab_havuz = st.container()
-        tab_ekle = None
+        book_titles = {b["book_id"]: f"{b['title']} ({b['page_count']} sayfa)" for b in saved_books}
+        selected_id = st.selectbox(T("select_book"), options=list(book_titles.keys()), format_func=lambda x: book_titles[x])
+        
+        col_r, col_e, col_d = st.columns([2, 2, 1])
+        with col_r:
+            if st.button(T("open_read"), type="primary", use_container_width=True):
+                with st.spinner(T("ocr_processing")):
+                    book_pages, l_err = load_book_content(selected_id)
+                    if book_pages:
+                        st.session_state.uploaded_book_pages = book_pages
+                        st.session_state.reading_mode = True; st.rerun()
+        with col_e:
+            if st.button(T("edit_book"), use_container_width=True) and st.session_state.user_role == "admin":
+                book_pages, l_err = load_book_content(selected_id)
+                if book_pages:
+                    st.session_state.editor_pages = book_pages
+                    st.session_state.editor_orig_book_id = selected_id
+                    st.session_state.editor_book_title = next((b["title"] for b in saved_books if b["book_id"] == selected_id), "")
+                    st.session_state.editor_mode = True; st.rerun()
+        with col_d:
+            if st.button(T("delete_book"), use_container_width=True) and st.session_state.user_role == "admin":
+                delete_hybrid_book(selected_id); st.rerun()
 
-    with tab_havuz:
-        saved_books, b_err = get_saved_books()
-        if b_err:
-            st.error(f"Kitap listesi yüklenemedi: {b_err}")
-        elif not saved_books:
-            st.info(T("empty_lib"))
-        else:
-            book_titles = {b["book_id"]: f"{b['title']} ({b['page_count']} sayfa)" for b in saved_books}
-            selected_id = st.selectbox(T("select_book"), options=list(book_titles.keys()), format_func=lambda x: book_titles[x])
-            
-            if st.session_state.user_role == "admin":
-                col_r, col_e, col_d = st.columns([2, 2, 1])
-                with col_r:
-                    if st.button(T("open_read"), type="primary", use_container_width=True):
-                        with st.spinner(T("ocr_processing")):
-                            book_pages, l_err = load_book_content(selected_id)
-                            if book_pages:
-                                st.session_state.uploaded_book_pages = book_pages
-                                st.session_state.current_book_title = next((b["title"] for b in saved_books if b["book_id"] == selected_id), "")
-                                st.session_state.reading_mode = True
-                                st.rerun()
-                            else:
-                                st.error(l_err)
-                with col_e:
-                    if st.button(T("edit_book"), use_container_width=True):
-                        with st.spinner(T("ocr_processing")):
-                            book_pages, l_err = load_book_content(selected_id)
-                            if book_pages:
-                                st.session_state.editor_pages = book_pages
-                                st.session_state.editor_book_title = next((b["title"] for b in saved_books if b["book_id"] == selected_id), "")
-                                st.session_state.editor_orig_book_id = selected_id
-                                st.session_state.editor_page_idx = 0
-                                st.session_state.editor_mode = True
-                                st.rerun()
-                            else:
-                                st.error(l_err)
-                with col_d:
-                    if st.button(T("delete_book"), use_container_width=True):
-                        delete_hybrid_book(selected_id)
-                        st.success(T("delete_confirm"))
-                        time.sleep(0.5)
-                        st.rerun()
-            else:
-                if st.button(T("open_read"), type="primary", use_container_width=True):
-                    with st.spinner(T("ocr_processing")):
-                        book_pages, l_err = load_book_content(selected_id)
-                        if book_pages:
-                            st.session_state.uploaded_book_pages = book_pages
-                            st.session_state.current_book_title = next((b["title"] for b in saved_books if b["book_id"] == selected_id), "")
-                            st.session_state.reading_mode = True
-                            st.rerun()
-                        else:
-                            st.error(l_err)
-
-    if tab_ekle:
-        with tab_ekle:
+    if st.session_state.user_role == "admin":
+        with st.expander(T("add_tab")):
             st.markdown("### 📚 Yeni Kitap Oluştur & Sayfa Aktar")
             book_title_input = st.text_input("Kitabın Adı:", value="Yeni Kitap")
-            split_spreads = st.checkbox("📖 Çift Sayfa Çekimlerini Otomatik İkiye Böl", value=True)
+            split_spreads = st.checkbox("📖 Çift Sayfaları Otomatik İkiye Böl", value=True)
+            upload_mode = st.radio("Yükleme Yöntemini Seçin:", ["📄 Taranmış PDF Yükle", "📸 Kameradan Çek & Kırp", "📁 Çoklu Fotoğraf"], horizontal=True)
 
-            upload_mode = st.radio(
-                "Yükleme Yöntemini Seçin:",
-                ["📄 Taranmış PDF Yükle (Önerilen)", "📸 Kameradan Çek & Kırp (Canlı Sayfa)", "📁 Galeriden / Dosyadan Çoklu Fotoğraf"],
-                horizontal=True
-            )
-
-            # YÖNTEM 1: PDF YÜKLEME
-            if upload_mode == "📄 Taranmış PDF Yükle (Önerilen)":
-                if not PDF_SUPPORT:
-                    st.error("PyMuPDF kütüphanesi henüz yüklenmemiş. Lütfen requirements.txt dosyasını kontrol edin.")
-                else:
-                    uploaded_pdf = st.file_uploader("Kitabın PDF dosyasını seçin:", type=["pdf"])
-                    if uploaded_pdf and st.button("⚡ PDF'i Çözümle & Düzenleyiciye Aktar", type="primary", use_container_width=True):
-                        try:
-                            pdf_doc = fitz.open(stream=uploaded_pdf.read(), filetype="pdf")
-                            total_pages = len(pdf_doc)
-                            extracted_pages = []
-                            p_bar = st.progress(0)
-                            s_txt = st.empty()
-
-                            for p_no in range(total_pages):
-                                s_txt.text(f"PDF Sayfası İşleniyor: {p_no + 1} / {total_pages}...")
-                                pdf_page = pdf_doc[p_no]
-                                pix = pdf_page.get_pixmap(dpi=150)
-                                base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
-
-                                sub_images = []
-                                if split_spreads and (base_img.width / base_img.height) > 1.05:
-                                    mid_x = base_img.width // 2
-                                    sub_images.append(base_img.crop((0, 0, mid_x, base_img.height)))
-                                    sub_images.append(base_img.crop((mid_x, 0, base_img.width, base_img.height)))
-                                else:
-                                    sub_images.append(base_img)
-
-                                for sub_img in sub_images:
-                                    page_obj = process_single_image(sub_img)
-                                    extracted_pages.append(page_obj)
-                                    del sub_img
-
-                                del base_img
-                                del pix
-                                gc.collect()
-                                p_bar.progress((p_no + 1) / total_pages)
-
-                            pdf_doc.close()
-                            s_txt.text("PDF başarıyla tamamlandı! Düzenleyiciye aktarılıyor...")
-                            st.session_state.editor_pages = extracted_pages
-                            st.session_state.editor_book_title = book_title_input.strip() or "İsimsiz Kitap"
-                            st.session_state.editor_orig_book_id = None
-                            st.session_state.editor_page_idx = 0
-                            st.session_state.editor_mode = True
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"PDF işleme hatası: {e}")
-
-            # YÖNTEM 2: KAMERADAN ÇEK & CANLI KIRP
-            elif upload_mode == "📸 Kameradan Çek & Kırp (Canlı Sayfa)":
-                st.caption("Her sayfayı telefonunuzla çekip kenarlarını kırparak sırayla sepete ekleyebilirsiniz.")
-                cam_pic = st.camera_input("Sayfanın Fotoğrafını Çekin")
-                
-                # Manuel dosya yükleyip tek sayfa kırpmak isteyenler için alternatif:
-                alt_file = st.file_uploader("veya Telefondan Tek Fotoğraf Seçin:", type=["png", "jpg", "jpeg"], key="single_crop_file")
-                active_pic = cam_pic if cam_pic else alt_file
-
-                if active_pic:
-                    raw_crop_img = ImageOps.exif_transpose(Image.open(active_pic)).convert("RGB")
-                    st.write("📐 **Sayfayı Çevreleyen Çerçeveyi Ayarlayın:**")
-                    
-                    if CROPPER_SUPPORT:
-                        cropped_img = st_cropper(
-                            raw_crop_img,
-                            realtime_update=True,
-                            box_color='#2563eb',
-                            aspect_ratio=None
-                        )
-                    else:
-                        st.warning("streamlit-cropper kütüphanesi eksik, kırpma yapılmadan devam ediliyor.")
-                        cropped_img = raw_crop_img
-
-                    if st.button("✂️ Bu Kırpılmış Sayfayı Sepete Ekle", type="secondary"):
-                        buf = io.BytesIO()
-                        cropped_img.save(buf, format="JPEG", quality=85)
-                        st.session_state.staged_camera_pages.append(buf.getvalue())
-                        st.success(f"Sayfa eklendi! Toplam sepetteki sayfa sayısı: {len(st.session_state.staged_camera_pages)}")
-
-                st.divider()
-                staged_count = len(st.session_state.staged_camera_pages)
-                st.markdown(f"📋 **Sepette Bekleyen Sayfa Sayısı:** `{staged_count}`")
-                
-                if staged_count > 0:
-                    col_cam1, col_cam2 = st.columns([2, 1])
-                    with col_cam1:
-                        if st.button(f"⚡ Sepetteki {staged_count} Sayfayı OCR ile Tara & Kitaba Dönüştür", type="primary", use_container_width=True):
-                            extracted_pages = []
-                            p_bar = st.progress(0)
-                            s_txt = st.empty()
-                            
-                            for c_idx, b_data in enumerate(st.session_state.staged_camera_pages):
-                                s_txt.text(f"Sayfa İşleniyor: {c_idx + 1} / {staged_count}...")
-                                c_pil = Image.open(io.BytesIO(b_data)).convert("RGB")
-                                page_obj = process_single_image(c_pil)
-                                extracted_pages.append(page_obj)
-                                del c_pil
-                                gc.collect()
-                                p_bar.progress((c_idx + 1) / staged_count)
-
-                            st.session_state.staged_camera_pages = []  # Sepeti temizle
-                            st.session_state.editor_pages = extracted_pages
-                            st.session_state.editor_book_title = book_title_input.strip() or "İsimsiz Kitap"
-                            st.session_state.editor_orig_book_id = None
-                            st.session_state.editor_page_idx = 0
-                            st.session_state.editor_mode = True
-                            st.rerun()
-                    with col_cam2:
-                        if st.button("🗑️ Sepeti Temizle", use_container_width=True):
-                            st.session_state.staged_camera_pages = []
-                            st.rerun()
-
-            # YÖNTEM 3: ÇOKLU FOTOĞRAF YÜKLEME
-            else:
-                uploaded_files = st.file_uploader("Kitap sayfalarını seçin (PNG, JPG):", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-                if uploaded_files and st.button("⚡ Taramayı Başlat & Düzenleyiciye Aktar", type="primary", use_container_width=True):
+            if upload_mode == "📄 Taranmış PDF Yükle":
+                uploaded_pdf = st.file_uploader("Kitabın PDF dosyasını seçin:", type=["pdf"])
+                if uploaded_pdf and st.button("⚡ PDF'i Düzenleyiciye Aktar"):
+                    pdf_doc = fitz.open(stream=uploaded_pdf.read(), filetype="pdf")
                     extracted_pages = []
-                    total_files = len(uploaded_files)
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    for f_idx, file in enumerate(uploaded_files):
-                        status_text.text(f"İşleniyor: Görsel {f_idx + 1} / {total_files}...")
-                        base_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
-                        
-                        sub_images = []
+                    for p_no in range(len(pdf_doc)):
+                        base_img = Image.open(io.BytesIO(pdf_doc[p_no].get_pixmap(dpi=150).tobytes("jpeg"))).convert("RGB")
                         if split_spreads and (base_img.width / base_img.height) > 1.05:
-                            mid_x = base_img.width // 2
-                            sub_images.append(base_img.crop((0, 0, mid_x, base_img.height)))
-                            sub_images.append(base_img.crop((mid_x, 0, base_img.width, base_img.height)))
-                        else:
-                            sub_images.append(base_img)
-                        
-                        for sub_img in sub_images:
-                            page_obj = process_single_image(sub_img)
-                            extracted_pages.append(page_obj)
-                            del sub_img
-                        
-                        del base_img
-                        del sub_images
-                        gc.collect()
-                        progress_bar.progress((f_idx + 1) / total_files)
-                    
-                    status_text.text("Tarama tamamlandı! Düzenleyiciye aktarılıyor...")
-                    st.session_state.editor_pages = extracted_pages
-                    st.session_state.editor_book_title = book_title_input.strip() or "İsimsiz Kitap"
-                    st.session_state.editor_orig_book_id = None
-                    st.session_state.editor_page_idx = 0
-                    st.session_state.editor_mode = True
-                    st.rerun()
+                            extracted_pages.append(process_single_image(base_img.crop((0, 0, base_img.width // 2, base_img.height))))
+                            extracted_pages.append(process_single_image(base_img.crop((base_img.width // 2, 0, base_img.width, base_img.height))))
+                        else: extracted_pages.append(process_single_image(base_img))
+                    pdf_doc.close()
+                    st.session_state.editor_pages = extracted_pages; st.session_state.editor_book_title = book_title_input
+                    st.session_state.editor_mode = True; st.rerun()
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+            elif upload_mode == "📸 Kameradan Çek & Kırp":
+                cam_pic = st.camera_input("Sayfanın Fotoğrafını Çekin")
+                alt_file = st.file_uploader("veya Telefondan Tek Fotoğraf Seçin:", type=["png", "jpg"])
+                active_pic = cam_pic if cam_pic else alt_file
+                if active_pic:
+                    raw_img = ImageOps.exif_transpose(Image.open(active_pic)).convert("RGB")
+                    c_img = st_cropper(raw_img, realtime_update=True) if CROPPER_SUPPORT else raw_img
+                    if st.button("✂️ Sepete Ekle"):
+                        buf = io.BytesIO(); c_img.save(buf, format="JPEG"); st.session_state.staged_camera_pages.append(buf.getvalue())
+                        st.success(f"Eklendi! Sepette: {len(st.session_state.staged_camera_pages)}")
+                if len(st.session_state.staged_camera_pages) > 0:
+                    if st.button("⚡ Sepettekileri Düzenleyiciye Aktar", type="primary"):
+                        st.session_state.editor_pages = [process_single_image(Image.open(io.BytesIO(b)).convert("RGB")) for b in st.session_state.staged_camera_pages]
+                        st.session_state.staged_camera_pages = []; st.session_state.editor_book_title = book_title_input; st.session_state.editor_mode = True; st.rerun()
+
+            else:
+                upl_files = st.file_uploader("Kitap sayfaları (PNG/JPG):", type=["png", "jpg"], accept_multiple_files=True)
+                if upl_files and st.button("⚡ Taramayı Başlat"):
+                    extracted_pages = []
+                    for file in upl_files:
+                        b_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
+                        if split_spreads and (b_img.width / b_img.height) > 1.05:
+                            extracted_pages.append(process_single_image(b_img.crop((0, 0, b_img.width // 2, b_img.height))))
+                            extracted_pages.append(process_single_image(b_img.crop((b_img.width // 2, 0, b_img.width, b_img.height))))
+                        else: extracted_pages.append(process_single_image(b_img))
+                    st.session_state.editor_pages = extracted_pages; st.session_state.editor_book_title = book_title_input; st.session_state.editor_mode = True; st.rerun()
+
+    st.markdown("<br><br><hr>", unsafe_allow_html=True)
+    
+    # ATATÜRK VE MİTİ ANMA EKLENTİSİ BAĞLANTISI
     st.markdown(
         f"""
-        <div style="text-align: center; color: #94a3b8; font-size: 13.5px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding-top: 5px; margin-bottom: 10px;">
             ✍️ <b>{T('created_by')}</b>
         </div>
         """, unsafe_allow_html=True
     )
+    
+    t_title = translate_ui_text(T("miti_title"), st.session_state.app_lang)
+    
+    col_img1, col_img2, col_img3 = st.columns([1, 1, 1])
+    with col_img2:
+        st.markdown(
+            f"""
+            <div style="text-align: center; cursor: pointer; transition: transform 0.3s;" title="Hikayeyi okumak için tıklayın">
+                <img src="https://media.licdn.com/dms/image/v2/D4D12AQH640P3304U_Q/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1715694242630?e=2147483647&v=beta&t=7b2h1D13H_146O8T_l3-K7z_xH-6-4N-4u2F2E4xX0E" 
+                     style="width: 160px; height: 160px; object-fit: cover; border-radius: 50%; border: 3px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 15px;">
+            </div>
+            """, unsafe_allow_html=True
+        )
+        if st.button(f"✨ {t_title}", use_container_width=True):
+            st.session_state.miti_mode = True
+            st.rerun()
