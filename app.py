@@ -276,17 +276,33 @@ def translate_ui_text(text, target_lang):
             continue
     return text
 
-def get_ataturk_img_data():
-    """Atatürk & Miti fotoğrafını yerel dosyadan veya güvenilir Base64'ten getirir"""
-    for fname in ["ataturk_miti.jpg", "atatürk ve miti.jpg", "ataturk_miti.png", "ataturk.jpg"]:
-        if os.path.exists(fname):
+def get_file_base64(filename, mime_type):
+    """GitHub reposundaki yerel dosyayı (resim/mp3) Base64 olarak okur"""
+    script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else "."
+    paths = [filename, os.path.join(script_dir, filename)]
+    for p in paths:
+        if os.path.exists(p):
             try:
-                with open(fname, "rb") as f:
-                    return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode("utf-8")
-            except:
+                with open(p, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("utf-8")
+                    return f"data:{mime_type};base64,{b64}"
+            except Exception:
                 pass
-    # Güvenilir Wikimedia / Direct Image Fallback
+    return ""
+
+def get_ataturk_img_data():
+    img_b64 = get_file_base64("ataturk_miti.jpg", "image/jpeg")
+    if not img_b64:
+        img_b64 = get_file_base64("atatürk ve miti.jpg", "image/jpeg")
+    if img_b64:
+        return img_b64
     return "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg"
+
+def get_blue_danube_audio_data():
+    audio_b64 = get_file_base64("blue_danube.mp3", "audio/mp3")
+    if audio_b64:
+        return audio_b64
+    return "https://upload.wikimedia.org/wikipedia/commons/transcoded/e/e0/Johann_Strauss_II_-_The_Blue_Danube_Waltz.ogg/Johann_Strauss_II_-_The_Blue_Danube_Waltz.ogg.mp3"
 
 # ==========================================
 # 1. GOOGLE SHEETS ENTEGRASYONU
@@ -554,11 +570,12 @@ if not st.session_state.logged_in:
             else: st.warning(T("email_warn"))
 
 # ==========================================
-# 4.1. MİTİ & ATATÜRK ANMA SAYFASI (ESKİZE BİREBİR UYGUN 3 SÜTUNLU TASARIM)
+# 4.1. MİTİ & ATATÜRK ANMA SAYFASI (3 SÜTUNLU KUSURSUZ TASARIM)
 # ==========================================
 elif st.session_state.miti_mode:
     target_lang = st.session_state.app_lang
     img_data_uri = get_ataturk_img_data()
+    audio_data_uri = get_blue_danube_audio_data()
     
     # Paragrafları seçilen dile göre çevir
     prepared_pairs = []
@@ -568,8 +585,9 @@ elif st.session_state.miti_mode:
             "fr": p["fr"],
             "sys": sys_text
         })
-    story_json = json.dumps(prepared_pairs)
+    story_json = json.dumps(prepared_pairs, ensure_ascii=False)
 
+    # 1. Çıkış Butonunu Ekranın Tam Üstüne Sabitleyen CSS (Z-INDEX 99999999)
     st.markdown(
         """
         <style>
@@ -577,18 +595,34 @@ elif st.session_state.miti_mode:
             .block-container { padding: 0 !important; margin: 0 !important; max-width: 100vw !important; height: 100vh !important; overflow: hidden !important; background: #080c14 !important; }
             iframe { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; border: none !important; z-index: 1 !important; }
             
-            #top-exit-bar {
-                position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 999999;
+            div[data-testid="stButton"], .stButton {
+                position: fixed !important;
+                top: 14px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                z-index: 99999999 !important;
             }
-            #top-exit-bar button {
-                background: rgba(15, 23, 42, 0.75) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255, 255, 255, 0.25) !important; color: #f8fafc !important; border-radius: 25px !important; padding: 6px 24px !important; font-weight: bold !important; font-size: 14px !important; transition: all 0.25s ease !important; cursor: pointer;
+            div[data-testid="stButton"] button, .stButton button {
+                background: #dc2626 !important;
+                border: 2px solid #fca5a5 !important;
+                color: #ffffff !important;
+                border-radius: 30px !important;
+                padding: 8px 32px !important;
+                font-weight: 800 !important;
+                font-size: 15px !important;
+                cursor: pointer !important;
+                box-shadow: 0 4px 25px rgba(220, 38, 38, 0.6) !important;
+                transition: all 0.2s ease !important;
             }
-            #top-exit-bar button:hover { background: #ef4444 !important; border-color: #ef4444 !important; transform: scale(1.04); }
+            div[data-testid="stButton"] button:hover, .stButton button:hover {
+                background: #b91c1c !important;
+                transform: scale(1.08) !important;
+                box-shadow: 0 6px 30px rgba(220, 38, 38, 0.8) !important;
+            }
         </style>
-        <div id="top-exit-bar"></div>
         """, unsafe_allow_html=True)
 
-    # Eskizdeki üst Exit butonu
+    # ÇIKIŞ BUTONU (Sistem Dilinde ve En Üstte Sabit)
     if st.button(T("miti_exit"), key="btn_top_exit"):
         st.session_state.miti_mode = False
         st.rerun()
@@ -602,32 +636,32 @@ elif st.session_state.miti_mode:
             * {{ box-sizing: border-box; }}
             body {{ margin: 0; padding: 0; overflow: hidden; background-color: #080c14; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
             
-            /* Sütun 1: Sabit Fotoğraf (Eskizdeki sol Foto) */
+            /* Sütun 1: Sabit Fotoğraf (Sol Sütun) */
             #col-photo {{
                 width: 30%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-                padding: 60px 20px 20px 25px; background: #04060a; border-right: 1.5px dashed rgba(255,255,255,0.15); position: relative;
+                padding: 65px 20px 20px 25px; background: #04060a; border-right: 1.5px dashed rgba(255,255,255,0.15); position: relative;
             }}
             #col-photo img {{
                 max-width: 100%; max-height: 82vh; object-fit: contain; border-radius: 12px;
-                box-shadow: 0 15px 45px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 15px 45px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.12);
             }}
             
-            /* Sütun 2 ve 3: Metin Sütunları (Eskizdeki orta ve sağ) */
+            /* Sütun 2 ve 3: Metin Sütunları (Orta ve Sağ) */
             #col-french, #col-system {{
-                width: 35%; height: 100vh; padding: 65px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative;
+                width: 35%; height: 100vh; padding: 75px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative;
             }}
             #col-french {{ border-right: 1.5px dashed rgba(255,255,255,0.15); }}
             
-            /* Sütun Başlık Çubuğu & Oku Butonları */
+            /* Sticky Başlıklar ve Dinle Butonları */
             .col-header {{
-                position: sticky; top: -65px; background: rgba(8, 12, 20, 0.94); backdrop-filter: blur(12px);
+                position: sticky; top: -75px; background: rgba(8, 12, 20, 0.95); backdrop-filter: blur(12px);
                 padding: 10px 0 16px 0; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px;
             }}
             .listen-btn {{
                 display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-                background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1.5px solid #fbbf24;
-                padding: 10px 18px; border-radius: 25px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-                font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.25s ease;
+                background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1.5px solid #fbbf24;
+                padding: 11px 18px; border-radius: 25px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 14.5px; font-weight: bold; cursor: pointer; transition: all 0.25s ease;
             }}
             .listen-btn:hover {{ background: #fbbf24; color: #000; transform: translateY(-1px); }}
             .listen-btn.active {{ background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }}
@@ -635,40 +669,44 @@ elif st.session_state.miti_mode:
             /* Metin Paragrafları */
             .story-p {{
                 font-size: 1.05rem; line-height: 1.85; margin-bottom: 18px; color: #cbd5e1;
-                padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; text-align: justify;
+                padding: 10px 14px; border-radius: 6px; transition: all 0.3s ease; text-align: justify;
             }}
             .story-title {{
                 font-size: 1.35rem; font-weight: bold; color: #fbbf24; margin-bottom: 20px; line-height: 1.4; text-align: left;
+                padding: 8px 12px;
             }}
             
-            /* Kindle Stili Senkronize Vurgu (Highlight) */
+            /* Kindle Stili Canlı Vurgulama */
             .highlight {{
-                background-color: rgba(254, 240, 138, 0.22) !important;
+                background-color: rgba(250, 204, 21, 0.28) !important;
                 color: #ffffff !important;
-                border-left: 4px solid #facc15 !important;
-                padding-left: 14px !important;
+                border-left: 5px solid #facc15 !important;
+                padding-left: 16px !important;
+                box-shadow: 0 0 20px rgba(250, 204, 21, 0.2) !important;
+                border-radius: 4px !important;
             }}
             
-            /* Özel Kaydırma Çubuğu */
             ::-webkit-scrollbar {{ width: 5px; }}
-            ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.18); border-radius: 4px; }}
+            ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
             
-            /* Arka Plan Müzik Butonu */
+            /* Müzik Kontrol Butonu */
             #music-toggle {{
                 position: fixed; bottom: 15px; left: 15px; z-index: 1000;
-                background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.15);
-                color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-family: sans-serif;
-                cursor: pointer; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(8px);
+                background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.2);
+                color: #fbbf24; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-family: sans-serif;
+                cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px);
+                transition: all 0.2s;
             }}
+            #music-toggle:hover {{ background: rgba(251, 191, 36, 0.2); transform: scale(1.04); }}
         </style>
     </head>
-    <body onclick="tryAutoPlayMusic()">
-        <!-- Güvenilir MP3 formatında Güzel Mavi Tuna Valsi -->
-        <audio id="bgMusic" src="https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3" loop></audio>
+    <body>
+        <!-- Yerel MP3 Dosyasından Doğrudan Çalan Ses Öğesi -->
+        <audio id="bgMusic" src="{audio_data_uri}" loop preload="auto"></audio>
 
-        <button id="music-toggle" onclick="toggleMusic(event)">🎵 Güzel Mavi Tuna: <span id="m-state">Oynat</span></button>
+        <button id="music-toggle" onclick="toggleMusic(event)">🎵 <span id="m-state">Vals Çalıyor</span></button>
 
-        <!-- 1. SÜTUN: FOTOĞRAF -->
+        <!-- 1. SÜTUN: ATATÜRK & MİTİ DANS FOTOĞRAFI -->
         <div id="col-photo">
             <img src="{img_data_uri}" alt="Atatürk ve Miti">
         </div>
@@ -691,14 +729,12 @@ elif st.session_state.miti_mode:
 
         <script>
             const paragraphs = {story_json};
-            const frCol = document.getElementById("col-french");
-            const sysCol = document.getElementById("col-system");
             const frContent = document.getElementById("french-content");
             const sysContent = document.getElementById("system-content");
             const music = document.getElementById("bgMusic");
-            music.volume = 0.25;
+            music.volume = 0.35;
 
-            // HTML Metinlerini Ekrana Bas
+            // Metinleri Sütunlara Yerleştir
             let frHtml = "", sysHtml = "";
             paragraphs.forEach((p, idx) => {{
                 let cls = (idx === 0 || idx === 2 || idx === 5 || idx === 8 || idx === 12) ? "story-title" : "story-p";
@@ -708,111 +744,135 @@ elif st.session_state.miti_mode:
             frContent.innerHTML = frHtml;
             sysContent.innerHTML = sysHtml;
 
-            // Müzik Kontrolleri & Otomatik Başlatma
-            let userInteracted = false;
-            function tryAutoPlayMusic() {{
-                if (!userInteracted && !isReading) {{
-                    userInteracted = true;
-                    music.play().then(() => {{
-                        document.getElementById("m-state").innerText = "Çalıyor";
-                    }}).catch(() => {{}});
+            // Müziği Güvenli Başlatma & Otomatik Oynatma
+            function playMusicSafe() {{
+                if (!music) return;
+                const p = music.play();
+                if (p !== undefined) {{
+                    p.then(() => {{
+                        document.getElementById("m-state").innerText = "Vals Çalıyor 🎵";
+                    }}).catch(() => {{
+                        document.getElementById("m-state").innerText = "Valsi Başlat ▶️";
+                    }});
                 }}
             }}
+
+            window.addEventListener("DOMContentLoaded", playMusicSafe);
+            setTimeout(playMusicSafe, 400);
+
+            // Kullanıcı ekranda herhangi bir yere ilk dokunduğunda müziği hemen başlat
+            window.addEventListener("click", () => {{
+                if (music.paused && !isReading) playMusicSafe();
+            }}, {{ once: true }});
+            window.addEventListener("touchstart", () => {{
+                if (music.paused && !isReading) playMusicSafe();
+            }}, {{ once: true }});
+
             function toggleMusic(e) {{
                 e.stopPropagation();
                 if (music.paused) {{
-                    music.play();
-                    document.getElementById("m-state").innerText = "Çalıyor";
+                    playMusicSafe();
                 }} else {{
                     music.pause();
-                    document.getElementById("m-state").innerText = "Duraklatıldı";
+                    document.getElementById("m-state").innerText = "Valsi Başlat ▶️";
                 }}
             }}
 
-            // SENKRONİZE KINDLE OKUMA & VURGU SİSTEMİ
+            // KINDLE STİLİ SENKRONİZE OKUMA & OTOMATİK KAYDIRMA
             let isReading = false;
             let currentLang = "";
             let currentIdx = 0;
+            let activeUtterance = null; // Garbage collector engellemek için global tutulur
 
             function stopReading() {{
-                window.speechSynthesis.cancel();
                 isReading = false;
                 currentLang = "";
-                document.getElementById("btn-listen-fr").innerText = "{T('listen_fr')}";
-                document.getElementById("btn-listen-fr").classList.remove("active");
-                document.getElementById("btn-listen-sys").innerText = "{T('listen_sys')}";
-                document.getElementById("btn-listen-sys").classList.remove("active");
+                if (window.speechSynthesis) {{
+                    window.speechSynthesis.cancel();
+                }}
+                const bFr = document.getElementById("btn-listen-fr");
+                const bSys = document.getElementById("btn-listen-sys");
+                if (bFr) {{ bFr.innerText = "{T('listen_fr')}"; bFr.classList.remove("active"); }}
+                if (bSys) {{ bSys.innerText = "{T('listen_sys')}"; bSys.classList.remove("active"); }}
                 document.querySelectorAll(".story-p, .story-title").forEach(el => el.classList.remove("highlight"));
-                music.play().catch(() => {{}});
-                document.getElementById("m-state").innerText = "Çalıyor";
+                playMusicSafe();
             }}
 
             function startReading(lang) {{
-                if (isReading) {{
+                if (isReading && currentLang === lang) {{
                     stopReading();
                     return;
                 }}
-                music.pause();
-                document.getElementById("m-state").innerText = "Duraklatıldı";
+                if (isReading) {{
+                    stopReading();
+                }}
+
+                try {{
+                    if (music && !music.paused) {{
+                        music.pause();
+                        document.getElementById("m-state").innerText = "Valsi Başlat ▶️";
+                    }}
+                }} catch(e) {{}}
+
                 isReading = true;
                 currentLang = lang;
                 currentIdx = 0;
 
-                if (lang === 'fr') {{
-                    document.getElementById("btn-listen-fr").innerText = "{T('stop_btn')}";
-                    document.getElementById("btn-listen-fr").classList.add("active");
-                }} else {{
-                    document.getElementById("btn-listen-sys").innerText = "{T('stop_btn')}";
-                    document.getElementById("btn-listen-sys").classList.add("active");
+                const bFr = document.getElementById("btn-listen-fr");
+                const bSys = document.getElementById("btn-listen-sys");
+                if (lang === 'fr' && bFr) {{ bFr.innerText = "{T('stop_btn')}"; bFr.classList.add("active"); }}
+                else if (bSys) {{ bSys.innerText = "{T('stop_btn')}"; bSys.classList.add("active"); }}
+
+                if (window.speechSynthesis) {{
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.resume();
                 }}
 
-                playNextParagraph();
+                playParagraph(0);
             }}
 
-            function playNextParagraph() {{
-                if (!isReading || currentIdx >= paragraphs.length) {{
+            function playParagraph(idx) {{
+                if (!isReading || idx >= paragraphs.length) {{
                     stopReading();
                     return;
                 }}
+                currentIdx = idx;
 
-                // 1. İki sütunda aynı anda paragrafı vurgula (Kindle stili)
+                // 1. İki sütunda aynı anda paragrafı vurgula
                 document.querySelectorAll(".story-p, .story-title").forEach(el => el.classList.remove("highlight"));
-                const frEl = document.getElementById(`fr_p_${{currentIdx}}`);
-                const sysEl = document.getElementById(`sys_p_${{currentIdx}}`);
+                const frEl = document.getElementById(`fr_p_${{idx}}`);
+                const sysEl = document.getElementById(`sys_p_${{idx}}`);
                 if (frEl) frEl.classList.add("highlight");
                 if (sysEl) sysEl.classList.add("highlight");
 
                 // 2. Ekranı okunan paragrafın hizasına otomatik kaydır (Auto-scroll)
-                if (frEl && frCol) {{
-                    frCol.scrollTo({{ top: frEl.offsetTop - 140, behavior: 'smooth' }});
-                }}
-                if (sysEl && sysCol) {{
-                    sysCol.scrollTo({{ top: sysEl.offsetTop - 140, behavior: 'smooth' }});
-                }}
+                if (frEl) {{ frEl.scrollIntoView({{ behavior: 'smooth', block: 'center' }}); }}
+                if (sysEl) {{ sysEl.scrollIntoView({{ behavior: 'smooth', block: 'center' }}); }}
 
                 // 3. Seslendirmeyi başlat
-                const textToSpeak = (currentLang === 'fr') ? paragraphs[currentIdx].fr : paragraphs[currentIdx].sys;
-                const u = new SpeechSynthesisUtterance(textToSpeak);
+                const textToSpeak = (currentLang === 'fr') ? paragraphs[idx].fr : paragraphs[idx].sys;
+                if (!window.speechSynthesis) return;
 
+                activeUtterance = new SpeechSynthesisUtterance(textToSpeak);
                 if (currentLang === 'fr') {{
-                    u.lang = 'fr-FR';
+                    activeUtterance.lang = 'fr-FR';
                 }} else {{
-                    if ('{target_lang}' === 'tr') u.lang = 'tr-TR';
-                    else if ('{target_lang}' === 'en') u.lang = 'en-US';
-                    else if ('{target_lang}' === 'bg') u.lang = 'bg-BG';
+                    const tLang = '{target_lang}';
+                    if (tLang === 'tr') activeUtterance.lang = 'tr-TR';
+                    else if (tLang === 'en') activeUtterance.lang = 'en-US';
+                    else if (tLang === 'bg') activeUtterance.lang = 'bg-BG';
+                    else activeUtterance.lang = 'fr-FR';
                 }}
-                u.rate = 0.95;
+                activeUtterance.rate = 0.95;
 
-                u.onend = () => {{
-                    currentIdx++;
-                    playNextParagraph();
+                activeUtterance.onend = function() {{
+                    if (isReading) playParagraph(idx + 1);
                 }};
-                u.onerror = () => {{
-                    currentIdx++;
-                    playNextParagraph();
+                activeUtterance.onerror = function() {{
+                    if (isReading) playParagraph(idx + 1);
                 }};
 
-                window.speechSynthesis.speak(u);
+                window.speechSynthesis.speak(activeUtterance);
             }}
         </script>
     </body>
