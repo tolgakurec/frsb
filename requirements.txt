@@ -1,6 +1,8 @@
 streamlit
 easyocr
-Pillow
-numpy
 gspread
 oauth2client
+Pillow
+numpy
+PyMuPDF
+streamlit-cropper
