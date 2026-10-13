@@ -150,6 +150,7 @@ UI_TRANSLATIONS = {
         "zen_listen": "Sesli Dinle",
         "zen_stop": "Durdur",
         "zen_page_trans": "Sayfa Çevirisi",
+        "zen_loading_trans": "Sayfa çevirisi hazırlanıyor...",
         "miti_title": "Sofya’da Kalan Gençlik: Bir İmparatorluğun İhtişamı ve Yarım Kalan Bir Aşk",
         "miti_exit": "✕ Çıkış / Exit",
         "listen_fr": "🔊 Fransızca Dinle",
@@ -186,6 +187,7 @@ UI_TRANSLATIONS = {
         "zen_listen": "Listen Aloud",
         "zen_stop": "Stop",
         "zen_page_trans": "Page Translation",
+        "zen_loading_trans": "Preparing translation...",
         "miti_title": "The Youth Left in Sofia: The Splendor of an Empire and an Unfinished Love",
         "miti_exit": "✕ Exit",
         "listen_fr": "🔊 Listen in French",
@@ -222,6 +224,7 @@ UI_TRANSLATIONS = {
         "zen_listen": "Слушай",
         "zen_stop": "Спри",
         "zen_page_trans": "Превод на страницата",
+        "zen_loading_trans": "Подготвя се превод...",
         "miti_title": "Младостта, оставена в София: Великолепието на една империя и една недовършена любов",
         "miti_exit": "✕ Изход",
         "listen_fr": "🔊 Слушай на френски",
@@ -255,26 +258,50 @@ def T(key):
     lang = st.session_state.app_lang if st.session_state.app_lang in UI_TRANSLATIONS else "tr"
     return UI_TRANSLATIONS[lang].get(key, UI_TRANSLATIONS["tr"].get(key, key))
 
+# ==========================================
+# 1. TEMEL ÇEVİRİ MOTORU (KAYNAK VE HEDEF DİL TAM AYRIMI)
+# ==========================================
 @st.cache_data(show_spinner=False)
-def translate_ui_text(text, target_lang):
-    if target_lang == "tr": return text
-    if not text or not text.strip(): return ""
-    clients = ['gtx', 'dict-chrome-ex']
+def translate_api(text, source_lang, target_lang):
+    """Herhangi bir kaynaktan hedefe Google Translate üzerinden çeviri yapar"""
+    if not text or not text.strip() or source_lang == target_lang:
+        return text
+    clients = ['gtx', 'dict-chrome-ex', 'te_lib']
     for client in clients:
         try:
-            url = f"https://translate.googleapis.com/translate_a/single?client={client}&sl=tr&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            url = f"https://translate.googleapis.com/translate_a/single?client={client}&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
             res = urllib.request.urlopen(req, timeout=5)
             data = json.loads(res.read().decode('utf-8'))
             translated_parts = []
             if data and data[0]:
                 for s in data[0]:
-                    if s and s[0]: translated_parts.append(s[0])
+                    if s and s[0]:
+                        translated_parts.append(s[0])
             res_str = "".join(translated_parts).strip()
-            if res_str: return res_str
+            if res_str:
+                return res_str
         except Exception:
             continue
     return text
+
+@st.cache_data(show_spinner=False)
+def translate_french_to_target(text, target_lang):
+    """KİTAPLAR İÇİN: Fransızca sayfaları ve kelimeleri sistem diline çevirir"""
+    if not text or not text.strip():
+        return ""
+    if target_lang == "fr":
+        return text
+    return translate_api(text, source_lang="fr", target_lang=target_lang)
+
+@st.cache_data(show_spinner=False)
+def translate_turkish_to_target(text, target_lang):
+    """MİTİ HİKAYESİ İÇİN: Orijinal Türkçe metni seçilen dile çevirir"""
+    if not text or not text.strip():
+        return ""
+    if target_lang == "tr":
+        return text
+    return translate_api(text, source_lang="tr", target_lang=target_lang)
 
 def get_file_base64(filename, mime_type):
     """GitHub reposundaki yerel dosyayı (resim/mp3) Base64 olarak okur"""
@@ -302,10 +329,10 @@ def get_blue_danube_audio_data():
     audio_b64 = get_file_base64("blue_danube.mp3", "audio/mp3")
     if audio_b64:
         return audio_b64
-    return "https://upload.wikimedia.org/wikipedia/commons/transcoded/e/e0/Johann_Strauss_II_-_The_Blue_Danube_Waltz.ogg/Johann_Strauss_II_-_The_Blue_Danube_Waltz.ogg.mp3"
+    return "https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
 
 # ==========================================
-# 1. GOOGLE SHEETS ENTEGRASYONU
+# 2. GOOGLE SHEETS ENTEGRASYONU
 # ==========================================
 def clean_private_key(key_str):
     if not key_str or not isinstance(key_str, str): return key_str
@@ -490,11 +517,10 @@ def build_coherent_page_text(boxes):
     return re.sub(r'\s+', ' ', re.sub(r'([.!?])([A-Za-zÀ-ÿ])', r'\1 \2', fs)).strip()
 
 @st.cache_data(show_spinner=False)
-def translate_text(text, target_lang):
-    return translate_ui_text(text, target_lang)
-
-@st.cache_data(show_spinner=False)
 def get_words_dictionary(texts_list, target_lang):
+    """Kelimeleri Fransızca'dan seçilen hedef dile çevirir"""
+    if target_lang == "fr":
+        return {}
     trans_map, unique_items = {}, set()
     for raw in texts_list:
         clean = clean_word_key(raw)
@@ -502,25 +528,37 @@ def get_words_dictionary(texts_list, target_lang):
         for word in re.findall(r"[\wÀ-ÿ'-]+", raw):
             w_clean = clean_word_key(word)
             if len(w_clean) > 1: unique_items.add(w_clean)
+            
+    if not unique_items:
+        return {}
+
     items_list = sorted(list(unique_items))
     for i in range(0, len(items_list), 15):
         batch = items_list[i:i + 15]
         combined = "\n".join(batch)
-        t_combined = translate_text(combined, target_lang)
+        t_combined = translate_french_to_target(combined, target_lang)
         lines = [line.strip() for line in t_combined.split("\n") if line.strip()]
         if len(lines) == len(batch):
             for orig, trans in zip(batch, lines): trans_map[orig] = trans
         else:
-            for orig in batch: trans_map[orig] = translate_text(orig, target_lang)
+            for orig in batch: trans_map[orig] = translate_french_to_target(orig, target_lang)
     return trans_map
 
 def ensure_reading_ready(pages, target_lang):
+    """Sayfaların seçilen hedef dilde hazır olduğundan ve önbellek hatası olmadığından emin olur"""
     for page in pages:
-        if page.get("current_lang") != target_lang or "full_trans" not in page or "dictionary" not in page:
+        # Eğer sayfa daha önce hatalı çevrilip Fransızca olarak önbelleğe kalmışsa yeniden çevir
+        is_corrupted = (
+            target_lang != "fr" and
+            page.get("full_trans") == page.get("full_text") and
+            len(page.get("full_text", "")) > 5
+        )
+        if page.get("current_lang") != target_lang or "full_trans" not in page or "dictionary" not in page or is_corrupted:
             raw_texts = [b.get("text", "").strip() for b in page.get("boxes", []) if b.get("text", "").strip()]
             for b in page.get("boxes", []): b["clean"] = clean_word_key(b.get("text", ""))
             full_str = build_coherent_page_text(page.get("boxes", []))
-            page["full_text"], page["full_trans"] = full_str, translate_text(full_str, target_lang)
+            page["full_text"] = full_str
+            page["full_trans"] = translate_french_to_target(full_str, target_lang)
             page["dictionary"] = get_words_dictionary(raw_texts, target_lang)
             page["current_lang"] = target_lang
     return pages
@@ -577,17 +615,22 @@ elif st.session_state.miti_mode:
     img_data_uri = get_ataturk_img_data()
     audio_data_uri = get_blue_danube_audio_data()
     
-    # Paragrafları seçilen dile göre çevir
-    prepared_pairs = []
-    for p in STORY_PARAGRAPHS:
-        sys_text = translate_ui_text(p["tr"], target_lang) if target_lang != "tr" else p["tr"]
-        prepared_pairs.append({
-            "fr": p["fr"],
-            "sys": sys_text
-        })
+    # Paragrafları seçilen dile göre hazırla
+    if target_lang == "tr":
+        prepared_pairs = [{"fr": p["fr"], "sys": p["tr"]} for p in STORY_PARAGRAPHS]
+    elif target_lang == "fr":
+        prepared_pairs = [{"fr": p["fr"], "sys": p["fr"]} for p in STORY_PARAGRAPHS]
+    else:
+        combined_tr = "\n=====\n".join([p["tr"] for p in STORY_PARAGRAPHS])
+        trans_all = translate_turkish_to_target(combined_tr, target_lang)
+        parts = [pt.strip() for pt in trans_all.split("=====")]
+        if len(parts) == len(STORY_PARAGRAPHS):
+            prepared_pairs = [{"fr": p["fr"], "sys": parts[i]} for i, p in enumerate(STORY_PARAGRAPHS)]
+        else:
+            prepared_pairs = [{"fr": p["fr"], "sys": translate_turkish_to_target(p["tr"], target_lang)} for p in STORY_PARAGRAPHS]
+
     story_json = json.dumps(prepared_pairs, ensure_ascii=False)
 
-    # 1. Çıkış Butonunu Ekranın Tam Üstüne Sabitleyen CSS (Z-INDEX 99999999)
     st.markdown(
         """
         <style>
@@ -622,7 +665,7 @@ elif st.session_state.miti_mode:
         </style>
         """, unsafe_allow_html=True)
 
-    # ÇIKIŞ BUTONU (Sistem Dilinde ve En Üstte Sabit)
+    # ÇIKIŞ BUTONU (Ekranın Tam Üstünde ve Belirgin)
     if st.button(T("miti_exit"), key="btn_top_exit"):
         st.session_state.miti_mode = False
         st.rerun()
@@ -632,13 +675,14 @@ elif st.session_state.miti_mode:
     <html>
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
             * {{ box-sizing: border-box; }}
             body {{ margin: 0; padding: 0; overflow: hidden; background-color: #080c14; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
             
             /* Sütun 1: Sabit Fotoğraf (Sol Sütun) */
             #col-photo {{
-                width: 30%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                width: 28%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
                 padding: 65px 20px 20px 25px; background: #04060a; border-right: 1.5px dashed rgba(255,255,255,0.15); position: relative;
             }}
             #col-photo img {{
@@ -646,11 +690,25 @@ elif st.session_state.miti_mode:
                 box-shadow: 0 15px 45px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.12);
             }}
             
-            /* Sütun 2 ve 3: Metin Sütunları (Orta ve Sağ) */
+            /* Metin Sütunları Sarmalayıcısı */
+            #cols-wrap {{
+                width: 72%; height: 100vh; display: flex;
+            }}
+            
+            /* Sütun 2 ve 3: Metin Sütunları */
             #col-french, #col-system {{
-                width: 35%; height: 100vh; padding: 75px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative;
+                width: 50%; height: 100vh; padding: 75px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative;
             }}
             #col-french {{ border-right: 1.5px dashed rgba(255,255,255,0.15); }}
+            
+            /* Mobilde Esnek Yerleşim */
+            @media (max-width: 768px) {{
+                body {{ flex-direction: column !important; }}
+                #col-photo {{ width: 100% !important; height: 26vh !important; padding: 60px 10px 10px 10px !important; border-right: none !important; border-bottom: 1.5px dashed rgba(255,255,255,0.15) !important; }}
+                #col-photo img {{ max-height: 18vh !important; }}
+                #cols-wrap {{ width: 100% !important; height: 74vh !important; }}
+                #col-french, #col-system {{ padding: 15px 12px 30px 12px !important; font-size: 0.95rem !important; }}
+            }}
             
             /* Sticky Başlıklar ve Dinle Butonları */
             .col-header {{
@@ -692,7 +750,7 @@ elif st.session_state.miti_mode:
             /* Müzik Kontrol Butonu */
             #music-toggle {{
                 position: fixed; bottom: 15px; left: 15px; z-index: 1000;
-                background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.2);
+                background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.2);
                 color: #fbbf24; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-family: sans-serif;
                 cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px);
                 transition: all 0.2s;
@@ -711,20 +769,22 @@ elif st.session_state.miti_mode:
             <img src="{img_data_uri}" alt="Atatürk ve Miti">
         </div>
 
-        <!-- 2. SÜTUN: FRANSIZCA METİN -->
-        <div id="col-french">
-            <div class="col-header">
-                <button class="listen-btn" id="btn-listen-fr" onclick="startReading('fr')">{T('listen_fr')}</button>
+        <div id="cols-wrap">
+            <!-- 2. SÜTUN: FRANSIZCA METİN -->
+            <div id="col-french">
+                <div class="col-header">
+                    <button class="listen-btn" id="btn-listen-fr" onclick="startReading('fr')">{T('listen_fr')}</button>
+                </div>
+                <div id="french-content"></div>
             </div>
-            <div id="french-content"></div>
-        </div>
 
-        <!-- 3. SÜTUN: SİSTEM DİLİ METİN -->
-        <div id="col-system">
-            <div class="col-header">
-                <button class="listen-btn" id="btn-listen-sys" onclick="startReading('sys')">{T('listen_sys')}</button>
+            <!-- 3. SÜTUN: SİSTEM DİLİ METİN -->
+            <div id="col-system">
+                <div class="col-header">
+                    <button class="listen-btn" id="btn-listen-sys" onclick="startReading('sys')">{T('listen_sys')}</button>
+                </div>
+                <div id="system-content"></div>
             </div>
-            <div id="system-content"></div>
         </div>
 
         <script>
@@ -744,7 +804,7 @@ elif st.session_state.miti_mode:
             frContent.innerHTML = frHtml;
             sysContent.innerHTML = sysHtml;
 
-            // Müziği Güvenli Başlatma & Otomatik Oynatma
+            // Müziği Güvenli Başlatma
             function playMusicSafe() {{
                 if (!music) return;
                 const p = music.play();
@@ -760,11 +820,11 @@ elif st.session_state.miti_mode:
             window.addEventListener("DOMContentLoaded", playMusicSafe);
             setTimeout(playMusicSafe, 400);
 
-            // Kullanıcı ekranda herhangi bir yere ilk dokunduğunda müziği hemen başlat
-            window.addEventListener("click", () => {{
+            // Mobilde ilk dokunuşta müziği tetikle
+            window.addEventListener("touchstart", () => {{
                 if (music.paused && !isReading) playMusicSafe();
             }}, {{ once: true }});
-            window.addEventListener("touchstart", () => {{
+            window.addEventListener("click", () => {{
                 if (music.paused && !isReading) playMusicSafe();
             }}, {{ once: true }});
 
@@ -782,7 +842,7 @@ elif st.session_state.miti_mode:
             let isReading = false;
             let currentLang = "";
             let currentIdx = 0;
-            let activeUtterance = null; // Garbage collector engellemek için global tutulur
+            let activeUtterance = null;
 
             function stopReading() {{
                 isReading = false;
@@ -881,7 +941,7 @@ elif st.session_state.miti_mode:
     components.html(MITI_HTML, height=850, scrolling=False)
 
 # ==========================================
-# 5. OKUMA MODU (ZEN VIEWER)
+# 5. OKUMA MODU (ZEN VIEWER - KİTAP OKUYUCU)
 # ==========================================
 elif st.session_state.reading_mode:
     st.markdown(
@@ -898,7 +958,9 @@ elif st.session_state.reading_mode:
         </style>
         """, unsafe_allow_html=True)
 
-    if st.button(T("zen_close"), key="btn_exit_zen"): st.session_state.reading_mode = False; st.rerun()
+    if st.button(T("zen_close"), key="btn_exit_zen"):
+        st.session_state.reading_mode = False
+        st.rerun()
 
     pages = ensure_reading_ready(st.session_state.uploaded_book_pages, st.session_state.app_lang)
     HTML_VIEWER = f"""
@@ -908,27 +970,53 @@ elif st.session_state.reading_mode:
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
             * {{ box-sizing: border-box; user-select: none; -webkit-user-select: none; }}
-            html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
+            html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
             #viewport-wrap {{ position: relative; width: 100vw; height: calc(100vh - 120px); margin-top: 48px; display: flex; align-items: center; justify-content: center; }}
             #stage {{ position: relative; max-width: 98vw; max-height: calc(100vh - 120px); display: inline-block; }}
             #book-img {{ max-width: 98vw; max-height: calc(100vh - 120px); width: auto; height: auto; display: block; margin: auto; object-fit: contain; box-shadow: 0 0 35px rgba(0,0,0,0.85); border-radius: 4px; }}
             #boxes-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }}
-            .word-hitbox {{ position: absolute; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.01); pointer-events: auto; transition: 0.15s; }}
+            .word-hitbox {{ position: absolute; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.01); pointer-events: auto; transition: background 0.15s ease, outline 0.15s ease; }}
             .word-hitbox:hover, .word-hitbox:active {{ background: rgba(254,240,138,0.45); outline: 2px solid #facc15; }}
             .karaoke-lit {{ background: rgba(250,204,21,0.65) !important; outline: 2px solid #eab308 !important; }}
             .glass-pill {{ position: fixed; top: 10px; left: 18px; background: rgba(15,23,42,0.45); backdrop-filter: blur(14px); color: #94a3b8; font-weight: 500; font-size: 13px; padding: 5px 14px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 1000; }}
-            #whisper-card {{ position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.92); backdrop-filter: blur(24px); color: #ffffff; padding: 14px 22px; border-radius: 18px; box-shadow: 0 12px 40px rgba(0,0,0,0.7); display: none; z-index: 1001; max-width: 680px; width: 90vw; line-height: 1.6; }}
+            
+            #whisper-card {{ 
+                position: fixed; 
+                bottom: 80px; 
+                left: 50%; 
+                transform: translateX(-50%); 
+                background: rgba(15,23,42,0.92); 
+                backdrop-filter: blur(24px); 
+                -webkit-backdrop-filter: blur(24px); 
+                color: #ffffff; 
+                padding: 14px 22px; 
+                border-radius: 18px; 
+                font-size: 15px; 
+                box-shadow: 0 12px 40px rgba(0,0,0,0.7); 
+                border: 1px solid rgba(255,255,255,0.18); 
+                display: none; 
+                z-index: 1001; 
+                max-width: 680px; 
+                width: 90vw; 
+                line-height: 1.6;
+            }}
             .card-close-btn {{ position: absolute; top: 8px; right: 12px; background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; }}
+            
             .glass-dock {{ position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(15,23,42,0.5); backdrop-filter: blur(16px); padding: 6px 12px; border-radius: 35px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); z-index: 1000; }}
             .glass-btn {{ background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); padding: 7px 14px; border-radius: 25px; font-weight: 500; font-size: 13.5px; cursor: pointer; }}
             .glass-btn.active {{ background: #2563eb !important; border-color: #60a5fa !important; }}
         </style>
     </head>
-    <body>
+    <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
         <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
-        <div id="page-counter" class="glass-pill">{T('zen_page')} 1 / 1</div>
-        <div id="whisper-card"><button class="card-close-btn" onclick="dismissCard()">✕</button><div id="whisper-body"></div></div>
-        <div id="main-dock" class="glass-dock">
+        <div id="page-counter" class="glass-pill hud-item">{T('zen_page')} 1 / 1</div>
+        
+        <div id="whisper-card">
+            <button class="card-close-btn" onclick="dismissCard()">✕</button>
+            <div id="whisper-body"></div>
+        </div>
+
+        <div id="main-dock" class="glass-dock hud-item">
             <button id="btn-prev" class="glass-btn" onclick="prevPage()">⬅️</button>
             <button id="btn-speed" class="glass-btn" onclick="cycleSpeed()">⚡ <span id="speed-text">0.8x</span></button>
             <button id="btn-karaoke" class="glass-btn" onclick="toggleKaraoke()">🎤 <span id="k-text">{T('zen_listen')}</span></button>
@@ -941,6 +1029,11 @@ elif st.session_state.reading_mode:
             let currentIndex = 0, isPlaying = false, timer = null, wordIndices = [];
             const speeds = [0.7, 0.8, 1.0]; let speedIdx = 1;
 
+            let hudTimer = null;
+            function resetHudTimer() {{
+                clearTimeout(hudTimer);
+            }}
+
             function dismissCard() {{ document.getElementById('whisper-card').style.display = 'none'; clearTimeout(timer); }}
             function cycleSpeed() {{ speedIdx = (speedIdx + 1) % speeds.length; document.getElementById('speed-text').innerText = speeds[speedIdx] + "x"; if(isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke,100); }} }}
 
@@ -949,6 +1042,8 @@ elif st.session_state.reading_mode:
                 stopKaraoke(); currentIndex = idx; const page = allPages[idx];
                 document.getElementById('book-img').src = "data:image/jpeg;base64," + page.img_b64;
                 document.getElementById('page-counter').innerText = `{T('zen_page')} ${{idx + 1}} / ${{allPages.length}}`;
+                document.getElementById('btn-prev').disabled = (idx === 0);
+                document.getElementById('btn-next').disabled = (idx === allPages.length - 1);
                 dismissCard(); document.getElementById('boxes-layer').innerHTML = ''; wordIndices = []; let charOffset = 0;
                 
                 (page.boxes || []).forEach((b, i) => {{
@@ -961,12 +1056,19 @@ elif st.session_state.reading_mode:
                         clearTimeout(timer);
                         const dict = page.dictionary || {{}};
                         const cleanKey = b.clean || b.text.toLowerCase().trim();
-                        let trans = dict[cleanKey] || dict[b.text] || '-';
-                        document.getElementById('whisper-body').innerHTML = "<div style='text-align: center;'>🇫🇷 <b>" + b.text + "</b> &nbsp;➔&nbsp; " + targetFlag + " <b>" + trans + "</b></div>";
+                        let trans = dict[cleanKey] || dict[b.text.toLowerCase().trim()] || dict[b.text] || '-';
+                        if (trans === '-' || !trans) {{
+                            let noPunct = b.text.replace(/^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$/g, "").trim().toLowerCase();
+                            trans = dict[noPunct] || '-';
+                        }}
+                        
+                        document.getElementById('whisper-body').innerHTML = "<div style='text-align: center; font-size: 15.5px;'>🇫🇷 <b>" + b.text + "</b> &nbsp;➔&nbsp; " + targetFlag + " <b>" + trans + "</b></div>";
                         document.getElementById('whisper-card').style.display = 'block';
+                        document.getElementById('whisper-card').dataset.type = 'word';
+                        
                         window.speechSynthesis.cancel(); 
                         const u = new SpeechSynthesisUtterance(b.text); u.lang = 'fr-FR'; u.rate = speeds[speedIdx]; window.speechSynthesis.speak(u);
-                        timer = setTimeout(dismissCard, 4000);
+                        timer = setTimeout(dismissCard, 4500);
                     }};
                     document.getElementById('boxes-layer').appendChild(d);
                 }});
@@ -976,11 +1078,18 @@ elif st.session_state.reading_mode:
 
             function toggleTranslation() {{
                 clearTimeout(timer);
-                const tText = allPages[currentIndex].full_trans || "...";
-                if (document.getElementById('whisper-card').style.display === 'block') dismissCard();
-                else {{ 
-                    document.getElementById('whisper-body').innerHTML = `<div style="color: #93c5fd; margin-bottom: 6px;">📝 {T('zen_page_trans')}</div><div>${{tText}}</div>`;
-                    document.getElementById('whisper-card').style.display = 'block'; 
+                const tText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : "{T('zen_loading_trans')}";
+                const card = document.getElementById('whisper-card');
+                
+                if (card.style.display === 'block' && card.dataset.type === 'page') {{
+                    dismissCard();
+                }} else {{ 
+                    document.getElementById('whisper-body').innerHTML = `
+                        <div style="font-size: 13.5px; font-weight: 600; color: #93c5fd; margin-bottom: 6px;">📝 {T('zen_page_trans')} (${{targetFlag}})</div>
+                        <div style="font-size: 15px; color: #f8fafc; text-align: left; line-height: 1.65; max-height: 40vh; overflow-y: auto;">${{tText}}</div>
+                    `;
+                    card.style.display = 'block'; 
+                    card.dataset.type = 'page';
                 }}
             }}
 
@@ -1000,6 +1109,9 @@ elif st.session_state.reading_mode:
             function stopKaraoke() {{ isPlaying = false; window.speechSynthesis.cancel(); document.getElementById('btn-karaoke').classList.remove('active'); document.getElementById('k-text').innerText = "{T('zen_listen')}"; document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); }}
             
             window.addEventListener('keydown', (e) => {{ if (e.key === 'ArrowRight') nextPage(); if (e.key === 'ArrowLeft') prevPage(); }});
+            let touchStartX = 0;
+            window.addEventListener('touchstart', (e) => {{ touchStartX = e.changedTouches[0].screenX; }}, {{passive: true}});
+            window.addEventListener('touchend', (e) => {{ let diff = e.changedTouches[0].screenX - touchStartX; if (diff < -50) nextPage(); if (diff > 50) prevPage(); }}, {{passive: true}});
             loadPage(0);
         </script>
     </body>
@@ -1008,7 +1120,7 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI
+# 6. DÜZENLEYİCİ EKRANI (ADMIN)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
@@ -1077,7 +1189,7 @@ else:
     with col_thanks:
         if st.button(T("thanks_btn"), use_container_width=True): record_thanks(st.session_state.user_email); st.toast(T("thanks_success"))
     with col_info2:
-        new_lang = st.selectbox("Dil", options=list(LANGUAGES.keys()), format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}", index=list(LANGUAGES.keys()).index(st.session_state.app_lang), label_visibility="collapsed")
+        new_lang = st.selectbox("Dil", options=list(LANGUAGES.keys()), format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}", index=list(LANGUAGES.keys()).index(st.session_state.app_lang) if st.session_state.app_lang in LANGUAGES else 0, label_visibility="collapsed")
         if new_lang != st.session_state.app_lang: st.session_state.app_lang = new_lang; st.rerun()
     with col_info3:
         if st.button(T("logout"), use_container_width=True): st.session_state.logged_in = False; st.rerun()
@@ -1153,7 +1265,7 @@ else:
                     extracted_pages = []
                     for file in upl_files:
                         b_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
-                        if split_spreads and (b_img.width / b_img.height) > 1.05:
+                        if split_spreads and (b_img.width / base_img.height) > 1.05:
                             extracted_pages.append(process_single_image(b_img.crop((0, 0, b_img.width // 2, b_img.height))))
                             extracted_pages.append(process_single_image(b_img.crop((b_img.width // 2, 0, b_img.width, b_img.height))))
                         else: extracted_pages.append(process_single_image(b_img))
@@ -1170,7 +1282,7 @@ else:
         """, unsafe_allow_html=True
     )
     
-    t_title = translate_ui_text(T("miti_title"), st.session_state.app_lang)
+    t_title = translate_turkish_to_target(T("miti_title"), st.session_state.app_lang)
     img_data_uri = get_ataturk_img_data()
     
     col_img1, col_img2, col_img3 = st.columns([1, 1, 1])
