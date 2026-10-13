@@ -22,6 +22,18 @@ try:
 except ImportError:
     GSHEETS_INSTALLED = False
 
+try:
+    import fitz  # PyMuPDF
+    PDF_SUPPORT = True
+except ImportError:
+    PDF_SUPPORT = False
+
+try:
+    from streamlit_cropper import st_cropper
+    CROPPER_SUPPORT = True
+except ImportError:
+    CROPPER_SUPPORT = False
+
 st.set_page_config(
     page_title="Fransızca Hikaye Kütüphanesi",
     page_icon="📚",
@@ -152,9 +164,9 @@ UI_TRANSLATIONS = {
         "subtitle": "Entdecken Sie französische Geschichten & lernen Sie gemeinsam",
         "created_by": "Diese App wurde von Tolga Küreç (Vater von Timuçin & Teoman) erstellt",
         "purpose_title": "🎯 Zweck der App",
-        "purpose_text": "Diese Bibliothek wurde entwickelt, damit nicht französischsprachige Familien beim Vorlesen qualitativ hochwertige und produktive Zeit mit ihren Kindern verbringen können. Sie hilft Eltern dabei, die Handlung zu verstehen und die französische Aussprache zu üben.",
+        "purpose_text": "Diese Bibliothek wurde entwickelt, damit nicht französischsprachige Familien beim Vorlesen qualitativ hochwertige Zeit mit ihren Kindern verbringen können.",
         "usage_title": "💡 Wie funktioniert es?",
-        "usage_text": "1. Wählen Sie ein Buch aus der Bibliothek aus und öffnen Sie es.\n2. Tippen Sie auf Wörter auf der Seite, um die französische Aussprache zu hören und die Übersetzung zu sehen.\n3. Verwenden Sie 'Laut vorlesen', um der gesamten Seite fließend zu folgen.\n4. Nutzen Sie 'Seitenübersetzung', um die Inhaltsangabe zu lesen.",
+        "usage_text": "1. Wählen Sie ein Buch aus und öffnen Sie es.\n2. Tippen Sie auf Wörter für Aussprache und Übersetzung.\n3. Nutzen Sie 'Laut vorlesen'.\n4. Nutzen Sie 'Seitenübersetzung'.",
         "email_label": "Ihre E-Mail-Adresse:",
         "login_btn": "Anmelden",
         "email_warn": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
@@ -174,9 +186,9 @@ UI_TRANSLATIONS = {
         "save_and_read": "🚀 Speichern & Lesen",
         "exit_editor": "✕ Verlassen",
         "split_page_btn": "✂️ Doppelseite teilen (Links & Rechts)",
-        "split_success": "Seite erfolgreich in links und rechts geteilt!",
-        "saving_db": "Speichern in der Datenbank...",
-        "ocr_processing": "Bilder werden gescannt...",
+        "split_success": "Seite erfolgreich geteilt!",
+        "saving_db": "Speichern...",
+        "ocr_processing": "Verarbeitung...",
         "reading_lang_label": "Lese- & Übersetzungssprache:",
         "zen_close": "✕ Schließen",
         "zen_page": "Seite",
@@ -190,9 +202,9 @@ UI_TRANSLATIONS = {
         "subtitle": "Explora cuentos en francés y aprendan juntos",
         "created_by": "Esta aplicación fue creada por Tolga Küreç (Padre de Timuçin y Teoman)",
         "purpose_title": "🎯 Propósito de la aplicación",
-        "purpose_text": "Esta biblioteca está diseñada para que las familias que no hablan francés pasen tiempo de calidad con sus hijos mientras leen. Ayuda a los padres a comprender la historia y los guía con la pronunciación en francés.",
+        "purpose_text": "Esta biblioteca está diseñada para que las familias pasen tiempo de calidad con sus hijos mientras leen.",
         "usage_title": "💡 ¿Cómo se usa?",
-        "usage_text": "1. Seleccione un libro de la biblioteca y ábralo.\n2. Toque las palabras en la página para escuchar la pronunciación y ver la traducción.\n3. Use 'Leer en voz alta' para escuchar toda la página.\n4. Use 'Traducción de página' para leer el significado de la historia.",
+        "usage_text": "1. Seleccione un libro y ábralo.\n2. Toque las palabras para escuchar la pronunciación y ver la traducción.\n3. Use 'Leer en voz alta'.\n4. Use 'Traducción de página'.",
         "email_label": "Su correo electrónico:",
         "login_btn": "Iniciar sesión",
         "email_warn": "Por favor, introduzca un correo electrónico válido.",
@@ -213,24 +225,24 @@ UI_TRANSLATIONS = {
         "exit_editor": "✕ Salir",
         "split_page_btn": "✂️ Dividir página doble (Izquierda y Derecha)",
         "split_success": "¡Página dividida con éxito!",
-        "saving_db": "Guardando en la base de datos...",
-        "ocr_processing": "Escaneando imágenes...",
+        "saving_db": "Guardando...",
+        "ocr_processing": "Escaneando...",
         "reading_lang_label": "Idioma de traducción:",
         "zen_close": "✕ Cerrar",
         "zen_page": "Página",
         "zen_listen": "Leer en voz alta",
         "zen_stop": "Detener",
         "zen_page_trans": "Traducción de página",
-        "zen_loading_trans": "Preparando la traducción..."
+        "zen_loading_trans": "Preparando traducción..."
     },
     "ru": {
         "title": "📚 Библиотека французских сказок",
         "subtitle": "Открывайте французские сказки и учитесь вместе",
         "created_by": "Это приложение создал Толга Кюреч (отец Тимучина и Теомана)",
         "purpose_title": "🎯 Цель приложения",
-        "purpose_text": "Эта библиотека создана для того, чтобы семьи, не говорящие по-французски, могли с пользой проводить время за чтением с детьми. Она помогает родителям понять сюжет и освоить французское произношение.",
+        "purpose_text": "Эта библиотека создана для того, чтобы семьи могли с пользой проводить время за чтением с детьми.",
         "usage_title": "💡 Как использовать?",
-        "usage_text": "1. Выберите книгу из библиотеки и откройте ее.\n2. Нажимайте на слова, чтобы услышать французское произношение и увидеть перевод.\n3. Кнопка 'Слушать вслух' прочитает всю страницу.\n4. Кнопка 'Перевод страницы' покажет полный смысл текста.",
+        "usage_text": "1. Выберите книгу и откройте ее.\n2. Нажимайте на слова для произношения и перевода.\n3. Кнопка 'Слушать вслух'.\n4. Кнопка 'Перевод страницы'.",
         "email_label": "Ваш Email:",
         "login_btn": "Войти",
         "email_warn": "Пожалуйста, введите действительный Email.",
@@ -251,8 +263,8 @@ UI_TRANSLATIONS = {
         "exit_editor": "✕ Выйти",
         "split_page_btn": "✂️ Разделить двойную страницу (Левая и Правая)",
         "split_success": "Страница успешно разделена!",
-        "saving_db": "Сохранение в базу данных...",
-        "ocr_processing": "Сканирование изображений...",
+        "saving_db": "Сохранение...",
+        "ocr_processing": "Обработка...",
         "reading_lang_label": "Язык чтения и перевода:",
         "zen_close": "✕ Закрыть",
         "zen_page": "Страница",
@@ -284,13 +296,14 @@ if "editor_pages" not in st.session_state: st.session_state.editor_pages = []
 if "editor_book_title" not in st.session_state: st.session_state.editor_book_title = ""
 if "editor_orig_book_id" not in st.session_state: st.session_state.editor_orig_book_id = None
 if "editor_page_idx" not in st.session_state: st.session_state.editor_page_idx = 0
+if "staged_camera_pages" not in st.session_state: st.session_state.staged_camera_pages = []
 
 def T(key):
     lang = st.session_state.app_lang if st.session_state.app_lang in UI_TRANSLATIONS else "tr"
     return UI_TRANSLATIONS[lang].get(key, UI_TRANSLATIONS["tr"].get(key, key))
 
 # ==========================================
-# 1. GOOGLE SHEETS ENTEGRASYONU & ANAHTAR ONARIMI
+# 1. GOOGLE SHEETS ENTEGRASYONU
 # ==========================================
 def clean_private_key(key_str):
     if not key_str or not isinstance(key_str, str):
@@ -1136,7 +1149,7 @@ elif st.session_state.editor_mode:
                 <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px;" /></div>"""
             st.markdown(img_html, unsafe_allow_html=True)
 
-            with st.expander(T("add_tab")):
+            with st.expander("➕ Tek Sayfa Ekle"):
                 new_single_file = st.file_uploader("Ek Sayfa Seç (PNG/JPG):", type=["png", "jpg", "jpeg"], key="add_new_p")
                 if new_single_file and st.button("Taramaya Ekle"):
                     b_img = ImageOps.exif_transpose(Image.open(new_single_file)).convert("RGB")
@@ -1280,12 +1293,132 @@ else:
 
     if tab_ekle:
         with tab_ekle:
-            book_title_input = st.text_input("Kitabın Adı (Örn: Trois Petits Cochons):", value="Yeni Kitap")
-            uploaded_files = st.file_uploader("Kitap sayfalarını seçin (PNG, JPG):", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+            st.markdown("### 📚 Yeni Kitap Oluştur & Sayfa Aktar")
+            book_title_input = st.text_input("Kitabın Adı:", value="Yeni Kitap")
             split_spreads = st.checkbox("📖 Çift Sayfa Çekimlerini Otomatik İkiye Böl", value=True)
 
-            if uploaded_files:
-                if st.button("⚡ Taramayı Başlat & Düzenleyiciye Aktar", type="primary", use_container_width=True):
+            upload_mode = st.radio(
+                "Yükleme Yöntemini Seçin:",
+                ["📄 Taranmış PDF Yükle (Önerilen)", "📸 Kameradan Çek & Kırp (Canlı Sayfa)", "📁 Galeriden / Dosyadan Çoklu Fotoğraf"],
+                horizontal=True
+            )
+
+            # YÖNTEM 1: PDF YÜKLEME
+            if upload_mode == "📄 Taranmış PDF Yükle (Önerilen)":
+                if not PDF_SUPPORT:
+                    st.error("PyMuPDF kütüphanesi henüz yüklenmemiş. Lütfen requirements.txt dosyasını kontrol edin.")
+                else:
+                    uploaded_pdf = st.file_uploader("Kitabın PDF dosyasını seçin:", type=["pdf"])
+                    if uploaded_pdf and st.button("⚡ PDF'i Çözümle & Düzenleyiciye Aktar", type="primary", use_container_width=True):
+                        try:
+                            pdf_doc = fitz.open(stream=uploaded_pdf.read(), filetype="pdf")
+                            total_pages = len(pdf_doc)
+                            extracted_pages = []
+                            p_bar = st.progress(0)
+                            s_txt = st.empty()
+
+                            for p_no in range(total_pages):
+                                s_txt.text(f"PDF Sayfası İşleniyor: {p_no + 1} / {total_pages}...")
+                                pdf_page = pdf_doc[p_no]
+                                pix = pdf_page.get_pixmap(dpi=150)
+                                base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
+
+                                sub_images = []
+                                if split_spreads and (base_img.width / base_img.height) > 1.05:
+                                    mid_x = base_img.width // 2
+                                    sub_images.append(base_img.crop((0, 0, mid_x, base_img.height)))
+                                    sub_images.append(base_img.crop((mid_x, 0, base_img.width, base_img.height)))
+                                else:
+                                    sub_images.append(base_img)
+
+                                for sub_img in sub_images:
+                                    page_obj = process_single_image(sub_img)
+                                    extracted_pages.append(page_obj)
+                                    del sub_img
+
+                                del base_img
+                                del pix
+                                gc.collect()
+                                p_bar.progress((p_no + 1) / total_pages)
+
+                            pdf_doc.close()
+                            s_txt.text("PDF başarıyla tamamlandı! Düzenleyiciye aktarılıyor...")
+                            st.session_state.editor_pages = extracted_pages
+                            st.session_state.editor_book_title = book_title_input.strip() or "İsimsiz Kitap"
+                            st.session_state.editor_orig_book_id = None
+                            st.session_state.editor_page_idx = 0
+                            st.session_state.editor_mode = True
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"PDF işleme hatası: {e}")
+
+            # YÖNTEM 2: KAMERADAN ÇEK & CANLI KIRP
+            elif upload_mode == "📸 Kameradan Çek & Kırp (Canlı Sayfa)":
+                st.caption("Her sayfayı telefonunuzla çekip kenarlarını kırparak sırayla sepete ekleyebilirsiniz.")
+                cam_pic = st.camera_input("Sayfanın Fotoğrafını Çekin")
+                
+                # Manuel dosya yükleyip tek sayfa kırpmak isteyenler için alternatif:
+                alt_file = st.file_uploader("veya Telefondan Tek Fotoğraf Seçin:", type=["png", "jpg", "jpeg"], key="single_crop_file")
+                active_pic = cam_pic if cam_pic else alt_file
+
+                if active_pic:
+                    raw_crop_img = ImageOps.exif_transpose(Image.open(active_pic)).convert("RGB")
+                    st.write("📐 **Sayfayı Çevreleyen Çerçeveyi Ayarlayın:**")
+                    
+                    if CROPPER_SUPPORT:
+                        cropped_img = st_cropper(
+                            raw_crop_img,
+                            realtime_update=True,
+                            box_color='#2563eb',
+                            aspect_ratio=None
+                        )
+                    else:
+                        st.warning("streamlit-cropper kütüphanesi eksik, kırpma yapılmadan devam ediliyor.")
+                        cropped_img = raw_crop_img
+
+                    if st.button("✂️ Bu Kırpılmış Sayfayı Sepete Ekle", type="secondary"):
+                        buf = io.BytesIO()
+                        cropped_img.save(buf, format="JPEG", quality=85)
+                        st.session_state.staged_camera_pages.append(buf.getvalue())
+                        st.success(f"Sayfa eklendi! Toplam sepetteki sayfa sayısı: {len(st.session_state.staged_camera_pages)}")
+
+                st.divider()
+                staged_count = len(st.session_state.staged_camera_pages)
+                st.markdown(f"📋 **Sepette Bekleyen Sayfa Sayısı:** `{staged_count}`")
+                
+                if staged_count > 0:
+                    col_cam1, col_cam2 = st.columns([2, 1])
+                    with col_cam1:
+                        if st.button(f"⚡ Sepetteki {staged_count} Sayfayı OCR ile Tara & Kitaba Dönüştür", type="primary", use_container_width=True):
+                            extracted_pages = []
+                            p_bar = st.progress(0)
+                            s_txt = st.empty()
+                            
+                            for c_idx, b_data in enumerate(st.session_state.staged_camera_pages):
+                                s_txt.text(f"Sayfa İşleniyor: {c_idx + 1} / {staged_count}...")
+                                c_pil = Image.open(io.BytesIO(b_data)).convert("RGB")
+                                page_obj = process_single_image(c_pil)
+                                extracted_pages.append(page_obj)
+                                del c_pil
+                                gc.collect()
+                                p_bar.progress((c_idx + 1) / staged_count)
+
+                            st.session_state.staged_camera_pages = []  # Sepeti temizle
+                            st.session_state.editor_pages = extracted_pages
+                            st.session_state.editor_book_title = book_title_input.strip() or "İsimsiz Kitap"
+                            st.session_state.editor_orig_book_id = None
+                            st.session_state.editor_page_idx = 0
+                            st.session_state.editor_mode = True
+                            st.rerun()
+                    with col_cam2:
+                        if st.button("🗑️ Sepeti Temizle", use_container_width=True):
+                            st.session_state.staged_camera_pages = []
+                            st.rerun()
+
+            # YÖNTEM 3: ÇOKLU FOTOĞRAF YÜKLEME
+            else:
+                uploaded_files = st.file_uploader("Kitap sayfalarını seçin (PNG, JPG):", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+                if uploaded_files and st.button("⚡ Taramayı Başlat & Düzenleyiciye Aktar", type="primary", use_container_width=True):
                     extracted_pages = []
                     total_files = len(uploaded_files)
                     progress_bar = st.progress(0)
