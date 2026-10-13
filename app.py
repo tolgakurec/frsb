@@ -44,69 +44,80 @@ st.set_page_config(
 # ==========================================
 # 0. HİKAYE METİNLERİ VE ARAYÜZ ÇEVİRİLERİ
 # ==========================================
-STORY_TR = """Sofya’da Kalan Gençlik: Bir İmparatorluğun İhtişamı ve Yarım Kalan Bir Aşk
-
-Yıl 1914. Balkan Savaşları'nın barut kokusu henüz dağılmamış, Avrupa'nın üzerinde yaklaşan Büyük Savaş'ın kara bulutları toplanırken, Sofya'nın soğuk sokakları o gece Askerî Kulüp'ten yükselen vals ezgileriyle ısınıyordu. 11 Mayıs gecesi, Bulgar Kralı Ferdinand'ın ev sahipliğinde düzenlenen bu görkemli maskeli balo, sıradan bir diplomatik davet değil; tarihin en zarif meydan okumalarından birine ve son nefese kadar unutulmayacak, kalpleri sızlatan bir aşka sahne olacaktı.
-
-Salonda Bir Yeniçeri Ağası
-Avrupalı diplomatlar, generaller ve elitler frakları, smokinleri ve şatafatlı elbiseleriyle salonu doldurmuşken, devasa kapılar ağır ağır açıldı. İçeriye adım atan adam, henüz 32 yaşında genç ve karizmatik bir Osmanlı Kurmay Yarbayı olan Mustafa Kemal'di. Ancak o gece üzerinde alışıldık bir üniforma yoktu. Balkan Savaşları'nda zedelenen milletinin gururunu ayağa kaldırmak istercesine, İstanbul'dan, Harbiye Askerî Müzesi'nden gizlice getirttiği orijinal bir Yeniçeri Ağası kıyafetiyle salona girmişti. Börk serpuşu, gösterişli kuşağı ve belindeki kılıcıyla adeta geçmişin kudretli imparatorluğunun ete kemiğe bürünmüş haliydi.
-
-O an salona derin, büyüleyici bir sessizlik çöktü; ardından bu sessizlik yerini devasa bir hayranlığa bıraktı. İşte yanda yer alan ve o tarihi balodaki büyüleyici anı yansıtan kareden de hissedilebileceği üzere, bu görkemli kostümün içindeki genç ataşe herkesi büyülemiş ve gecenin yıldızı olmuştu.
-
-Mavi Tuna'nın Sularında Süzülen Bir Aşk: "Bulgar Gülü" Miti
-Bu ihtişamlı gece, Mustafa Kemal için sadece bir diplomatik zafer değil, kalbinin derinliklerine kazınan bir sevdanın da en güzel sahnesiydi. Gecenin ilerleyen saatlerinde Johann Strauss'un "Güzel Mavi Tuna" valsi çalmaya başladığında, Mustafa Kemal Bulgaristan’ın eski Savunma Bakanı General Kovaçev’in kızı Dimitrina Kovaçeva'ya, namıdiğer "Miti"ye doğru ilerledi. İsviçre'de eğitim almış, yüksek kültürü ve eşsiz güzelliğiyle "Bulgar Gülü" olarak anılan Miti ile Mustafa Kemal dansa kalktığında, Sofya sosyetesi için zaman adeta durdu.
-
-Bu dans, aslında alevlenmiş bir aşkın toplum önündeki cesur bir ilanıydı. Boris Parkı'nda yaptıkları uzun romantik yürüyüşlerin, buz pateni pistindeki gizli bakışmaların taçlandığı andı. Mustafa Kemal, bu büyük aşka teslim olmuş ve Miti'ye evlenme teklif etmiş, genç kızdan tereddütsüz bir "Evet" almıştı.
-
-Vatan Borcu ve Kırık Bir Kalp
-Fakat tarih, büyük aşkları genellikle büyük trajedilerle sınar. İki eski düşman millet... Biri Çatalca'ya kadar ilerlemiş bir Bulgar generalinin kızı, diğeri ise vatanının kurtuluşunu omuzlarında taşıyan bir Osmanlı subayı. General Kovaçev, din ve siyaset duvarlarını örerek bu aşka iki kez kesin bir dille karşı çıktı. General, kızını apar topar bir mühendisle nişanlayıp bu sevdayı koparıp atmaya çalışırken, Mustafa Kemal'in içindeki fırtınalar, yalnız geçirdiği günlerde dostu Salih Bozok'a yazdığı mektuptaki şu dizelere dökülüyordu:
-
-"Hayat kısacık... birazcık umut, birazcık aşk ve sonra elveda..."
-
-Genç yarbay, Madam Corinne'e yazdığı mektuplarda ise acısını ve yaralı kalbini büyük bir ideale gömdüğünü fısıldıyordu: "Benim ihtiraslarım var, hem de pek büyükleri... Ben bu ihtirasların gerçekleşmesini vatanıma büyük bir hizmet borcu olarak görüyorum." Mustafa Kemal, yaklaşan cihan harbinin ayak seslerini duyuyor ve vatanı için kendi kalbinden vazgeçiyordu. Savaş tamtamları çalmaya başladığında, yarım kalan aşkını Sofya'da bırakarak Çanakkale Cephesi'ne, dünya tarihini değiştireceği o destana doğru yola çıktı.
-
-"Gençliğimi Bıraktım Sofya'da..."
-Yıllar su gibi aktı. Mustafa Kemal bir imparatorluğun küllerinden yepyeni bir cumhuriyet kurup dünyanın saygı duyduğu bir lider oldu. Miti ise ailesinin zoruyla evlenip saygın bir eş ve anne olarak hayatına devam etti. Ancak ikisinin de kalbindeki o ince sızı, o Mavi Tuna valsinde yarım kalan melodi hiç susmadı. Miti, yıllarca Atatürk'ün her başarısını Bulgar gazetelerinden yaşlı gözlerle takip etti. Atatürk ise yıllar sonra Ankara'da o günleri anımsadığında, içindeki sönmeyen hüznü şu sözlerle itiraf edecekti:
-
-"Bir kız sevdim ataşeyken, vermediler. Gençliğimi bıraktım Sofya'da..."
-
-Bu destansı sevdanın son perdesi ise, Ağustos 1966'da, sofya rüzgarlarından çok uzakta kapandı. Miti, ölüm döşeğinde son nefesini vermeden hemen önce, başucunda bekleyen kız kardeşine şu sarsıcı cümleyi fısıldadı:
-
-"Biliyor musun? Rüyamda onu gördüm. Sanıyorum ki nihayet Mustafa Kemal’e kavuşacağım..."
-
-Kıranlık Kulüp'teki o büyülü vals ve ölümsüz aşk, bugün tarihin sayfalarında sadece askeri bir dehanın değil; vatanı için en derin sevgisinden vazgeçmek zorunda kalan bir devin en insani, en hüzünlü hatırası olarak yankılanmaya devam ediyor."""
-
-STORY_FR = """La Jeunesse laissée à Sofia : La splendeur d'un empire et un amour inachevé
-
-L'année 1914. L'odeur de poudre des guerres balkaniques ne s'était pas encore dissipée et les sombres nuages de la Grande Guerre imminente s'amoncelaient sur l'Europe, tandis que les rues froides de Sofia étaient réchauffées par les airs de valse s'échappant du Club Militaire ce soir-là. Ce grand bal masqué, organisé par le roi Ferdinand de Bulgarie dans la nuit du 11 mai, n'était pas une simple invitation diplomatique ; il allait être le théâtre de l'un des défis les plus élégants de l'histoire et d'un amour déchirant qui ne serait jamais oublié jusqu'au dernier souffle.
-
-Un Agha Janissaire dans le Salon
-Alors que les diplomates, les généraux et l'élite européenne remplissaient la salle avec leurs queues-de-pie, leurs smokings et leurs robes flamboyantes, les portes géantes s'ouvrirent lentement. L'homme qui y entra était Mustafa Kemal, un jeune et charismatique lieutenant-colonel d'état-major ottoman âgé de 32 ans à peine. Cependant, il ne portait pas d'uniforme habituel ce soir-là. Comme pour relever la fierté de sa nation ébranlée par les guerres des Balkans, il était entré dans la salle avec une tenue originale d'Agha janissaire qu'il avait secrètement ramenée d'Istanbul, du Musée militaire de Harbiye. Avec sa coiffe en feutre, sa ceinture ostentatoire et l'épée à sa taille, il incarnait le puissant empire du passé.
-
-À ce moment-là, un silence profond et fascinant tomba sur la salle ; puis ce silence fit place à une immense admiration. Comme on peut le voir sur la photo ci-contre qui reflète ce moment magique de ce bal historique, le jeune attaché dans ce magnifique costume avait fasciné tout le monde et était devenu la star de la soirée.
-
-Un amour planant sur les eaux du Danube bleu : Miti, la "Rose Bulgare"
-Cette magnifique soirée ne fut pas seulement un triomphe diplomatique pour Mustafa Kemal, ce fut aussi la plus belle scène d'un amour gravé au fond de son cœur. Plus tard dans la nuit, lorsque la valse du "Beau Danube bleu" de Johann Strauss a commencé à jouer, Mustafa Kemal s'est avancé vers Dimitrina Kovacheva, fille de l'ancien ministre bulgare de la Défense, le général Kovachev, alias "Miti". Éduquée en Suisse et connue sous le nom de "Rose bulgare" pour sa grande culture et sa beauté inégalée, lorsque Miti et Mustafa Kemal se sont levés pour danser, le temps s'est arrêté pour la haute société de Sofia.
-
-Cette danse était en fait la déclaration courageuse devant la société d'un amour enflammé. C'était le couronnement de leurs longues promenades romantiques dans le parc Boris et de leurs regards secrets sur la patinoire. Mustafa Kemal, s'abandonnant à ce grand amour, avait demandé Miti en mariage et avait reçu un "Oui" sans hésitation de la jeune fille.
-
-Le Devoir de la Patrie et un Cœur Brisé
-Mais l'histoire met souvent les grands amours à l'épreuve des grandes tragédies. Deux anciennes nations ennemies... L'une est la fille d'un général bulgare qui a avancé jusqu'à Çatalca, l'autre est un officier ottoman qui porte la libération de sa patrie sur ses épaules. Le général Kovachev s'est opposé à cet amour à deux reprises avec un ton catégorique, construisant des murs de religion et de politique. Alors que le général tentait d'arracher cet amour en fiançant précipitamment sa fille à un ingénieur, les tempêtes intérieures de Mustafa Kemal se déversaient dans les lignes suivantes d'une lettre qu'il écrivit à son ami Salih Bozok pendant ses jours de solitude :
-
-"La vie est très courte... un peu d'espoir, un peu d'amour et puis adieu..."
-
-Dans ses lettres à Madame Corinne, le jeune lieutenant-colonel murmurait qu'il enterrait sa douleur et son cœur blessé dans un grand idéal : "J'ai des ambitions, et des très grandes... Je considère la réalisation de ces ambitions comme un grand devoir envers ma patrie." Mustafa Kemal entendait les bruits de pas de la guerre mondiale imminente et renonçait à son propre cœur pour sa patrie. Lorsque les tambours de guerre commencèrent à battre, il laissa son amour inachevé à Sofia et partit pour le front des Dardanelles, pour l'épopée où il allait changer l'histoire du monde.
-
-"J'ai laissé ma jeunesse à Sofia..."
-Les années passèrent comme de l'eau. Mustafa Kemal a construit une toute nouvelle république sur les cendres d'un empire et est devenu un leader respecté du monde entier. Miti, en revanche, a été forcée de se marier par sa famille et a poursuivi sa vie en tant qu'épouse et mère respectée. Mais la fine douleur dans leurs deux cœurs, la mélodie inachevée de cette valse du Danube bleu ne s'est jamais tue. Pendant des années, Miti a suivi chaque succès d'Atatürk dans les journaux bulgares, les larmes aux yeux. Atatürk, d'autre part, lorsqu'il s'est souvenu de ces jours à Ankara des années plus tard, confessait sa tristesse inextinguible avec ces mots :
-
-"J'ai aimé une fille quand j'étais attaché, ils ne me l'ont pas donnée. J'ai laissé ma jeunesse à Sofia..."
-
-Le dernier acte de cet amour épique s'est clos en août 1966, loin des vents de Sofia. Miti, juste avant de rendre son dernier souffle sur son lit de mort, a murmuré cette phrase bouleversante à sa sœur qui l'attendait à son chevet :
-
-"Tu sais ? Je l'ai vu dans mon rêve. Je pense que je vais enfin retrouver Mustafa Kemal..."
-
-Cette valse magique au Club et cet amour immortel continuent de résonner aujourd'hui dans les pages de l'histoire, non seulement comme le souvenir d'un génie militaire, mais aussi comme le souvenir le plus humain et le plus triste d'un géant qui a dû renoncer à son amour le plus profond pour sa patrie."""
+STORY_PARAGRAPHS = [
+    {
+        "tr": "Sofya’da Kalan Gençlik: Bir İmparatorluğun İhtişamı ve Yarım Kalan Bir Aşk",
+        "fr": "La Jeunesse laissée à Sofia : La splendeur d'un empire et un amour inachevé"
+    },
+    {
+        "tr": "Yıl 1914. Balkan Savaşları'nın barut kokusu henüz dağılmamış, Avrupa'nın üzerinde yaklaşan Büyük Savaş'ın kara bulutları toplanırken, Sofya'nın soğuk sokakları o gece Askerî Kulüp'ten yükselen vals ezgileriyle ısınıyordu. 11 Mayıs gecesi, Bulgar Kralı Ferdinand'ın ev sahipliğinde düzenlenen bu görkemli maskeli balo, sıradan bir diplomatik davet değil; tarihin en zarif meydan okumalarından birine ve son nefese kadar unutulmayacak, kalpleri sızlatan bir aşka sahne olacaktı.",
+        "fr": "L'année 1914. L'odeur de poudre des guerres balkaniques ne s'était pas encore dissipée et les sombres nuages de la Grande Guerre imminente s'amoncelaient sur l'Europe, tandis que les rues froides de Sofia étaient réchauffées par les airs de valse s'échappant du Club Militaire ce soir-là. Ce grand bal masqué, organisé par le roi Ferdinand de Bulgarie dans la nuit du 11 mai, n'était pas une simple invitation diplomatique ; il allait être le théâtre de l'un des défis les plus élégants de l'histoire et d'un amour déchirant qui ne serait jamais oublié jusqu'au dernier souffle."
+    },
+    {
+        "tr": "Salonda Bir Yeniçeri Ağası",
+        "fr": "Un Agha Janissaire dans le Salon"
+    },
+    {
+        "tr": "Avrupalı diplomatlar, generaller ve elitler frakları, smokinleri ve şatafatlı elbiseleriyle salonu doldurmuşken, devasa kapılar ağır ağır açıldı. İçeriye adım atan adam, henüz 32 yaşında genç ve karizmatik bir Osmanlı Kurmay Yarbayı olan Mustafa Kemal'di. Ancak o gece üzerinde alışıldık bir üniforma yoktu. Balkan Savaşları'nda zedelenen milletinin gururunu ayağa kaldırmak istercesine, İstanbul'dan, Harbiye Askerî Müzesi'nden gizlice getirttiği orijinal bir Yeniçeri Ağası kıyafetiyle salona girmişti. Börk serpuşu, gösterişli kuşağı ve belindeki kılıcıyla adeta geçmişin kudretli imparatorluğunun ete kemiğe bürünmüş haliydi.",
+        "fr": "Alors que les diplomates, les généraux et l'élite européenne remplissaient la salle avec leurs queues-de-pie, leurs smokings et leurs robes flamboyantes, les portes géantes s'ouvrirent lentement. L'homme qui y entra était Mustafa Kemal, un jeune et charismatique lieutenant-colonel d'état-major ottoman âgé de 32 ans à peine. Cependant, il ne portait pas d'uniforme habituel ce soir-là. Comme pour relever la fierté de sa nation ébranlée par les guerres des Balkans, il était entré dans la salle avec une tenue originale d'Agha janissaire qu'il avait secrètement ramenée d'Istanbul, du Musée militaire de Harbiye. Avec sa coiffe en feutre, sa ceinture ostentatoire et l'épée à sa taille, il incarnait le puissant empire du passé."
+    },
+    {
+        "tr": "O an salona derin, büyüleyici bir sessizlik çöktü; ardından bu sessizlik yerini devasa bir hayranlığa bıraktı. İşte yanda yer alan ve o tarihi balodaki büyüleyici anı yansıtan kareden de hissedilebileceği üzere, bu görkemli kostümün içindeki genç ataşe herkesi büyülemiş ve gecenin yıldızı olmuştu.",
+        "fr": "À ce moment-là, un silence profond et fascinant tomba sur la salle ; puis ce silence fit place à une immense admiration. Comme on peut le voir sur la photo ci-contre qui reflète ce moment magique de ce bal historique, le jeune attaché dans ce magnifique costume avait fasciné tout le monde et était devenu la star de la soirée."
+    },
+    {
+        "tr": "Mavi Tuna'nın Sularında Süzülen Bir Aşk: 'Bulgar Gülü' Miti",
+        "fr": "Un amour planant sur les eaux du Danube bleu : Miti, la 'Rose Bulgare'"
+    },
+    {
+        "tr": "Bu ihtişamlı gece, Mustafa Kemal için sadece bir diplomatik zafer değil, kalbinin derinliklerine kazınan bir sevdanın da en güzel sahnesiydi. Gecenin ilerleyen saatlerinde Johann Strauss'un 'Güzel Mavi Tuna' valsi çalmaya başladığında, Mustafa Kemal Bulgaristan’ın eski Savunma Bakanı General Kovaçev’in kızı Dimitrina Kovaçeva'ya, namıdiğer 'Miti'ye doğru ilerledi. İsviçre'de eğitim almış, yüksek kültürü ve eşsiz güzelliğiyle 'Bulgar Gülü' olarak anılan Miti ile Mustafa Kemal dansa kalktığında, Sofya sosyetesi için zaman adeta durdu.",
+        "fr": "Cette magnifique soirée ne fut pas seulement un triomphe diplomatique pour Mustafa Kemal, ce fut aussi la plus belle scène d'un amour gravé au fond de son cœur. Plus tard dans la nuit, lorsque la valse du 'Beau Danube bleu' de Johann Strauss a commencé à jouer, Mustafa Kemal s'est avancé vers Dimitrina Kovacheva, fille de l'ancien ministre bulgare de la Défense, le général Kovachev, alias 'Miti'. Éduquée en Suisse et connue sous le nom de 'Rose bulgare' pour sa grande culture et sa beauté inégalée, lorsque Miti et Mustafa Kemal se sont levés pour danser, le temps s'est arrêté pour la haute société de Sofia."
+    },
+    {
+        "tr": "Bu dans, aslında alevlenmiş bir aşkın toplum önündeki cesur bir ilanıydı. Boris Parkı'nda yaptıkları uzun romantik yürüyüşlerin, buz pateni pistindeki gizli bakışmaların taçlandığı andı. Mustafa Kemal, bu büyük aşka teslim olmuş ve Miti'ye evlenme teklif etmiş, genç kızdan tereddütsüz bir 'Evet' almıştı.",
+        "fr": "Cette danse était en fait la déclaration courageuse devant la société d'un amour enflammé. C'était le couronnement de leurs longues promenades romantiques dans le parc Boris et de leurs regards secrets sur la patinoire. Mustafa Kemal, s'abandonnant à ce grand amour, avait demandé Miti en mariage et avait reçu un 'Oui' sans hésitation de la jeune fille."
+    },
+    {
+        "tr": "Vatan Borcu ve Kırık Bir Kalp",
+        "fr": "Le Devoir de la Patrie et un Cœur Brisé"
+    },
+    {
+        "tr": "Fakat tarih, büyük aşkları genellikle büyük trajedilerle sınar. İki eski düşman millet... Biri Çatalca'ya kadar ilerlemiş bir Bulgar generalinin kızı, diğeri ise vatanının kurtuluşunu omuzlarında taşıyan bir Osmanlı subayı. General Kovaçev, din ve siyaset duvarlarını örerek bu aşka iki kez kesin bir dille karşı çıktı. General, kızını apar topar bir mühendisle nişanlayıp bu sevdayı koparıp atmaya çalışırken, Mustafa Kemal'in içindeki fırtınalar, yalnız geçirdiği günlerde dostu Salih Bozok'a yazdığı mektuptaki şu dizelere dökülüyordu:",
+        "fr": "Mais l'histoire met souvent les grands amours à l'épreuve des grandes tragédies. Deux anciennes nations ennemies... L'une est la fille d'un général bulgare qui a avancé jusqu'à Çatalca, l'autre est un officier ottoman qui porte la libération de sa patrie sur ses épaules. Le général Kovachev s'est opposé à cet amour à deux reprises avec un ton catégorique, construisant des murs de religion et de politique. Alors que le général tentait d'arracher cet amour en fiançant précipitamment sa fille à un ingénieur, les tempêtes intérieures de Mustafa Kemal se déversaient dans les lignes suivantes d'une lettre qu'il écrivit à son ami Salih Bozok pendant ses jours de solitude :"
+    },
+    {
+        "tr": "'Hayat kısacık... birazcık umut, birazcık aşk ve sonra elveda...'",
+        "fr": "'La vie est très courte... un peu d'espoir, un peu d'amour et puis adieu...'"
+    },
+    {
+        "tr": "Genç yarbay, Madam Corinne'e yazdığı mektuplarda ise acısını ve yaralı kalbini büyük bir ideale gömdüğünü fısıldıyordu: 'Benim ihtiraslarım var, hem de pek büyükleri... Ben bu ihtirasların gerçekleşmesini vatanıma büyük bir hizmet borcu olarak görüyorum.' Mustafa Kemal, yaklaşan cihan harbinin ayak seslerini duyuyor ve vatanı için kendi kalbinden vazgeçiyordu. Savaş tamtamları çalmaya başladığında, yarım kalan aşkını Sofya'da bırakarak Çanakkale Cephesi'ne, dünya tarihini değiştireceği o destana doğru yola çıktı.",
+        "fr": "Dans ses lettres à Madame Corinne, le jeune lieutenant-colonel murmurait qu'il enterrait sa douleur et son cœur blessé dans un grand idéal : 'J'ai des ambitions, et des très grandes... Je considère la réalisation de ces ambitions comme un grand devoir envers ma patrie.' Mustafa Kemal entendait les bruits de pas de la guerre mondiale imminente et renonçait à son propre cœur pour sa patrie. Lorsque les tambours de guerre commencèrent à battre, il laissa son amour inachevé à Sofia et partit pour le front des Dardanelles, pour l'épopée où il allait changer l'histoire du monde."
+    },
+    {
+        "tr": "'Gençliğimi Bıraktım Sofya'da...'",
+        "fr": "'J'ai laissé ma jeunesse à Sofia...'"
+    },
+    {
+        "tr": "Yıllar su gibi aktı. Mustafa Kemal bir imparatorluğun küllerinden yepyeni bir cumhuriyet kurup dünyanın saygı duyduğu bir lider oldu. Miti ise ailesinin zoruyla evlenip saygın bir eş ve anne olarak hayatına devam etti. Ancak ikisinin de kalbindeki o ince sızı, o Mavi Tuna valsinde yarım kalan melodi hiç susmadı. Miti, yıllarca Atatürk'ün her başarısını Bulgar gazetelerinden yaşlı gözlerle takip etti. Atatürk ise yıllar sonra Ankara'da o günleri anımsadığında, içindeki sönmeyen hüznü şu sözlerle itiraf edecekti:",
+        "fr": "Les années passèrent comme de l'eau. Mustafa Kemal a construit une toute nouvelle république sur les cendres d'un empire et est devenu un leader respecté du monde entier. Miti, en revanche, a été forcée de se marier par sa famille et a poursuivi sa vie en tant qu'épouse et mère respectée. Mais la fine douleur dans leurs deux cœurs, la mélodie inachevée de cette valse du Danube bleu ne s'est jamais tue. Pendant des années, Miti a suivi chaque succès d'Atatürk dans les journaux bulgares, les larmes aux yeux. Atatürk, d'autre part, lorsqu'il s'est souvenu de ces jours à Ankara des années plus tard, confessait sa tristesse inextinguible avec ces mots :"
+    },
+    {
+        "tr": "'Bir kız sevdim ataşeyken, vermediler. Gençliğimi bıraktım Sofya'da...'",
+        "fr": "'J'ai aimé une fille quand j'étais attaché, ils ne me l'ont pas donnée. J'ai laissé ma jeunesse à Sofia...'"
+    },
+    {
+        "tr": "Bu destansı sevdanın son perdesi ise, Ağustos 1966'da, Sofya rüzgarlarından çok uzakta kapandı. Miti, ölüm döşeğinde son nefesini vermeden hemen önce, başucunda bekleyen kız kardeşine şu sarsıcı cümleyi fısıldadı:",
+        "fr": "Le dernier acte de cet amour épique s'est clos en août 1966, loin des vents de Sofia. Miti, juste avant de rendre son dernier souffle sur son lit de mort, a murmuré cette phrase bouleversante à sa sœur qui l'attendait à son chevet :"
+    },
+    {
+        "tr": "'Biliyor musun? Rüyamda onu gördüm. Sanıyorum ki nihayet Mustafa Kemal’e kavuşacağım...'",
+        "fr": "'Tu sais ? Je l'ai vu dans mon rêve. Je pense que je vais enfin retrouver Mustafa Kemal...'"
+    },
+    {
+        "tr": "Askerî Kulüp'teki o büyülü vals ve ölümsüz aşk, bugün tarihin sayfalarında sadece askeri bir dehanın değil; vatanı için en derin sevgisinden vazgeçmek zorunda kalan bir devin en insani, en hüzünlü hatırası olarak yankılanmaya devam ediyor.",
+        "fr": "Cette valse magique au Club et cet amour immortel continuent de résonner aujourd'hui dans les pages de l'histoire, non seulement comme le souvenir d'un génie militaire, mais aussi comme le souvenir le plus humain et le plus triste d'un géant qui a dû renoncer à son amour le plus profond pour sa patrie."
+    }
+]
 
 UI_TRANSLATIONS = {
     "tr": {
@@ -140,7 +151,7 @@ UI_TRANSLATIONS = {
         "zen_stop": "Durdur",
         "zen_page_trans": "Sayfa Çevirisi",
         "miti_title": "Sofya’da Kalan Gençlik: Bir İmparatorluğun İhtişamı ve Yarım Kalan Bir Aşk",
-        "miti_exit": "✕ Çıkış Yap",
+        "miti_exit": "✕ Çıkış / Exit",
         "listen_fr": "🔊 Fransızca Dinle",
         "listen_sys": "🔊 Türkçe Dinle",
         "stop_btn": "⏹ Durdur"
@@ -258,13 +269,24 @@ def translate_ui_text(text, target_lang):
             translated_parts = []
             if data and data[0]:
                 for s in data[0]:
-                    if s and s[0]:
-                        translated_parts.append(s[0])
+                    if s and s[0]: translated_parts.append(s[0])
             res_str = "".join(translated_parts).strip()
             if res_str: return res_str
         except Exception:
             continue
     return text
+
+def get_ataturk_img_data():
+    """Atatürk & Miti fotoğrafını yerel dosyadan veya güvenilir Base64'ten getirir"""
+    for fname in ["ataturk_miti.jpg", "atatürk ve miti.jpg", "ataturk_miti.png", "ataturk.jpg"]:
+        if os.path.exists(fname):
+            try:
+                with open(fname, "rb") as f:
+                    return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode("utf-8")
+            except:
+                pass
+    # Güvenilir Wikimedia / Direct Image Fallback
+    return "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg"
 
 # ==========================================
 # 1. GOOGLE SHEETS ENTEGRASYONU
@@ -532,32 +554,42 @@ if not st.session_state.logged_in:
             else: st.warning(T("email_warn"))
 
 # ==========================================
-# 4.1. MİTİ & ATATÜRK ANMA HİKAYESİ EKRANI (ÜÇ SÜTUNLU SABİT TASARIM + KINDLE OKUMA)
+# 4.1. MİTİ & ATATÜRK ANMA SAYFASI (ESKİZE BİREBİR UYGUN 3 SÜTUNLU TASARIM)
 # ==========================================
 elif st.session_state.miti_mode:
     target_lang = st.session_state.app_lang
-    t_title = translate_ui_text(T("miti_title"), target_lang)
-    t_story = translate_ui_text(STORY_TR, target_lang)
+    img_data_uri = get_ataturk_img_data()
     
+    # Paragrafları seçilen dile göre çevir
+    prepared_pairs = []
+    for p in STORY_PARAGRAPHS:
+        sys_text = translate_ui_text(p["tr"], target_lang) if target_lang != "tr" else p["tr"]
+        prepared_pairs.append({
+            "fr": p["fr"],
+            "sys": sys_text
+        })
+    story_json = json.dumps(prepared_pairs)
+
     st.markdown(
         """
         <style>
             [data-testid="stSidebar"], header, footer { display: none !important; }
-            .block-container { padding: 0 !important; margin: 0 !important; max-width: 100vw !important; height: 100vh !important; overflow: hidden !important; background: #000000 !important; }
+            .block-container { padding: 0 !important; margin: 0 !important; max-width: 100vw !important; height: 100vh !important; overflow: hidden !important; background: #080c14 !important; }
             iframe { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; border: none !important; z-index: 1 !important; }
             
-            #exit-btn-wrap {
-                position: fixed; top: 15px; right: 20px; z-index: 999999;
+            #top-exit-bar {
+                position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 999999;
             }
-            #exit-btn-wrap button {
-                background: rgba(15, 23, 42, 0.6) !important; backdrop-filter: blur(14px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: #f8fafc !important; border-radius: 25px !important; padding: 6px 18px !important; font-weight: bold !important; transition: all 0.3s ease !important; cursor: pointer;
+            #top-exit-bar button {
+                background: rgba(15, 23, 42, 0.75) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255, 255, 255, 0.25) !important; color: #f8fafc !important; border-radius: 25px !important; padding: 6px 24px !important; font-weight: bold !important; font-size: 14px !important; transition: all 0.25s ease !important; cursor: pointer;
             }
-            #exit-btn-wrap button:hover { background: #ef4444 !important; }
+            #top-exit-bar button:hover { background: #ef4444 !important; border-color: #ef4444 !important; transform: scale(1.04); }
         </style>
-        <div id="exit-btn-wrap"></div>
+        <div id="top-exit-bar"></div>
         """, unsafe_allow_html=True)
 
-    if st.button(T("miti_exit")):
+    # Eskizdeki üst Exit butonu
+    if st.button(T("miti_exit"), key="btn_top_exit"):
         st.session_state.miti_mode = False
         st.rerun()
 
@@ -567,156 +599,220 @@ elif st.session_state.miti_mode:
     <head>
         <meta charset="utf-8">
         <style>
-            body {{ margin: 0; padding: 0; overflow: hidden; background-color: #0b0f19; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
+            * {{ box-sizing: border-box; }}
+            body {{ margin: 0; padding: 0; overflow: hidden; background-color: #080c14; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
             
-            #left-col {{ width: 33%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; background: #000; border-right: 1px dashed rgba(255,255,255,0.15); }}
-            #left-col img {{ max-width: 90%; max-height: 80vh; object-fit: contain; border-radius: 8px; filter: grayscale(15%) contrast(1.1); box-shadow: 0 10px 40px rgba(0,0,0,0.8); }}
+            /* Sütun 1: Sabit Fotoğraf (Eskizdeki sol Foto) */
+            #col-photo {{
+                width: 30%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                padding: 60px 20px 20px 25px; background: #04060a; border-right: 1.5px dashed rgba(255,255,255,0.15); position: relative;
+            }}
+            #col-photo img {{
+                max-width: 100%; max-height: 82vh; object-fit: contain; border-radius: 12px;
+                box-shadow: 0 15px 45px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.1);
+            }}
             
-            #center-col, #right-col {{ width: 33.5%; height: 100vh; padding: 40px 30px; box-sizing: border-box; overflow-y: auto; position: relative; }}
-            #center-col {{ border-right: 1px dashed rgba(255,255,255,0.15); }}
+            /* Sütun 2 ve 3: Metin Sütunları (Eskizdeki orta ve sağ) */
+            #col-french, #col-system {{
+                width: 35%; height: 100vh; padding: 65px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative;
+            }}
+            #col-french {{ border-right: 1.5px dashed rgba(255,255,255,0.15); }}
             
-            /* Özel Scrollbar */
-            ::-webkit-scrollbar {{ width: 6px; }}
-            ::-webkit-scrollbar-track {{ background: transparent; }}
-            ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
+            /* Sütun Başlık Çubuğu & Oku Butonları */
+            .col-header {{
+                position: sticky; top: -65px; background: rgba(8, 12, 20, 0.94); backdrop-filter: blur(12px);
+                padding: 10px 0 16px 0; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px;
+            }}
+            .listen-btn {{
+                display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+                background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1.5px solid #fbbf24;
+                padding: 10px 18px; border-radius: 25px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.25s ease;
+            }}
+            .listen-btn:hover {{ background: #fbbf24; color: #000; transform: translateY(-1px); }}
+            .listen-btn.active {{ background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }}
             
-            .text-container {{ font-size: 1.15rem; line-height: 1.8; text-align: justify; padding-bottom: 50vh; }}
-            .text-container h1 {{ color: #fbbf24; font-size: 1.6rem; text-align: left; margin-bottom: 2rem; margin-top: 0; line-height: 1.4; }}
-            .text-container p {{ margin-bottom: 1.5rem; }}
+            /* Metin Paragrafları */
+            .story-p {{
+                font-size: 1.05rem; line-height: 1.85; margin-bottom: 18px; color: #cbd5e1;
+                padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; text-align: justify;
+            }}
+            .story-title {{
+                font-size: 1.35rem; font-weight: bold; color: #fbbf24; margin-bottom: 20px; line-height: 1.4; text-align: left;
+            }}
             
-            .play-btn {{ display: inline-flex; align-items: center; gap: 8px; background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.5); padding: 8px 16px; border-radius: 20px; font-family: sans-serif; font-size: 0.9rem; font-weight: bold; cursor: pointer; margin-bottom: 25px; transition: all 0.2s; }}
-            .play-btn:hover {{ background: rgba(251, 191, 36, 0.3); transform: scale(1.02); }}
+            /* Kindle Stili Senkronize Vurgu (Highlight) */
+            .highlight {{
+                background-color: rgba(254, 240, 138, 0.22) !important;
+                color: #ffffff !important;
+                border-left: 4px solid #facc15 !important;
+                padding-left: 14px !important;
+            }}
             
-            .highlight {{ background-color: rgba(251, 191, 36, 0.4); color: #fff; border-radius: 3px; border-bottom: 2px solid #fbbf24; transition: background-color 0.1s; }}
+            /* Özel Kaydırma Çubuğu */
+            ::-webkit-scrollbar {{ width: 5px; }}
+            ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.18); border-radius: 4px; }}
+            
+            /* Arka Plan Müzik Butonu */
+            #music-toggle {{
+                position: fixed; bottom: 15px; left: 15px; z-index: 1000;
+                background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.15);
+                color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-family: sans-serif;
+                cursor: pointer; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(8px);
+            }}
         </style>
     </head>
-    <body>
-        <audio id="bgMusic" src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Johann_Strauss_II_-_The_Blue_Danube_Waltz.ogg" autoplay loop volume="0.3"></audio>
+    <body onclick="tryAutoPlayMusic()">
+        <!-- Güvenilir MP3 formatında Güzel Mavi Tuna Valsi -->
+        <audio id="bgMusic" src="https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3" loop></audio>
 
-        <div id="left-col">
-            <img src="https://media.licdn.com/dms/image/v2/D4D12AQH640P3304U_Q/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1715694242630?e=2147483647&v=beta&t=7b2h1D13H_146O8T_l3-K7z_xH-6-4N-4u2F2E4xX0E" alt="Ataturk and Miti">
+        <button id="music-toggle" onclick="toggleMusic(event)">🎵 Güzel Mavi Tuna: <span id="m-state">Oynat</span></button>
+
+        <!-- 1. SÜTUN: FOTOĞRAF -->
+        <div id="col-photo">
+            <img src="{img_data_uri}" alt="Atatürk ve Miti">
         </div>
 
-        <div id="center-col">
-            <div class="text-container">
-                <button class="play-btn" id="btn-fr" onclick="toggleRead('fr')">{T('listen_fr')}</button>
-                <h1>(Français) La Jeunesse laissée à Sofia</h1>
-                <div id="fr-content"></div>
+        <!-- 2. SÜTUN: FRANSIZCA METİN -->
+        <div id="col-french">
+            <div class="col-header">
+                <button class="listen-btn" id="btn-listen-fr" onclick="startReading('fr')">{T('listen_fr')}</button>
             </div>
+            <div id="french-content"></div>
         </div>
 
-        <div id="right-col">
-            <div class="text-container">
-                <button class="play-btn" id="btn-sys" onclick="toggleRead('sys')">{T('listen_sys')}</button>
-                <h1>{t_title}</h1>
-                <div id="target-content"></div>
+        <!-- 3. SÜTUN: SİSTEM DİLİ METİN -->
+        <div id="col-system">
+            <div class="col-header">
+                <button class="listen-btn" id="btn-listen-sys" onclick="startReading('sys')">{T('listen_sys')}</button>
             </div>
+            <div id="system-content"></div>
         </div>
 
         <script>
-            const frText = `{STORY_FR.replace('`', "'")}`;
-            const tgText = `{t_story.replace('`', "'")}`;
-            const frDiv = document.getElementById("fr-content");
-            const tgDiv = document.getElementById("target-content");
+            const paragraphs = {story_json};
+            const frCol = document.getElementById("col-french");
+            const sysCol = document.getElementById("col-system");
+            const frContent = document.getElementById("french-content");
+            const sysContent = document.getElementById("system-content");
             const music = document.getElementById("bgMusic");
-            music.volume = 0.2;
+            music.volume = 0.25;
 
-            function splitIntoSentences(text) {{
-                return text.match(/[^.!?]+[.!?]+/g) || [text];
+            // HTML Metinlerini Ekrana Bas
+            let frHtml = "", sysHtml = "";
+            paragraphs.forEach((p, idx) => {{
+                let cls = (idx === 0 || idx === 2 || idx === 5 || idx === 8 || idx === 12) ? "story-title" : "story-p";
+                frHtml += `<div class="${{cls}}" id="fr_p_${{idx}}">${{p.fr}}</div>`;
+                sysHtml += `<div class="${{cls}}" id="sys_p_${{idx}}">${{p.sys}}</div>`;
+            }});
+            frContent.innerHTML = frHtml;
+            sysContent.innerHTML = sysHtml;
+
+            // Müzik Kontrolleri & Otomatik Başlatma
+            let userInteracted = false;
+            function tryAutoPlayMusic() {{
+                if (!userInteracted && !isReading) {{
+                    userInteracted = true;
+                    music.play().then(() => {{
+                        document.getElementById("m-state").innerText = "Çalıyor";
+                    }}).catch(() => {{}});
+                }}
+            }}
+            function toggleMusic(e) {{
+                e.stopPropagation();
+                if (music.paused) {{
+                    music.play();
+                    document.getElementById("m-state").innerText = "Çalıyor";
+                }} else {{
+                    music.pause();
+                    document.getElementById("m-state").innerText = "Duraklatıldı";
+                }}
             }}
 
-            function buildHtml(text, container) {{
-                const sentences = splitIntoSentences(text);
-                let html = "";
-                sentences.forEach((s, i) => {{
-                    html += `<span id="${{container.id}}_s_${{i}}">${{s}}</span> `;
-                }});
-                container.innerHTML = `<p>${{html}}</p>`;
-            }}
-            
-            buildHtml(frText, frDiv);
-            buildHtml(tgText, tgDiv);
-
+            // SENKRONİZE KINDLE OKUMA & VURGU SİSTEMİ
             let isReading = false;
             let currentLang = "";
-            let utterance = null;
+            let currentIdx = 0;
 
             function stopReading() {{
                 window.speechSynthesis.cancel();
                 isReading = false;
                 currentLang = "";
-                document.getElementById('btn-fr').innerText = "{T('listen_fr')}";
-                document.getElementById('btn-sys').innerText = "{T('listen_sys')}";
-                document.querySelectorAll('span').forEach(el => el.classList.remove('highlight'));
-                music.play();
+                document.getElementById("btn-listen-fr").innerText = "{T('listen_fr')}";
+                document.getElementById("btn-listen-fr").classList.remove("active");
+                document.getElementById("btn-listen-sys").innerText = "{T('listen_sys')}";
+                document.getElementById("btn-listen-sys").classList.remove("active");
+                document.querySelectorAll(".story-p, .story-title").forEach(el => el.classList.remove("highlight"));
+                music.play().catch(() => {{}});
+                document.getElementById("m-state").innerText = "Çalıyor";
             }}
 
-            function toggleRead(langChoice) {{
+            function startReading(lang) {{
                 if (isReading) {{
                     stopReading();
                     return;
                 }}
-                
                 music.pause();
+                document.getElementById("m-state").innerText = "Duraklatıldı";
                 isReading = true;
-                currentLang = langChoice;
-                
-                let textToRead = (langChoice === 'fr') ? frText : tgText;
-                let activeDivId = (langChoice === 'fr') ? 'fr-content' : 'target-content';
-                let passiveDivId = (langChoice === 'fr') ? 'target-content' : 'fr-content';
-                let scrollCol = (langChoice === 'fr') ? document.getElementById('center-col') : document.getElementById('right-col');
-                let passiveCol = (langChoice === 'fr') ? document.getElementById('right-col') : document.getElementById('center-col');
-                
-                if(langChoice === 'fr') document.getElementById('btn-fr').innerText = "{T('stop_btn')}";
-                else document.getElementById('btn-sys').innerText = "{T('stop_btn')}";
+                currentLang = lang;
+                currentIdx = 0;
 
-                utterance = new SpeechSynthesisUtterance(textToRead);
-                
-                if (langChoice === 'fr') {{ utterance.lang = 'fr-FR'; }}
-                else {{
-                    if('{target_lang}' === 'tr') utterance.lang = 'tr-TR';
-                    else if('{target_lang}' === 'en') utterance.lang = 'en-US';
-                    else if('{target_lang}' === 'bg') utterance.lang = 'bg-BG';
+                if (lang === 'fr') {{
+                    document.getElementById("btn-listen-fr").innerText = "{T('stop_btn')}";
+                    document.getElementById("btn-listen-fr").classList.add("active");
+                }} else {{
+                    document.getElementById("btn-listen-sys").innerText = "{T('stop_btn')}";
+                    document.getElementById("btn-listen-sys").classList.add("active");
                 }}
-                
-                utterance.onend = stopReading;
-                utterance.onerror = stopReading;
-                
-                const sentences = splitIntoSentences(textToRead);
-                let charOffset = 0;
-                let sentenceData = [];
-                
-                sentences.forEach((s, idx) => {{
-                    sentenceData.push({{ index: idx, start: charOffset, end: charOffset + s.length }});
-                    charOffset += s.length + 1; 
-                }});
 
-                utterance.onboundary = (e) => {{
-                    if (e.name === 'word') {{
-                        const match = sentenceData.find(s => e.charIndex >= s.start && e.charIndex <= s.end);
-                        if (match) {{
-                            document.querySelectorAll('span').forEach(el => el.classList.remove('highlight'));
-                            
-                            const activeSpan = document.getElementById(`${{activeDivId}}_s_${{match.index}}`);
-                            if (activeSpan) {{
-                                activeSpan.classList.add('highlight');
-                                
-                                // Scroll active column
-                                const offset = activeSpan.offsetTop;
-                                scrollCol.scrollTo({{ top: offset - 150, behavior: 'smooth' }});
-                                
-                                // Highlight & Scroll passive column (sync by sentence index)
-                                const passiveSpan = document.getElementById(`${{passiveDivId}}_s_${{match.index}}`);
-                                if (passiveSpan) {{
-                                    passiveSpan.classList.add('highlight');
-                                    passiveCol.scrollTo({{ top: passiveSpan.offsetTop - 150, behavior: 'smooth' }});
-                                }}
-                            }}
-                        }}
-                    }}
+                playNextParagraph();
+            }}
+
+            function playNextParagraph() {{
+                if (!isReading || currentIdx >= paragraphs.length) {{
+                    stopReading();
+                    return;
+                }}
+
+                // 1. İki sütunda aynı anda paragrafı vurgula (Kindle stili)
+                document.querySelectorAll(".story-p, .story-title").forEach(el => el.classList.remove("highlight"));
+                const frEl = document.getElementById(`fr_p_${{currentIdx}}`);
+                const sysEl = document.getElementById(`sys_p_${{currentIdx}}`);
+                if (frEl) frEl.classList.add("highlight");
+                if (sysEl) sysEl.classList.add("highlight");
+
+                // 2. Ekranı okunan paragrafın hizasına otomatik kaydır (Auto-scroll)
+                if (frEl && frCol) {{
+                    frCol.scrollTo({{ top: frEl.offsetTop - 140, behavior: 'smooth' }});
+                }}
+                if (sysEl && sysCol) {{
+                    sysCol.scrollTo({{ top: sysEl.offsetTop - 140, behavior: 'smooth' }});
+                }}
+
+                // 3. Seslendirmeyi başlat
+                const textToSpeak = (currentLang === 'fr') ? paragraphs[currentIdx].fr : paragraphs[currentIdx].sys;
+                const u = new SpeechSynthesisUtterance(textToSpeak);
+
+                if (currentLang === 'fr') {{
+                    u.lang = 'fr-FR';
+                }} else {{
+                    if ('{target_lang}' === 'tr') u.lang = 'tr-TR';
+                    else if ('{target_lang}' === 'en') u.lang = 'en-US';
+                    else if ('{target_lang}' === 'bg') u.lang = 'bg-BG';
+                }}
+                u.rate = 0.95;
+
+                u.onend = () => {{
+                    currentIdx++;
+                    playNextParagraph();
+                }};
+                u.onerror = () => {{
+                    currentIdx++;
+                    playNextParagraph();
                 }};
 
-                window.speechSynthesis.speak(utterance);
+                window.speechSynthesis.speak(u);
             }}
         </script>
     </body>
@@ -736,9 +832,7 @@ elif st.session_state.reading_mode:
             iframe { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; border: none !important; z-index: 1 !important; }
             div[data-testid="stButton"] { position: fixed !important; top: 10px !important; right: 18px !important; z-index: 999999 !important; }
             div[data-testid="stButton"] button {
-                background: rgba(15, 23, 42, 0.45) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
-                border: 1px solid rgba(255, 255, 255, 0.15) !important; color: #cbd5e1 !important; border-radius: 25px !important; padding: 5px 14px !important;
-                font-weight: 500 !important; font-size: 13px !important; transition: all 0.25s ease !important;
+                background: rgba(15, 23, 42, 0.45) !important; backdrop-filter: blur(14px) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; color: #cbd5e1 !important; border-radius: 25px !important; padding: 5px 14px !important; font-weight: 500 !important; font-size: 13px !important; transition: all 0.25s ease !important;
             }
             div[data-testid="stButton"] button:hover { background: rgba(220, 38, 38, 0.8) !important; border-color: #ef4444 !important; color: #ffffff !important; transform: scale(1.04) !important; }
         </style>
@@ -1007,24 +1101,25 @@ else:
 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
     
-    # GİRİŞ EKRANINDA ORTADA YUVARLAK ATATÜRK FOTOĞRAFI EKLENTİSİ
+    # GİRİŞ EKRANINDA ORTADA ATATÜRK FOTOĞRAFI & ANMA BUTONU
     st.markdown(
         f"""
-        <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding-top: 5px; margin-bottom: 20px;">
+        <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding-top: 5px; margin-bottom: 15px;">
             ✍️ <b>{T('created_by')}</b>
         </div>
         """, unsafe_allow_html=True
     )
     
     t_title = translate_ui_text(T("miti_title"), st.session_state.app_lang)
+    img_data_uri = get_ataturk_img_data()
     
     col_img1, col_img2, col_img3 = st.columns([1, 1, 1])
     with col_img2:
         st.markdown(
             f"""
-            <div style="text-align: center; cursor: pointer; transition: transform 0.3s;" title="Hikayeyi okumak için tıklayın">
-                <img src="https://media.licdn.com/dms/image/v2/D4D12AQH640P3304U_Q/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1715694242630?e=2147483647&v=beta&t=7b2h1D13H_146O8T_l3-K7z_xH-6-4N-4u2F2E4xX0E" 
-                     style="width: 200px; height: 200px; object-fit: cover; border-radius: 50%; border: 3px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 20px;">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <img src="{img_data_uri}" 
+                     style="width: 170px; height: 170px; object-fit: cover; border-radius: 50%; border: 3px solid #cbd5e1; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
             </div>
             """, unsafe_allow_html=True
         )
