@@ -45,6 +45,7 @@ st.set_page_config(
 # 0. HİKAYE METİNLERİ VE ARAYÜZ ÇEVİRİLERİ
 # ==========================================
 STORY_TR = """Sofya’da Kalan Gençlik: Bir İmparatorluğun İhtişamı ve Yarım Kalan Bir Aşk
+
 Yıl 1914. Balkan Savaşları'nın barut kokusu henüz dağılmamış, Avrupa'nın üzerinde yaklaşan Büyük Savaş'ın kara bulutları toplanırken, Sofya'nın soğuk sokakları o gece Askerî Kulüp'ten yükselen vals ezgileriyle ısınıyordu. 11 Mayıs gecesi, Bulgar Kralı Ferdinand'ın ev sahipliğinde düzenlenen bu görkemli maskeli balo, sıradan bir diplomatik davet değil; tarihin en zarif meydan okumalarından birine ve son nefese kadar unutulmayacak, kalpleri sızlatan bir aşka sahne olacaktı.
 
 Salonda Bir Yeniçeri Ağası
@@ -76,6 +77,7 @@ Bu destansı sevdanın son perdesi ise, Ağustos 1966'da, sofya rüzgarlarından
 Kıranlık Kulüp'teki o büyülü vals ve ölümsüz aşk, bugün tarihin sayfalarında sadece askeri bir dehanın değil; vatanı için en derin sevgisinden vazgeçmek zorunda kalan bir devin en insani, en hüzünlü hatırası olarak yankılanmaya devam ediyor."""
 
 STORY_FR = """La Jeunesse laissée à Sofia : La splendeur d'un empire et un amour inachevé
+
 L'année 1914. L'odeur de poudre des guerres balkaniques ne s'était pas encore dissipée et les sombres nuages de la Grande Guerre imminente s'amoncelaient sur l'Europe, tandis que les rues froides de Sofia étaient réchauffées par les airs de valse s'échappant du Club Militaire ce soir-là. Ce grand bal masqué, organisé par le roi Ferdinand de Bulgarie dans la nuit du 11 mai, n'était pas une simple invitation diplomatique ; il allait être le théâtre de l'un des défis les plus élégants de l'histoire et d'un amour déchirant qui ne serait jamais oublié jusqu'au dernier souffle.
 
 Un Agha Janissaire dans le Salon
@@ -138,7 +140,10 @@ UI_TRANSLATIONS = {
         "zen_stop": "Durdur",
         "zen_page_trans": "Sayfa Çevirisi",
         "miti_title": "Sofya’da Kalan Gençlik: Bir İmparatorluğun İhtişamı ve Yarım Kalan Bir Aşk",
-        "miti_exit": "✕ Çıkış Yap"
+        "miti_exit": "✕ Çıkış Yap",
+        "listen_fr": "🔊 Fransızca Dinle",
+        "listen_sys": "🔊 Türkçe Dinle",
+        "stop_btn": "⏹ Durdur"
     },
     "en": {
         "title": "📚 French Storybook Library",
@@ -171,7 +176,10 @@ UI_TRANSLATIONS = {
         "zen_stop": "Stop",
         "zen_page_trans": "Page Translation",
         "miti_title": "The Youth Left in Sofia: The Splendor of an Empire and an Unfinished Love",
-        "miti_exit": "✕ Exit"
+        "miti_exit": "✕ Exit",
+        "listen_fr": "🔊 Listen in French",
+        "listen_sys": "🔊 Listen in English",
+        "stop_btn": "⏹ Stop"
     },
     "bg": {
         "title": "📚 Френска библиотека с приказки",
@@ -204,7 +212,10 @@ UI_TRANSLATIONS = {
         "zen_stop": "Спри",
         "zen_page_trans": "Превод на страницата",
         "miti_title": "Младостта, оставена в София: Великолепието на една империя и една недовършена любов",
-        "miti_exit": "✕ Изход"
+        "miti_exit": "✕ Изход",
+        "listen_fr": "🔊 Слушай на френски",
+        "listen_sys": "🔊 Слушай на български",
+        "stop_btn": "⏹ Спри"
     }
 }
 
@@ -521,7 +532,7 @@ if not st.session_state.logged_in:
             else: st.warning(T("email_warn"))
 
 # ==========================================
-# 4.1. MİTİ & ATATÜRK ANMA HİKAYESİ EKRANI (TAM EKRAN YILDIZ SAVAŞLARI KONSEPTİ)
+# 4.1. MİTİ & ATATÜRK ANMA HİKAYESİ EKRANI (ÜÇ SÜTUNLU SABİT TASARIM + KINDLE OKUMA)
 # ==========================================
 elif st.session_state.miti_mode:
     target_lang = st.session_state.app_lang
@@ -534,12 +545,16 @@ elif st.session_state.miti_mode:
             [data-testid="stSidebar"], header, footer { display: none !important; }
             .block-container { padding: 0 !important; margin: 0 !important; max-width: 100vw !important; height: 100vh !important; overflow: hidden !important; background: #000000 !important; }
             iframe { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; border: none !important; z-index: 1 !important; }
-            div[data-testid="stButton"] { position: fixed !important; top: 15px !important; right: 20px !important; z-index: 999999 !important; }
-            div[data-testid="stButton"] button {
-                background: rgba(15, 23, 42, 0.6) !important; backdrop-filter: blur(14px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: #f8fafc !important; border-radius: 25px !important; padding: 6px 18px !important; font-weight: bold !important; transition: all 0.3s ease !important;
+            
+            #exit-btn-wrap {
+                position: fixed; top: 15px; right: 20px; z-index: 999999;
             }
-            div[data-testid="stButton"] button:hover { background: #ef4444 !important; }
+            #exit-btn-wrap button {
+                background: rgba(15, 23, 42, 0.6) !important; backdrop-filter: blur(14px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: #f8fafc !important; border-radius: 25px !important; padding: 6px 18px !important; font-weight: bold !important; transition: all 0.3s ease !important; cursor: pointer;
+            }
+            #exit-btn-wrap button:hover { background: #ef4444 !important; }
         </style>
+        <div id="exit-btn-wrap"></div>
         """, unsafe_allow_html=True)
 
     if st.button(T("miti_exit")):
@@ -552,62 +567,50 @@ elif st.session_state.miti_mode:
     <head>
         <meta charset="utf-8">
         <style>
-            body {{ margin: 0; overflow: hidden; background-color: #000; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
+            body {{ margin: 0; padding: 0; overflow: hidden; background-color: #0b0f19; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
             
-            #left-pane {{ width: 33.33%; height: 100vh; position: relative; background: #000; display: flex; align-items: center; justify-content: center; }}
-            #left-pane img {{ width: 100%; height: 100%; object-fit: cover; opacity: 0.85; filter: grayscale(20%) contrast(1.1); box-shadow: inset -30px 0 50px #000; }}
+            #left-col {{ width: 33%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; background: #000; border-right: 1px dashed rgba(255,255,255,0.15); }}
+            #left-col img {{ max-width: 90%; max-height: 80vh; object-fit: contain; border-radius: 8px; filter: grayscale(15%) contrast(1.1); box-shadow: 0 10px 40px rgba(0,0,0,0.8); }}
             
-            #center-pane, #right-pane {{ width: 33.33%; height: 100vh; position: relative; perspective: 400px; overflow: hidden; padding: 0 4%; }}
+            #center-col, #right-col {{ width: 33.5%; height: 100vh; padding: 40px 30px; box-sizing: border-box; overflow-y: auto; position: relative; }}
+            #center-col {{ border-right: 1px dashed rgba(255,255,255,0.15); }}
             
-            .star-wars-scroll {{
-                position: absolute;
-                bottom: -100%;
-                width: 92%;
-                text-align: justify;
-                font-size: 1.4rem;
-                line-height: 1.8;
-                font-weight: 500;
-                transform-origin: 50% 100%;
-                transform: rotateX(20deg);
-                animation: scrollText 120s linear forwards;
-            }}
-            .star-wars-scroll h1 {{ text-align: center; color: #fbbf24; font-size: 1.8rem; margin-bottom: 2rem; text-shadow: 0 0 10px rgba(251,191,36,0.5); }}
+            /* Özel Scrollbar */
+            ::-webkit-scrollbar {{ width: 6px; }}
+            ::-webkit-scrollbar-track {{ background: transparent; }}
+            ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
             
-            @keyframes scrollText {{
-                0% {{ bottom: -100%; }}
-                100% {{ bottom: 120%; }}
-            }}
-
-            #dock {{ position: fixed; bottom: 20px; left: 66%; transform: translateX(-50%); z-index: 1000; background: rgba(0,0,0,0.7); border: 1px solid #333; padding: 10px 20px; border-radius: 30px; display: flex; gap: 15px; }}
-            .dock-btn {{ background: transparent; color: #fbbf24; border: 1px solid #fbbf24; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; }}
-            .dock-btn:hover {{ background: #fbbf24; color: #000; }}
+            .text-container {{ font-size: 1.15rem; line-height: 1.8; text-align: justify; padding-bottom: 50vh; }}
+            .text-container h1 {{ color: #fbbf24; font-size: 1.6rem; text-align: left; margin-bottom: 2rem; margin-top: 0; line-height: 1.4; }}
+            .text-container p {{ margin-bottom: 1.5rem; }}
             
-            .highlight {{ background-color: rgba(251,191,36,0.7); color: #000; border-radius: 3px; }}
+            .play-btn {{ display: inline-flex; align-items: center; gap: 8px; background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.5); padding: 8px 16px; border-radius: 20px; font-family: sans-serif; font-size: 0.9rem; font-weight: bold; cursor: pointer; margin-bottom: 25px; transition: all 0.2s; }}
+            .play-btn:hover {{ background: rgba(251, 191, 36, 0.3); transform: scale(1.02); }}
+            
+            .highlight {{ background-color: rgba(251, 191, 36, 0.4); color: #fff; border-radius: 3px; border-bottom: 2px solid #fbbf24; transition: background-color 0.1s; }}
         </style>
     </head>
     <body>
         <audio id="bgMusic" src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Johann_Strauss_II_-_The_Blue_Danube_Waltz.ogg" autoplay loop volume="0.3"></audio>
 
-        <div id="left-pane">
+        <div id="left-col">
             <img src="https://media.licdn.com/dms/image/v2/D4D12AQH640P3304U_Q/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1715694242630?e=2147483647&v=beta&t=7b2h1D13H_146O8T_l3-K7z_xH-6-4N-4u2F2E4xX0E" alt="Ataturk and Miti">
         </div>
 
-        <div id="center-pane">
-            <div class="star-wars-scroll">
+        <div id="center-col">
+            <div class="text-container">
+                <button class="play-btn" id="btn-fr" onclick="toggleRead('fr')">{T('listen_fr')}</button>
                 <h1>(Français) La Jeunesse laissée à Sofia</h1>
                 <div id="fr-content"></div>
             </div>
         </div>
 
-        <div id="right-pane">
-            <div class="star-wars-scroll" style="animation-delay: 0.5s;">
+        <div id="right-col">
+            <div class="text-container">
+                <button class="play-btn" id="btn-sys" onclick="toggleRead('sys')">{T('listen_sys')}</button>
                 <h1>{t_title}</h1>
                 <div id="target-content"></div>
             </div>
-        </div>
-
-        <div id="dock">
-            <button class="dock-btn" id="listenBtn" onclick="toggleRead()">🎤 Dinle / Listen</button>
         </div>
 
         <script>
@@ -618,51 +621,102 @@ elif st.session_state.miti_mode:
             const music = document.getElementById("bgMusic");
             music.volume = 0.2;
 
-            function wrapWords(text, container) {{
-                container.innerHTML = text.split(/(\\s+)/).map((w, i) => w.trim() ? `<span id="w_${{container.id}}_${{i}}">${{w}}</span>` : w).join("");
+            function splitIntoSentences(text) {{
+                return text.match(/[^.!?]+[.!?]+/g) || [text];
             }}
-            wrapWords(frText, frDiv);
-            wrapWords(tgText, tgDiv);
+
+            function buildHtml(text, container) {{
+                const sentences = splitIntoSentences(text);
+                let html = "";
+                sentences.forEach((s, i) => {{
+                    html += `<span id="${{container.id}}_s_${{i}}">${{s}}</span> `;
+                }});
+                container.innerHTML = `<p>${{html}}</p>`;
+            }}
+            
+            buildHtml(frText, frDiv);
+            buildHtml(tgText, tgDiv);
 
             let isReading = false;
+            let currentLang = "";
             let utterance = null;
 
-            function toggleRead() {{
-                if(isReading) {{
-                    window.speechSynthesis.cancel();
-                    music.play();
-                    isReading = false;
-                    document.getElementById("listenBtn").innerText = "🎤 Dinle / Listen";
-                }} else {{
-                    music.pause();
-                    utterance = new SpeechSynthesisUtterance(tgText);
-                    utterance.lang = '{target_lang}';
-                    if('{target_lang}' === 'tr') utterance.lang = 'tr-TR';
-                    if('{target_lang}' === 'en') utterance.lang = 'en-US';
-                    if('{target_lang}' === 'bg') utterance.lang = 'bg-BG';
-                    
-                    utterance.onend = () => {{ music.play(); isReading = false; document.getElementById("listenBtn").innerText = "🎤 Dinle / Listen"; }};
-                    
-                    let charOffset = 0;
-                    const spans = Array.from(tgDiv.querySelectorAll('span'));
-                    const wordMap = spans.map(s => {{
-                        let start = charOffset;
-                        charOffset += s.innerText.length + 1; // plus space
-                        return {{ span: s, start: start, end: charOffset }};
-                    }});
+            function stopReading() {{
+                window.speechSynthesis.cancel();
+                isReading = false;
+                currentLang = "";
+                document.getElementById('btn-fr').innerText = "{T('listen_fr')}";
+                document.getElementById('btn-sys').innerText = "{T('listen_sys')}";
+                document.querySelectorAll('span').forEach(el => el.classList.remove('highlight'));
+                music.play();
+            }}
 
-                    utterance.onboundary = (e) => {{
-                        if (e.name === 'word') {{
-                            spans.forEach(s => s.classList.remove('highlight'));
-                            const match = wordMap.find(w => e.charIndex >= w.start && e.charIndex <= w.end);
-                            if (match) match.span.classList.add('highlight');
-                        }}
-                    }};
-
-                    window.speechSynthesis.speak(utterance);
-                    isReading = true;
-                    document.getElementById("listenBtn").innerText = "⏹ Durdur / Stop";
+            function toggleRead(langChoice) {{
+                if (isReading) {{
+                    stopReading();
+                    return;
                 }}
+                
+                music.pause();
+                isReading = true;
+                currentLang = langChoice;
+                
+                let textToRead = (langChoice === 'fr') ? frText : tgText;
+                let activeDivId = (langChoice === 'fr') ? 'fr-content' : 'target-content';
+                let passiveDivId = (langChoice === 'fr') ? 'target-content' : 'fr-content';
+                let scrollCol = (langChoice === 'fr') ? document.getElementById('center-col') : document.getElementById('right-col');
+                let passiveCol = (langChoice === 'fr') ? document.getElementById('right-col') : document.getElementById('center-col');
+                
+                if(langChoice === 'fr') document.getElementById('btn-fr').innerText = "{T('stop_btn')}";
+                else document.getElementById('btn-sys').innerText = "{T('stop_btn')}";
+
+                utterance = new SpeechSynthesisUtterance(textToRead);
+                
+                if (langChoice === 'fr') {{ utterance.lang = 'fr-FR'; }}
+                else {{
+                    if('{target_lang}' === 'tr') utterance.lang = 'tr-TR';
+                    else if('{target_lang}' === 'en') utterance.lang = 'en-US';
+                    else if('{target_lang}' === 'bg') utterance.lang = 'bg-BG';
+                }}
+                
+                utterance.onend = stopReading;
+                utterance.onerror = stopReading;
+                
+                const sentences = splitIntoSentences(textToRead);
+                let charOffset = 0;
+                let sentenceData = [];
+                
+                sentences.forEach((s, idx) => {{
+                    sentenceData.push({{ index: idx, start: charOffset, end: charOffset + s.length }});
+                    charOffset += s.length + 1; 
+                }});
+
+                utterance.onboundary = (e) => {{
+                    if (e.name === 'word') {{
+                        const match = sentenceData.find(s => e.charIndex >= s.start && e.charIndex <= s.end);
+                        if (match) {{
+                            document.querySelectorAll('span').forEach(el => el.classList.remove('highlight'));
+                            
+                            const activeSpan = document.getElementById(`${{activeDivId}}_s_${{match.index}}`);
+                            if (activeSpan) {{
+                                activeSpan.classList.add('highlight');
+                                
+                                // Scroll active column
+                                const offset = activeSpan.offsetTop;
+                                scrollCol.scrollTo({{ top: offset - 150, behavior: 'smooth' }});
+                                
+                                // Highlight & Scroll passive column (sync by sentence index)
+                                const passiveSpan = document.getElementById(`${{passiveDivId}}_s_${{match.index}}`);
+                                if (passiveSpan) {{
+                                    passiveSpan.classList.add('highlight');
+                                    passiveCol.scrollTo({{ top: passiveSpan.offsetTop - 150, behavior: 'smooth' }});
+                                }}
+                            }}
+                        }}
+                    }}
+                }};
+
+                window.speechSynthesis.speak(utterance);
             }}
         </script>
     </body>
@@ -953,10 +1007,10 @@ else:
 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
     
-    # ATATÜRK VE MİTİ ANMA EKLENTİSİ BAĞLANTISI
+    # GİRİŞ EKRANINDA ORTADA YUVARLAK ATATÜRK FOTOĞRAFI EKLENTİSİ
     st.markdown(
         f"""
-        <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding-top: 5px; margin-bottom: 10px;">
+        <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding-top: 5px; margin-bottom: 20px;">
             ✍️ <b>{T('created_by')}</b>
         </div>
         """, unsafe_allow_html=True
@@ -970,7 +1024,7 @@ else:
             f"""
             <div style="text-align: center; cursor: pointer; transition: transform 0.3s;" title="Hikayeyi okumak için tıklayın">
                 <img src="https://media.licdn.com/dms/image/v2/D4D12AQH640P3304U_Q/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1715694242630?e=2147483647&v=beta&t=7b2h1D13H_146O8T_l3-K7z_xH-6-4N-4u2F2E4xX0E" 
-                     style="width: 160px; height: 160px; object-fit: cover; border-radius: 50%; border: 3px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 15px;">
+                     style="width: 200px; height: 200px; object-fit: cover; border-radius: 50%; border: 3px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 20px;">
             </div>
             """, unsafe_allow_html=True
         )
