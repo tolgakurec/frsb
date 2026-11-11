@@ -79,7 +79,7 @@ STORY_PARAGRAPHS = [
     },
     {
         "tr": "Bu ihtişamlı gece, Mustafa Kemal için sadece bir diplomatik zafer değil, kalbinin derinliklerine kazınan bir sevdanın da en güzel sahnesiydi. Gecenin ilerleyen saatlerinde Johann Strauss'un 'Güzel Mavi Tuna' valsi çalmaya başladığında, Mustafa Kemal Bulgaristan’ın eski Savunma Bakanı General Kovaçev’in kızı Dimitrina Kovaçeva'ya, namıdiğer 'Miti'ye doğru ilerledi. İsviçre'de eğitim almış, yüksek kültürü ve eşsiz güzelliğiyle 'Bulgar Gülü' olarak anılan Miti ile Mustafa Kemal dansa kalktığında, Sofya sosyetesi için zaman adeta durdu.",
-        "fr": "Cette magnifique soirée ne fut pas seulement un triomphe diplomatique pour Mustafa Kemal, ce fut aussi la plus belle scène d'un amour gravé au fond de son cœur. Plus tard dans la nuit, lorsque la valse du 'Beau Danube bleu' de Johann Strauss a commencé à jouer, Mustafa Kemal s'est avancé vers Dimitrina Kovacheva, fille de l'ancien ministre bulgare de la Défense, le général Kovachev, alias 'Miti'. Éduquée en Suisse et connue sous le nom de 'Rose bulgare' pour sa grande culture et sa beauté inégalée, lorsque Miti et Mustafa Kemal se sont levés pour danser, le temps s'est arrêté pour la haute society de Sofia."
+        "fr": "Cette magnifique soirée ne fut pas seulement un triomphe diplomatique pour Mustafa Kemal, ce fut aussi la plus belle scène d'un amour gravé au fond de son cœur. Plus tard dans la nuit, lorsque la valse du 'Beau Danube bleu' de Johann Strauss a commencé à jouer, Mustafa Kemal s'est avancé vers Dimitrina Kovacheva, fille de l'ancien ministre bulgare de la Défense, le général Kovachev, alias 'Miti'. Éduquée en Suisse et connue sous le nom de 'Rose bulgare' pour sa grande culture et sa beauté inégalée, lorsque Miti et Mustafa Kemal se sont levés pour danser, le temps s'est arrêté pour la haute société de Sofia."
     },
     {
         "tr": "Bu dans, aslında alevlenmiş bir aşkın toplum önündeki cesur bir ilanıydı. Boris Parkı'nda yaptıkları uzun romantik yürüyüşlerin, buz pateni pistindeki gizli bakışmaların taçlandığı andı. Mustafa Kemal, bu büyük aşka teslim olmuş ve Miti'ye evlenme teklif etmiş, genç kızdan tereddütsüz bir 'Evet' almıştı.",
@@ -1210,6 +1210,7 @@ elif st.session_state.reading_mode:
             const layer = document.getElementById('boxes-layer');
             const wrap = document.getElementById('viewport-wrap');
 
+            // HER SAYFAYI EKRANIN BOYUTUNA TAM OTURTAN AKILLI HESAPLAYICI (HER CİHAZDA KUSURSUZ FIT)
             function fitPageToScreen() {{
                 if (!imgEl.naturalWidth || !imgEl.naturalHeight) return;
                 const availW = wrap.clientWidth * 0.96;
@@ -1332,7 +1333,7 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI (SIRALAMA KONTROLLERİ VE NUMARALI ÖNİZLEME)
+# 6. DÜZENLEYİCİ EKRANI (BİRLEŞTİRME & YENİDEN TARAMA DESTEĞİ)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
@@ -1561,25 +1562,21 @@ elif st.session_state.editor_mode:
                     except Exception as e:
                         st.error(f"Tarama hatası: {e}")
 
-            # SAYFA ÖNİZLEMESİ: NUMARALI KELİME KUTULARIYLA BİRLİKTE GÖSTERİM
-            overlay_divs = ""
-            for b_i, b in enumerate(curr_page.get("boxes", [])):
-                overlay_divs += f"""
-                <div style="position: absolute; left: {b['left']}%; top: {b['top']}%; width: {b['width']}%; height: {b['height']}%; border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.15); pointer-events: none; box-sizing: border-box; border-radius: 3px;">
-                    <span style="position: absolute; top: -15px; left: 0; background: #0284c7; color: #ffffff; font-size: 10px; font-weight: bold; padding: 0 4px; border-radius: 2px; line-height: 14px;">#{b_i+1}</span>
-                </div>
-                """
-
-            st.markdown(
-                f"""
-                <div style="text-align: center; background: #0f172a; border-radius: 8px; padding: 10px; margin-top: 10px; position: relative; display: inline-block; width: 100%;">
-                    <div style="position: relative; display: inline-block; max-width: 100%;">
-                        <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px; display: block;" />
-                        {overlay_divs}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True
+            # SAYFA ÖNİZLEMESİ: NUMARALI KELİME KUTULARIYLA BİRLİKTE GÖSTERİM (KOD BLOK KAÇAĞI DÜZELTİLDİ)
+            overlay_divs = "".join([
+                f'<div style="position:absolute;left:{b["left"]}%;top:{b["top"]}%;width:{b["width"]}%;height:{b["height"]}%;border:2px solid #38bdf8;background:rgba(56,189,248,0.15);pointer-events:none;box-sizing:border-box;border-radius:3px;">'
+                f'<span style="position:absolute;top:-15px;left:0;background:#0284c7;color:#ffffff;font-size:10px;font-weight:bold;padding:0 4px;border-radius:2px;line-height:14px;">#{b_i+1}</span>'
+                f'</div>'
+                for b_i, b in enumerate(curr_page.get("boxes", []))
+            ])
+            preview_html = (
+                f'<div style="text-align:center;background:#0f172a;border-radius:8px;padding:10px;margin-top:10px;position:relative;display:inline-block;width:100%;">'
+                f'<div style="position:relative;display:inline-block;max-width:100%;">'
+                f'<img src="data:image/jpeg;base64,{curr_page["img_b64"]}" style="max-width:100%;max-height:480px;object-fit:contain;border-radius:4px;display:block;" />'
+                f'{overlay_divs}'
+                f'</div></div>'
             )
+            st.markdown(preview_html, unsafe_allow_html=True)
 
         with col_right:
             st.markdown("### 🔤 Tespit Edilen Kelimeler ve Cümleler")
@@ -1624,7 +1621,6 @@ elif st.session_state.editor_mode:
             col_app1, col_app2 = st.columns([2, 1.2])
             with col_app1:
                 if st.button("🔄 Değişiklikleri Bu Sayfaya Uygula", type="primary", use_container_width=True):
-                    # Satırları ve varsa değiştirilen "Sıra" numaralarını topla
                     valid_items = []
                     for i, row in enumerate(edited_table):
                         is_deleted = row.get("Kaldır 🗑️", False)
@@ -1639,7 +1635,6 @@ elif st.session_state.editor_mode:
                             box_obj["clean"] = clean_word_key(text_val)
                             valid_items.append((order_val, box_obj))
                     
-                    # Kullanıcı elle sıra numarası değiştirdiyse ona göre sırala
                     valid_items.sort(key=lambda x: x[0])
                     curr_page["boxes"] = [item[1] for item in valid_items]
                     st.success("Bu sayfanın kelimeleri ve sırası başarıyla güncellendi!")
@@ -1659,7 +1654,6 @@ elif st.session_state.editor_mode:
                     if bulk_input.strip():
                         words = [w for w in bulk_input.strip().split() if w]
                         new_bulk_boxes = []
-                        # Varsa eski kutuların koordinatlarını sırayla koruyarak metinleri yenile
                         for w_i, w_txt in enumerate(words):
                             if w_i < len(curr_page["boxes"]):
                                 old_box = dict(curr_page["boxes"][w_i])
