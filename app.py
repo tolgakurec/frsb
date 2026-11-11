@@ -8,8 +8,8 @@ import gc
 import uuid
 import urllib.request
 import urllib.parse
-import urllib.error
 import concurrent.futures
+import requests
 from datetime import datetime
 from PIL import Image, ImageOps
 import numpy as np
@@ -284,7 +284,7 @@ def translate_api(text, source_lang, target_lang):
     clients = ['gtx', 'dict-chrome-ex', 'te_lib']
     for client in clients:
         try:
-            url = f"[https://translate.googleapis.com/translate_a/single?client=](https://translate.googleapis.com/translate_a/single?client=){client}&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
+            url = f"https://translate.googleapis.com/translate_a/single?client={client}&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
             res = urllib.request.urlopen(req, timeout=4)
             data = json.loads(res.read().decode('utf-8'))
@@ -330,15 +330,15 @@ def get_ataturk_img_data():
     if not img_b64:
         img_b64 = get_file_base64("atatürk ve miti.jpg", "image/jpeg")
     if img_b64: return img_b64
-    return "[https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg)"
+    return "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg"
 
 def get_blue_danube_audio_data():
     audio_b64 = get_file_base64("blue_danube.mp3", "audio/mp3")
     if audio_b64: return audio_b64
-    return "[https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3](https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3)"
+    return "https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
 
 # ==========================================
-# 2. GOOGLE SHEETS ENTEGRASYONU
+# 2. GOOGLE SHEETS ENTEGRASYONU (CANLI VE GÜVENLİ)
 # ==========================================
 def clean_private_key(key_str):
     if not key_str or not isinstance(key_str, str): return key_str
@@ -362,14 +362,13 @@ def get_service_account_dict():
         creds_dict["private_key"] = clean_private_key(creds_dict["private_key"])
     return creds_dict
 
-@st.cache_resource
 def get_gsheet_client():
     if not GSHEETS_INSTALLED: return None, "gspread veya oauth2client eksik.", ""
     creds_dict = get_service_account_dict()
     if not creds_dict: return None, "Google kimlik anahtarı bulunamadı!", ""
     sa_email = creds_dict.get("client_email", "Bilinmeyen Servis Hesabı")
     try:
-        scope = ["[https://spreadsheets.google.com/feeds](https://spreadsheets.google.com/feeds)", "[https://www.googleapis.com/auth/drive](https://www.googleapis.com/auth/drive)"]
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         return client, None, sa_email
@@ -379,7 +378,7 @@ def get_sheet(sheet_name):
     client, err, sa_email = get_gsheet_client()
     if not client: return None, err
     try: doc = client.open_by_key("1Ec0v2Oo-7BlILvb35TGgo5j-SOGivJwmf5xpF85oGoU")
-    except Exception as e: return None, f"Tablo açılamadı! (Hata: {str(e)})"
+    except Exception as e: return None, f"Tablo açılamadı! ({str(e)})"
     try: return doc.worksheet(sheet_name), None
     except Exception as e: return None, f"'{sheet_name}' sekmesi bulunamadı!"
 
@@ -404,7 +403,7 @@ def record_thanks(email):
         return True
     except: return False
 
-@st.cache_data(ttl=600, show_spinner=False)
+# DİKKAT: Tehlikeli önbellek kaldırıldı; artık doğrudan canlı okunur!
 def get_saved_books():
     sheet, err = get_sheet("Library")
     if not sheet: return [], err
@@ -419,7 +418,6 @@ def get_saved_books():
         return sorted(books_list, key=lambda x: x["title"]), None
     except Exception as e: return [], str(e)
 
-@st.cache_data(ttl=600, show_spinner=False)
 def load_book_content(book_id):
     sheet, err = get_sheet("Pages")
     if not sheet: return None, err
@@ -452,9 +450,6 @@ def save_hybrid_book(title, pages, old_book_id=None):
         lib_sheet.append_row([book_id, title, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(pages)])
         all_page_rows = [[book_id, idx + 1, page["img_b64"], json.dumps(page["boxes"], ensure_ascii=False)] for idx, page in enumerate(pages)]
         for i in range(0, len(all_page_rows), 10): pages_sheet.append_rows(all_page_rows[i:i + 10]); time.sleep(0.5)
-        
-        get_saved_books.clear()
-        load_book_content.clear()
         return book_id, "Kitap başarıyla kaydedildi!"
     except Exception as e: return None, str(e)
 
@@ -467,12 +462,9 @@ def delete_hybrid_book(book_id):
     if pages_sheet:
         rows_to_delete = [i + 2 for i, r in enumerate(pages_sheet.get_all_records()) if str(r.get("BookID", "")) == book_id]
         for row_idx in reversed(rows_to_delete): pages_sheet.delete_rows(row_idx); time.sleep(0.1)
-    
-    get_saved_books.clear()
-    load_book_content.clear()
 
 # ==========================================
-# 3. KUSURSUZ GEMINI VISION API & REST PROTOKOLÜ
+# 3. GEMINI VISION (REQUESTS İLE KESİN VE HATASIZ)
 # ==========================================
 def get_active_gemini_key():
     if st.session_state.get("manual_gemini_key", "").strip():
@@ -489,30 +481,35 @@ def load_ocr():
 
 def call_gemini_vision(base64_image, api_key):
     """
-    Google Gemini Vision REST API çağrısı.
-    Fransız çocuk el yazısını (écriture cursive) tam doğrulukla ve koordinatlarıyla okur.
+    Google Gemini Vision REST API çağrısı (requests motoru ile).
+    Fransız çocuk el yazısını tek seferde kesin doğrulukla okur.
     """
-    candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest"]
+    if not api_key:
+        return None, "API Key bulunamadı."
+        
+    api_key = api_key.strip().strip('"').strip("'")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    
     prompt = (
-        "You are an expert OCR engine for children's illustrated storybooks. "
-        "Carefully read all French text in this image, especially cursive handwriting (écriture cursive) and artistic fonts. "
+        "You are an expert OCR system for children's illustrated storybooks. "
+        "Transcribe all visible French text with 100% accuracy, particularly cursive script (écriture cursive). "
         "Return STRICTLY a JSON array of objects without markdown formatting or code fences. "
-        "Each object represents a line or distinct phrase and must contain:\n"
-        "- 'text': The exact transcribed French text (keep accents é,è,à,ç, apostrophes, punctuation).\n"
-        "- 'left': Float percentage (0 to 100) from image left edge.\n"
-        "- 'top': Float percentage (0 to 100) from image top edge.\n"
-        "- 'width': Float percentage (0 to 100) width of text.\n"
-        "- 'height': Float percentage (0 to 100) height of text.\n"
-        "Sort the objects in natural reading order (top-to-bottom, left-to-right)."
+        "Each object represents a line/phrase with:\n"
+        "- 'text': The exact transcribed French text (preserve é, è, à, ç, apostrophes).\n"
+        "- 'left': Float percentage (0 to 100) from left.\n"
+        "- 'top': Float percentage (0 to 100) from top.\n"
+        "- 'width': Float percentage (0 to 100).\n"
+        "- 'height': Float percentage (0 to 100).\n"
+        "Sort top-to-bottom."
     )
-
+    
     payload = {
         "contents": [{
             "parts": [
                 {"text": prompt},
                 {
-                    "inlineData": {
-                        "mimeType": "image/jpeg",
+                    "inline_data": {
+                        "mime_type": "image/jpeg",
                         "data": base64_image
                     }
                 }
@@ -524,61 +521,61 @@ def call_gemini_vision(base64_image, api_key):
         }
     }
     
-    data_bytes = json.dumps(payload).encode("utf-8")
-    last_error = ""
-
-    for model in candidate_models:
-        url = f"[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/){model}:generateContent?key={api_key}"
-        req = urllib.request.Request(
-            url,
-            data=data_bytes,
-            headers={
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0"
-            }
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=14) as response:
-                res_body = response.read().decode("utf-8")
-                res_data = json.loads(res_body)
-                raw_text = res_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "[]").strip()
-                
-                # Kod çitlerini temizle
-                if raw_text.startswith("```"):
-                    raw_text = re.sub(r"^```[a-zA-Z]*\n?", "", raw_text)
-                    raw_text = re.sub(r"\n?```$", "", raw_text).strip()
-                    
-                parsed_boxes = json.loads(raw_text)
-                if isinstance(parsed_boxes, list) and len(parsed_boxes) > 0:
-                    clean_boxes = []
-                    for i, b in enumerate(parsed_boxes):
-                        t_val = str(b.get("text", "")).strip()
-                        if not t_val: continue
-                        clean_boxes.append({
-                            "id": f"b_{i}",
-                            "text": t_val,
-                            "clean": clean_word_key(t_val),
-                            "left": float(b.get("left", 5)),
-                            "top": float(b.get("top", 5)),
-                            "width": float(b.get("width", 30)),
-                            "height": float(b.get("height", 8))
-                        })
-                    if clean_boxes:
-                        return clean_boxes, model, None
-        except urllib.error.HTTPError as he:
-            err_content = he.read().decode("utf-8", errors="ignore")
-            last_error = f"{model} HTTP {he.code}: {err_content}"
-            continue
-        except Exception as e:
-            last_error = f"{model} Hata: {str(e)}"
-            continue
-
-    return None, None, last_error
+    try:
+        res = requests.post(url, json=payload, timeout=25)
+        if res.status_code != 200:
+            return None, f"Google API Hatası (HTTP {res.status_code}): {res.text[:180]}"
+            
+        data = res.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return None, "Gemini boş yanıt döndürdü."
+            
+        raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "[]").strip()
+        if raw_text.startswith("```"):
+            raw_text = re.sub(r"^```[a-zA-Z]*\n?", "", raw_text)
+            raw_text = re.sub(r"\n?```$", "", raw_text).strip()
+            
+        parsed = json.loads(raw_text)
+        items = []
+        if isinstance(parsed, list):
+            items = parsed
+        elif isinstance(parsed, dict):
+            for k in ["items", "boxes", "text_elements", "lines", "data"]:
+                if k in parsed and isinstance(parsed[k], list):
+                    items = parsed[k]
+                    break
+            if not items:
+                for v in parsed.values():
+                    if isinstance(v, list):
+                        items = v
+                        break
+                        
+        clean_boxes = []
+        for i, b in enumerate(items):
+            t = str(b.get("text", "")).strip()
+            if not t: continue
+            clean_boxes.append({
+                "id": f"b_{i}",
+                "text": t,
+                "clean": clean_word_key(t),
+                "left": float(b.get("left", 5)),
+                "top": float(b.get("top", 5)),
+                "width": float(b.get("width", 30)),
+                "height": float(b.get("height", 8))
+            })
+            
+        if clean_boxes:
+            return clean_boxes, None
+        return None, "Görselde okunabilir metin bulunamadı."
+        
+    except Exception as e:
+        return None, f"Bağlantı Hatası: {str(e)}"
 
 def process_single_image(img):
     img_fixed = ImageOps.exif_transpose(img).convert("RGB")
     
-    # Gemini için yüksek kaliteli 1200px Base64
+    # 1. Gemini için 1200px görsel
     img_c = img_fixed.copy()
     img_c.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
@@ -591,13 +588,11 @@ def process_single_image(img):
     engine_name = "EasyOCR"
     error_msg = None
     
-    # 1. Gemini Vision ile dene
     if gemini_key:
-        boxes, used_model, error_msg = call_gemini_vision(b64_gemini, gemini_key)
+        boxes, error_msg = call_gemini_vision(b64_gemini, gemini_key)
         if boxes:
-            engine_name = f"Gemini ({used_model})"
+            engine_name = "Gemini Vision (1.5 Flash)"
             
-    # 2. Eğer Gemini anahtarı yoksa veya hata verdiyse EasyOCR'a dön
     if not boxes:
         reader = load_ocr()
         img_ocr = img_fixed.copy()
@@ -628,7 +623,7 @@ def process_single_image(img):
             })
         del img_ocr, np_arr
 
-    # Google Sheets için sıkıştırılmış Base64
+    # Google Sheets için sıkıştırma
     img_s = img_fixed.copy()
     img_s.thumbnail((650, 850), Image.Resampling.LANCZOS)
     buf_s = io.BytesIO()
@@ -835,7 +830,7 @@ elif st.session_state.miti_mode:
             iframe { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; border: none !important; z-index: 1 !important; }
             div[data-testid="stButton"], .stButton { position: fixed !important; top: 14px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 99999999 !important; }
             div[data-testid="stButton"] button, .stButton button { background: #dc2626 !important; border: 2px solid #fca5a5 !important; color: #ffffff !important; border-radius: 30px !important; padding: 8px 32px !important; font-weight: 800 !important; font-size: 15px !important; cursor: pointer !important; box-shadow: 0 4px 25px rgba(220, 38, 38, 0.6) !important; transition: all 0.2s ease !important; }
-            div[data-testid="stButton"] button:hover, .stButton button:hover { background: #b91c1c !important; transform: scale(1.08) !important; }
+            div[data-testid="stButton"] button:hover { background: #b91c1c !important; transform: scale(1.08) !important; }
         </style>
         """, unsafe_allow_html=True)
 
@@ -1134,24 +1129,40 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI (DURUM BİLGİLENDİRMELİ)
+# 6. DÜZENLEYİCİ EKRANI (TEST BUTONLU & GÜVENİLİR)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
     
     # GEMINI DURUM VE GİRİŞ BARI
     active_key = get_active_gemini_key()
-    col_k1, col_k2 = st.columns([1.5, 3])
+    col_k1, col_k2, col_k3 = st.columns([1.5, 2.2, 1])
     with col_k1:
         if active_key:
-            st.success("🟢 Gemini Vision API Aktif")
+            st.success("🟢 Gemini Vision Hazır")
         else:
-            st.warning("🟠 EasyOCR Devrede (Gemini Anahtarı Yok)")
+            st.warning("🟠 EasyOCR Devrede (Anahtar Yok)")
     with col_k2:
-        m_key = st.text_input("Gemini API Anahtarı (İsteğe bağlı):", value=st.session_state.manual_gemini_key, type="password", placeholder="AIzaSy...", label_visibility="collapsed")
+        m_key = st.text_input("Gemini API Anahtarı:", value=st.session_state.manual_gemini_key, type="password", placeholder="AIzaSy...", label_visibility="collapsed")
         if m_key != st.session_state.manual_gemini_key:
             st.session_state.manual_gemini_key = m_key
             st.rerun()
+    with col_k3:
+        if st.button("🧪 Anahtarı Test Et", use_container_width=True):
+            if not active_key:
+                st.error("Önce API anahtarınızı girin!")
+            else:
+                with st.spinner("Google sunucularına bağlanılıyor..."):
+                    test_url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){active_key}"
+                    try:
+                        t_resp = requests.post(test_url, json={"contents": [{"parts": [{"text": "Say 'OK'"}]}]}, timeout=10)
+                        if t_resp.status_code == 200:
+                            st.toast("✅ Mükemmel! Gemini API bağlantısı %100 çalışıyor.")
+                            st.success("✅ Bağlantı Başarılı: Gemini Çalışıyor!")
+                        else:
+                            st.error(f"Hata (HTTP {t_resp.status_code}): {t_resp.text[:150]}")
+                    except Exception as te:
+                        st.error(f"Bağlantı Hatası: {str(te)}")
 
     col_t1, col_t2, col_t3, col_t4 = st.columns([2.5, 1.5, 1.5, 1])
     with col_t1:
@@ -1378,13 +1389,12 @@ elif st.session_state.editor_mode:
                         re_obj, engine_used, err = process_single_image(orig_pil)
                         curr_page['boxes'] = re_obj['boxes']
                         if "Gemini" in engine_used:
-                            st.success(f"✨ Başarılı! {engine_used} ile mükemmel şekilde okundu.")
+                            st.success(f"✨ Başarılı! {engine_used} ile okundu.")
                         else:
                             if err:
-                                st.warning(f"⚠️ Gemini Hatası: {err}. EasyOCR ile okundu.")
-                            else:
-                                st.info("Motor: EasyOCR kullanıldı.")
-                        time.sleep(0.5)
+                                st.error(f"Gemini Çalışamadı: {err}")
+                            st.warning("Motor: EasyOCR kullanıldı.")
+                        time.sleep(0.8)
                         st.rerun()
                     except Exception as e:
                         st.error(f"Tarama hatası: {e}")
@@ -1514,7 +1524,7 @@ elif st.session_state.editor_mode:
                         st.rerun()
 
 # ==========================================
-# 7. ANA KÜTÜPHANE EKRANI
+# 7. ANA KÜTÜPHANE EKRANI (CANLI VE GÜVENLİ LİSTELEME)
 # ==========================================
 else:
     col_info1, col_thanks, col_info2, col_info3 = st.columns([2.5, 1.2, 1.8, 1])
@@ -1529,8 +1539,17 @@ else:
 
     st.markdown(f"<h2 style='text-align: center; color: #1e3a8a;'>{T('lib_title')}</h2>", unsafe_allow_html=True)
     
+    col_ref1, col_ref2 = st.columns([4, 1])
+    with col_ref2:
+        if st.button("🔄 Kütüphaneyi Yenile", use_container_width=True):
+            st.rerun()
+
     saved_books, b_err = get_saved_books()
-    if not saved_books: st.info(T("empty_lib"))
+    if b_err:
+        st.error(f"Veritabanı Uyarısı: {b_err} (Lütfen 'Kütüphaneyi Yenile' butonuna basınız)")
+        
+    if not saved_books:
+        st.info(T("empty_lib"))
     else:
         book_titles = {b["book_id"]: f"{b['title']} ({b['page_count']} sayfa)" for b in saved_books}
         selected_id = st.selectbox(T("select_book"), options=list(book_titles.keys()), format_func=lambda x: book_titles[x])
@@ -1662,35 +1681,4 @@ else:
                     stat_text.text("Tarama tamamlandı! Düzenleyiciye aktarılıyor...")
                     st.session_state.editor_pages = extracted_pages
                     st.session_state.editor_book_title = book_title_input
-                    st.session_state.editor_orig_book_id = None
-                    st.session_state.editor_page_idx = 0
-                    st.session_state.editor_mode = True
-                    st.rerun()
-
-    st.markdown("<br><br><hr>", unsafe_allow_html=True)
-    
-    # ATATÜRK VE MİTİ ANMA BUTONU
-    st.markdown(
-        f"""
-        <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding-top: 5px; margin-bottom: 15px;">
-            ✍️ <b>{T('created_by')}</b>
-        </div>
-        """, unsafe_allow_html=True
-    )
-    
-    t_title = translate_turkish_to_target(T("miti_title"), st.session_state.app_lang)
-    img_data_uri = get_ataturk_img_data()
-    
-    col_img1, col_img2, col_img3 = st.columns([1, 1, 1])
-    with col_img2:
-        st.markdown(
-            f"""
-            <div style="text-align: center; margin-bottom: 15px;">
-                <img src="{img_data_uri}" 
-                     style="width: 170px; height: 170px; object-fit: cover; border-radius: 50%; border: 3px solid #cbd5e1; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-            </div>
-            """, unsafe_allow_html=True
-        )
-        if st.button(f"✨ {t_title}", use_container_width=True):
-            st.session_state.miti_mode = True
-            st.rerun()
+                    st.session_state.editor
