@@ -79,7 +79,7 @@ STORY_PARAGRAPHS = [
     },
     {
         "tr": "Bu ihtişamlı gece, Mustafa Kemal için sadece bir diplomatik zafer değil, kalbinin derinliklerine kazınan bir sevdanın da en güzel sahnesiydi. Gecenin ilerleyen saatlerinde Johann Strauss'un 'Güzel Mavi Tuna' valsi çalmaya başladığında, Mustafa Kemal Bulgaristan’ın eski Savunma Bakanı General Kovaçev’in kızı Dimitrina Kovaçeva'ya, namıdiğer 'Miti'ye doğru ilerledi. İsviçre'de eğitim almış, yüksek kültürü ve eşsiz güzelliğiyle 'Bulgar Gülü' olarak anılan Miti ile Mustafa Kemal dansa kalktığında, Sofya sosyetesi için zaman adeta durdu.",
-        "fr": "Cette magnifique soirée ne fut pas seulement un triomphe diplomatique pour Mustafa Kemal, ce fut aussi la plus belle scène d'un amour gravé au fond de son cœur. Plus tard dans la nuit, lorsque la valse du 'Beau Danube bleu' de Johann Strauss a commencé à jouer, Mustafa Kemal s'est avancé vers Dimitrina Kovacheva, fille de l'ancien ministre bulgare de la Défense, le général Kovachev, alias 'Miti'. Éduquée en Suisse et connue sous le nom de 'Rose bulgare' pour sa grande culture et sa beauté inégalée, lorsque Miti et Mustafa Kemal se sont levés pour danser, le temps s'est arrêté pour la haute société de Sofia."
+        "fr": "Cette magnifique soirée ne fut pas seulement un triomphe diplomatique pour Mustafa Kemal, ce fut aussi la plus belle scène d'un amour gravé au fond de son cœur. Plus tard dans la nuit, lorsque la valse du 'Beau Danube bleu' de Johann Strauss a commencé à jouer, Mustafa Kemal s'est avancé vers Dimitrina Kovacheva, fille de l'ancien ministre bulgare de la Défense, le général Kovachev, alias 'Miti'. Éduquée en Suisse et connue sous le nom de 'Rose bulgare' pour sa grande culture et sa beauté inégalée, lorsque Miti et Mustafa Kemal se sont levés pour danser, le temps s'est arrêté pour la haute society de Sofia."
     },
     {
         "tr": "Bu dans, aslında alevlenmiş bir aşkın toplum önündeki cesur bir ilanıydı. Boris Parkı'nda yaptıkları uzun romantik yürüyüşlerin, buz pateni pistindeki gizli bakışmaların taçlandığı andı. Mustafa Kemal, bu büyük aşka teslim olmuş ve Miti'ye evlenme teklif etmiş, genç kızdan tereddütsüz bir 'Evet' almıştı.",
@@ -472,7 +472,7 @@ def delete_hybrid_book(book_id):
     load_book_content.clear()
 
 # ==========================================
-# 3. YÜKSEK HIZLI VE DÜŞÜK BELLEKLİ OCR MOTORU (EL YAZISI OPTİMİZASYONLU)
+# 3. YÜKSEK HIZLI VE DÜŞÜK BELLEKLİ OCR MOTORU
 # ==========================================
 @st.cache_resource
 def load_ocr():
@@ -495,26 +495,62 @@ def compress_image_for_sheets(img):
     return res
 
 def sort_reading_order(ocr_items):
+    """
+    Gelişmiş düşey çakışma (Vertical Overlap) tabanlı sıralama.
+    Büyük başlıkların küçük alt/üst yazıları yutmasını kesin olarak engeller.
+    """
     if not ocr_items: return []
     parsed = []
     for item in ocr_items:
         box, text, conf = item
-        if not text.strip(): continue
-        xs, ys = [p[0] for p in box], [p[1] for p in box]
-        min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
-        parsed.append({'item': item, 'min_x': min_x, 'cy': (min_y + max_y) / 2.0, 'h': max(max_y - min_y, 1.0)})
-    parsed.sort(key=lambda p: p['cy'])
+        t_clean = text.strip()
+        if not t_clean: continue
+        xs = [p[0] for p in box]
+        ys = [p[1] for p in box]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        parsed.append({
+            'item': item,
+            'min_x': min_x,
+            'max_x': max_x,
+            'min_y': min_y,
+            'max_y': max_y,
+            'cy': (min_y + max_y) / 2.0,
+            'h': max(max_y - min_y, 1.0)
+        })
+    
+    if not parsed: return []
+    parsed.sort(key=lambda p: (p['min_y'], p['min_x']))
+    
     lines = []
     for p in parsed:
         matched_line = None
         for line in lines:
-            avg_cy = sum(k['cy'] for k in line) / len(line)
-            avg_h = sum(k['h'] for k in line) / len(line)
-            if abs(p['cy'] - avg_cy) < (max(avg_h, p['h']) * 0.65): matched_line = line; break
-        if matched_line: matched_line.append(p)
-        else: lines.append([p])
-    lines.sort(key=lambda line: sum(k['cy'] for k in line) / len(line))
-    return [p['item'] for line in lines for p in sorted(line, key=lambda p: p['min_x'])]
+            overlaps = []
+            for other in line:
+                ov = max(0, min(p['max_y'], other['max_y']) - max(p['min_y'], other['min_y']))
+                min_h = min(p['h'], other['h'])
+                overlaps.append(ov / min_h)
+            
+            avg_overlap = sum(overlaps) / len(overlaps)
+            if avg_overlap > 0.40:
+                matched_line = line
+                break
+        
+        if matched_line is not None:
+            matched_line.append(p)
+        else:
+            lines.append([p])
+            
+    lines.sort(key=lambda line: min(k['min_y'] for k in line))
+    
+    sorted_items = []
+    for line in lines:
+        line.sort(key=lambda p: p['min_x'])
+        for p in line:
+            sorted_items.append(p['item'])
+            
+    return sorted_items
 
 def clean_word_key(text):
     if not text: return ""
@@ -589,7 +625,7 @@ def ensure_reading_ready(pages, target_lang):
     return pages
 
 def process_single_image(img):
-    """El yazısı ve renkli çocuk kitabı sayfaları için optimize edilmiş OCR okuyucu"""
+    """El yazısı ve renkli çocuk kitabı sayfaları için dengeli OCR okuyucu"""
     img_fixed = ImageOps.exif_transpose(img).convert("RGB")
     
     img_ocr = img_fixed.copy()
@@ -602,17 +638,13 @@ def process_single_image(img):
     w, h = img_ocr.size
     np_arr = np.array(img_ocr)
     
-    # EL YAZISI OPTİMİZASYONU:
-    # mag_ratio=1.8: Harf kıvrımlarını büyüterek okur
-    # contrast_ths=0.05: Sarı/yeşil zeminlerdeki ince el yazısını yakalar
-    # low_text=0.3: Kopuk harf çizgilerini birleştirir
     ocr_raw = reader.readtext(
         np_arr,
         detail=1,
         paragraph=False,
-        mag_ratio=1.8,
-        contrast_ths=0.05,
-        adjust_contrast=0.6,
+        mag_ratio=1.0,
+        contrast_ths=0.1,
+        adjust_contrast=0.5,
         text_threshold=0.5,
         low_text=0.3
     )
@@ -1178,7 +1210,6 @@ elif st.session_state.reading_mode:
             const layer = document.getElementById('boxes-layer');
             const wrap = document.getElementById('viewport-wrap');
 
-            // HER SAYFAYI EKRANIN BOYUTUNA TAM OTURTAN AKILLI HESAPLAYICI (HER CİHAZDA KUSURSUZ FIT)
             function fitPageToScreen() {{
                 if (!imgEl.naturalWidth || !imgEl.naturalHeight) return;
                 const availW = wrap.clientWidth * 0.96;
@@ -1301,7 +1332,7 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI (BİRLEŞTİRME & YENİDEN TARAMA DESTEĞİ)
+# 6. DÜZENLEYİCİ EKRANI (SIRALAMA KONTROLLERİ VE NUMARALI ÖNİZLEME)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
@@ -1530,26 +1561,62 @@ elif st.session_state.editor_mode:
                     except Exception as e:
                         st.error(f"Tarama hatası: {e}")
 
+            # SAYFA ÖNİZLEMESİ: NUMARALI KELİME KUTULARIYLA BİRLİKTE GÖSTERİM
+            overlay_divs = ""
+            for b_i, b in enumerate(curr_page.get("boxes", [])):
+                overlay_divs += f"""
+                <div style="position: absolute; left: {b['left']}%; top: {b['top']}%; width: {b['width']}%; height: {b['height']}%; border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.15); pointer-events: none; box-sizing: border-box; border-radius: 3px;">
+                    <span style="position: absolute; top: -15px; left: 0; background: #0284c7; color: #ffffff; font-size: 10px; font-weight: bold; padding: 0 4px; border-radius: 2px; line-height: 14px;">#{b_i+1}</span>
+                </div>
+                """
+
             st.markdown(
                 f"""
-                <div style="text-align: center; background: #0f172a; border-radius: 8px; padding: 10px; margin-top: 10px;">
-                    <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px;" />
+                <div style="text-align: center; background: #0f172a; border-radius: 8px; padding: 10px; margin-top: 10px; position: relative; display: inline-block; width: 100%;">
+                    <div style="position: relative; display: inline-block; max-width: 100%;">
+                        <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px; display: block;" />
+                        {overlay_divs}
+                    </div>
                 </div>
                 """, unsafe_allow_html=True
             )
 
         with col_right:
             st.markdown("### 🔤 Tespit Edilen Kelimeler ve Cümleler")
-            st.caption("Kelimeyi düzenleyebilir veya istemediğiniz satırları 'Kaldır 🗑️' kutusunu işaretleyip aşağıdaki butona basarak silebilirsiniz.")
+            st.caption("Cümlelerin sırasını aşağıdaki ⬆️ / ⬇️ imleç butonlarıyla değiştirebilirsiniz. Böylece okurken alt satır ile üst satır asla karışmaz.")
 
-            table_data = [{"Kaldır 🗑️": False, "Metin (Fransızca)": b["text"]} for b in curr_page["boxes"]]
+            # 1. DOĞRUDAN SIRALAMA ARACI (⬆️ YUKARI / ⬇️ AŞAĞI TAŞIMA BUTONLARI)
+            num_boxes = len(curr_page["boxes"])
+            if num_boxes > 1:
+                st.markdown("#### ↕️ Cümle / Kelime Sırasını Kaydır")
+                col_pick, col_mv_u, col_mv_d = st.columns([2.5, 1, 1])
+                with col_pick:
+                    move_target_idx = st.selectbox(
+                        "Taşınacak Cümle:",
+                        options=list(range(num_boxes)),
+                        format_func=lambda i: f"#{i+1}: {curr_page['boxes'][i]['text'][:30]}...",
+                        key=f"reorder_select_{p_idx}",
+                        label_visibility="collapsed"
+                    )
+                with col_mv_u:
+                    if st.button("⬆️ Yukarı", disabled=(move_target_idx == 0), use_container_width=True, key=f"btn_u_{p_idx}"):
+                        curr_page["boxes"][move_target_idx], curr_page["boxes"][move_target_idx - 1] = curr_page["boxes"][move_target_idx - 1], curr_page["boxes"][move_target_idx]
+                        st.rerun()
+                with col_mv_d:
+                    if st.button("⬇️ Aşağı", disabled=(move_target_idx >= num_boxes - 1), use_container_width=True, key=f"btn_d_{p_idx}"):
+                        curr_page["boxes"][move_target_idx], curr_page["boxes"][move_target_idx + 1] = curr_page["boxes"][move_target_idx + 1], curr_page["boxes"][move_target_idx]
+                        st.rerun()
+
+            # 2. TABLO İLE METİN DÜZENLEME & SİLME
+            table_data = [{"Sıra": i + 1, "Kaldır 🗑️": False, "Metin (Fransızca)": b["text"]} for i, b in enumerate(curr_page["boxes"])]
             edited_table = st.data_editor(
                 table_data,
                 key=f"editor_table_{p_idx}_{len(curr_page['boxes'])}",
                 use_container_width=True,
-                height=320,
+                height=300,
                 column_config={
-                    "Kaldır 🗑️": st.column_config.CheckboxColumn("Kaldır 🗑️", default=False),
+                    "Sıra": st.column_config.NumberColumn("Sıra #", min_value=1, max_value=max(1, num_boxes), step=1, width="small"),
+                    "Kaldır 🗑️": st.column_config.CheckboxColumn("Kaldır 🗑️", default=False, width="small"),
                     "Metin (Fransızca)": st.column_config.TextColumn("Metin (Fransızca)", required=True)
                 }
             )
@@ -1557,20 +1624,25 @@ elif st.session_state.editor_mode:
             col_app1, col_app2 = st.columns([2, 1.2])
             with col_app1:
                 if st.button("🔄 Değişiklikleri Bu Sayfaya Uygula", type="primary", use_container_width=True):
-                    new_boxes = []
+                    # Satırları ve varsa değiştirilen "Sıra" numaralarını topla
+                    valid_items = []
                     for i, row in enumerate(edited_table):
                         is_deleted = row.get("Kaldır 🗑️", False)
                         text_val = str(row.get("Metin (Fransızca)", "")).strip()
+                        order_val = row.get("Sıra", i + 1)
                         if not is_deleted and text_val:
                             if i < len(curr_page["boxes"]):
                                 box_obj = dict(curr_page["boxes"][i])
                             else:
-                                box_obj = {"id": f"b_{len(new_boxes)}", "left": 10, "top": 10, "width": 80, "height": 8}
+                                box_obj = {"id": f"b_{len(valid_items)}", "left": 10, "top": 10, "width": 80, "height": 8}
                             box_obj["text"] = text_val
                             box_obj["clean"] = clean_word_key(text_val)
-                            new_boxes.append(box_obj)
-                    curr_page["boxes"] = new_boxes
-                    st.success("Bu sayfanın kelimeleri başarıyla güncellendi!")
+                            valid_items.append((order_val, box_obj))
+                    
+                    # Kullanıcı elle sıra numarası değiştirdiyse ona göre sırala
+                    valid_items.sort(key=lambda x: x[0])
+                    curr_page["boxes"] = [item[1] for item in valid_items]
+                    st.success("Bu sayfanın kelimeleri ve sırası başarıyla güncellendi!")
                     time.sleep(0.3)
                     st.rerun()
 
@@ -1579,26 +1651,31 @@ elif st.session_state.editor_mode:
                     curr_page["boxes"] = [b for b in curr_page["boxes"] if not b["text"].strip().isdigit()]
                     st.rerun()
 
-            # SAYFA METNİNİ TOPLU DÜZELTME PANELİ (HIZLI DÜZELTME İÇİN)
+            # SAYFA METNİNİ TOPLU DÜZELTME PANELİ
             with st.expander("⚡ Bu Sayfanın Metnini Blok Halinde Toplu Düzelt"):
                 curr_joined = " ".join([b["text"] for b in curr_page["boxes"]])
-                bulk_input = st.text_area("Sayfada olması gereken doğru metin:", value=curr_joined, height=100)
+                bulk_input = st.text_area("Sayfada olması gereken doğru metin:", value=curr_joined, height=90)
                 if st.button("✨ Sayfa Metnini Bu Cümleyle Yenile"):
                     if bulk_input.strip():
-                        # Cümleyi kelimelere bölerek kutular oluşturur
                         words = [w for w in bulk_input.strip().split() if w]
-                        total_w = len(words)
                         new_bulk_boxes = []
+                        # Varsa eski kutuların koordinatlarını sırayla koruyarak metinleri yenile
                         for w_i, w_txt in enumerate(words):
-                            new_bulk_boxes.append({
-                                "id": f"b_{w_i}",
-                                "text": w_txt,
-                                "clean": clean_word_key(w_txt),
-                                "left": round(5 + (w_i % 6) * 15, 1),
-                                "top": round(20 + (w_i // 6) * 10, 1),
-                                "width": 14,
-                                "height": 8
-                            })
+                            if w_i < len(curr_page["boxes"]):
+                                old_box = dict(curr_page["boxes"][w_i])
+                                old_box["text"] = w_txt
+                                old_box["clean"] = clean_word_key(w_txt)
+                                new_bulk_boxes.append(old_box)
+                            else:
+                                new_bulk_boxes.append({
+                                    "id": f"b_{w_i}",
+                                    "text": w_txt,
+                                    "clean": clean_word_key(w_txt),
+                                    "left": round(5 + (w_i % 5) * 18, 1),
+                                    "top": round(20 + (w_i // 5) * 12, 1),
+                                    "width": 16,
+                                    "height": 9
+                                })
                         curr_page["boxes"] = new_bulk_boxes
                         st.success("Sayfa metni tek seferde yenilendi! 'Değişiklikleri Kaydet' ile kaydedebilirsiniz.")
                         time.sleep(0.4)
@@ -1667,7 +1744,6 @@ else:
             if st.button(T("delete_book"), use_container_width=True) and st.session_state.user_role == "admin":
                 delete_hybrid_book(selected_id); st.rerun()
 
-    # YENİ KİTAP OLUŞTURMA SEKMESİ
     if st.session_state.user_role == "admin":
         with st.expander(T("add_tab")):
             st.markdown("### 📚 Yeni Kitap Oluştur & Sayfa Aktar")
@@ -1764,7 +1840,8 @@ else:
                     st.session_state.editor_book_title = book_title_input
                     st.session_state.editor_orig_book_id = None
                     st.session_state.editor_page_idx = 0
-                    st.session_state.editor_mode = True; st.rerun()
+                    st.session_state.editor_mode = True
+                    st.rerun()
 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
     
