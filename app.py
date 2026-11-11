@@ -124,7 +124,7 @@ STORY_PARAGRAPHS = [
     },
     {
         "tr": "Askerî Kulüp'teki o büyülü vals ve ölümsüz aşk, bugün tarihin sayfalarında sadece askeri bir dehanın değil; vatanı için en derin sevgisinden vazgeçmek zorunda kalan bir devin en insani, en hüzünlü hatırası olarak yankılanmaya devam ediyor.",
-        "fr": "Cette valse magique au Club et cet amour immortel continuent de résonner aujourd'hui dans les pages de l'histoire, non seulement comme le souvenir d'un génie militaire, mais aussi comme le souvenir le plus humain et le plus triste d'un giant qui a dû renoncer à son amour le plus profond pour sa patrie."
+        "fr": "Cette valse magique au Club et cet amour immortel continuent de résonner aujourd'hui dans les pages de l'histoire, non seulement comme le souvenir d'un génie militaire, mais aussi comme le souvenir le plus humain et le plus triste d'un géant qui a dû renoncer à son amour le plus profond pour sa patrie."
     }
 ]
 
@@ -338,7 +338,7 @@ def get_blue_danube_audio_data():
     return "https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
 
 # ==========================================
-# 2. GOOGLE SHEETS ENTEGRASYONU (DOĞRUDAN CANLI VE GÜVENİLİR)
+# 2. GOOGLE SHEETS ENTEGRASYONU (CANLI)
 # ==========================================
 def clean_private_key(key_str):
     if not key_str or not isinstance(key_str, str): return key_str
@@ -404,7 +404,6 @@ def record_thanks(email):
     except: return False
 
 def get_saved_books():
-    """Canlı Google Sheets okuyucu (Önbelleksiz, her zaman en güncel veriyi çeker)"""
     sheet, err = get_sheet("Library")
     if not sheet: return [], err
     for attempt in range(2):
@@ -466,21 +465,30 @@ def delete_hybrid_book(book_id):
         for i, r in enumerate(lib_sheet.get_all_records()):
             if str(r.get("BookID", "")).strip() == str(book_id).strip(): lib_sheet.delete_rows(i + 2); break
     if pages_sheet:
-        rows_to_delete = [i + 2 for i, r in enumerate(pages_sheet.get_all_records()) if str(r.get("BookID", "")).strip() == str(book_id).strip()]
+        rows_to_delete = [i + 2 for i, r in enumerate(pages_sheet.get_all_records()) if str(r.get("BookID", "")) == book_id]
         for row_idx in reversed(rows_to_delete): pages_sheet.delete_rows(row_idx); time.sleep(0.1)
 
 # ==========================================
-# 3. YEREL HTTP İLE ÇALIŞAN KUSURSUZ GEMINI VISION
+# 3. ZIRHLI GEMINI VISION API & REST PROTOKOLÜ
 # ==========================================
+def sanitize_gemini_key(raw_key):
+    if not raw_key: return ""
+    return re.sub(r"[^a-zA-Z0-9_\-\.]", "", str(raw_key)).strip()
+
 def get_active_gemini_key():
     k = st.session_state.get("manual_gemini_key", "").strip()
-    if k: return k.strip("'").strip('"')
+    if k: return sanitize_gemini_key(k)
     if hasattr(st, "secrets"):
         for name in ["GEMINI_API_KEY", "gemini_api_key", "GEMINI_KEY"]:
             if name in st.secrets:
-                val = str(st.secrets[name]).strip().strip("'").strip('"')
+                val = sanitize_gemini_key(st.secrets[name])
                 if val: return val
     return None
+
+def build_gemini_url(api_key):
+    clean_k = sanitize_gemini_key(api_key)
+    # Başına hiçbir karakterin kaçmasına izin vermeyen katı formatlama
+    return f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={clean_k}"
 
 @st.cache_resource
 def load_ocr():
@@ -488,11 +496,13 @@ def load_ocr():
 
 def call_gemini_vision_native(base64_image, api_key):
     """
-    Python'ın yerel urllib modülü ile hatasız Gemini Vision çağrısı.
-    'No connection adapters' hatası üretmesi imkansızdır.
+    Kusursuz ve protokole tam uyan Gemini Vision çağrısı.
     """
-    clean_key = str(api_key).strip().strip("'").strip('"')
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={clean_key}"
+    clean_key = sanitize_gemini_key(api_key)
+    if not clean_key:
+        return None, "API Key boş veya geçersiz."
+        
+    url = build_gemini_url(clean_key)
     
     prompt = (
         "You are an expert OCR engine for French children's picture books. "
@@ -579,7 +589,7 @@ def call_gemini_vision_native(base64_image, api_key):
             
     except urllib.error.HTTPError as he:
         err_msg = he.read().decode("utf-8", errors="ignore")
-        return None, f"Google API Hatası (HTTP {he.code}): {err_msg[:160]}"
+        return None, f"Google Hatası (HTTP {he.code}): {err_msg[:160]}"
     except Exception as e:
         return None, f"Bağlantı Hatası: {str(e)}"
 
@@ -1152,8 +1162,9 @@ elif st.session_state.editor_mode:
             st.warning("🟠 EasyOCR Devrede (Anahtar Yok)")
     with col_k2:
         m_key = st.text_input("Gemini API Anahtarı:", value=st.session_state.manual_gemini_key, type="password", placeholder="AIzaSy...", label_visibility="collapsed")
-        if m_key != st.session_state.manual_gemini_key:
-            st.session_state.manual_gemini_key = m_key.strip().strip("'").strip('"')
+        clean_m_key = sanitize_gemini_key(m_key)
+        if clean_m_key != st.session_state.manual_gemini_key:
+            st.session_state.manual_gemini_key = clean_m_key
             st.rerun()
     with col_k3:
         if st.button("🧪 Anahtarı Test Et", use_container_width=True):
@@ -1161,8 +1172,7 @@ elif st.session_state.editor_mode:
                 st.error("Önce API anahtarınızı girin!")
             else:
                 with st.spinner("Google sunucularına bağlanılıyor..."):
-                    clean_k = str(active_key).strip().strip("'").strip('"')
-                    test_url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){clean_k}"
+                    test_url = build_gemini_url(active_key)
                     try:
                         t_data = json.dumps({"contents": [{"parts": [{"text": "Say 'OK'"}]}]}).encode("utf-8")
                         t_req = urllib.request.Request(test_url, data=t_data, headers={"Content-Type": "application/json"})
