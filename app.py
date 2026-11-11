@@ -16,7 +16,7 @@ import easyocr
 import streamlit as st
 import streamlit.components.v1 as components
 
-# PyTorch Bellek Tasarrufu (EasyOCR bellek sızıntısını engeller)
+# PyTorch Bellek Tasarrufu
 try:
     import torch
     torch.set_grad_enabled(False)
@@ -83,7 +83,7 @@ STORY_PARAGRAPHS = [
     },
     {
         "tr": "Bu dans, aslında alevlenmiş bir aşkın toplum önündeki cesur bir ilanıydı. Boris Parkı'nda yaptıkları uzun romantik yürüyüşlerin, buz pateni pistindeki gizli bakışmaların taçlandığı andı. Mustafa Kemal, bu büyük aşka teslim olmuş ve Miti'ye evlenme teklif etmiş, genç kızdan tereddütsüz bir 'Evet' almıştı.",
-        "fr": "Cette danse était en fait la déclaration courageuse devant la société d'un amour enflammé. C'était le couronnement de leurs longues promenades romantiques dans le parc Boris et de leurs regards secrets sur la patinoire. Mustafa Kemal, s'abandonnant a ce grand amour, avait demandé Miti en mariage et avait reçu un 'Oui' sans hésitation de la jeune fille."
+        "fr": "Cette danse était en fait la déclaration courageuse devant la société d'un amour enflammé. C'était le couronnement de leurs longues promenades romantiques dans le parc Boris et de leurs regards secrets sur la patinoire. Mustafa Kemal, s'abandonnant à ce grand amour, avait demandé Miti en mariage et avait reçu un 'Oui' sans hésitation de la jeune fille."
     },
     {
         "tr": "Vatan Borcu ve Kırık Bir Kalp",
@@ -472,7 +472,7 @@ def delete_hybrid_book(book_id):
     load_book_content.clear()
 
 # ==========================================
-# 3. YÜKSEK HIZLI VE DÜŞÜK BELLEKLİ OCR MOTORU (24+ SAYFA İÇİN GÜÇLENDİRİLMİŞ)
+# 3. YÜKSEK HIZLI VE DÜŞÜK BELLEKLİ OCR MOTORU (EL YAZISI OPTİMİZASYONLU)
 # ==========================================
 @st.cache_resource
 def load_ocr():
@@ -589,12 +589,11 @@ def ensure_reading_ready(pages, target_lang):
     return pages
 
 def process_single_image(img):
-    """Bellek tasarruflu ve yüksek hızlı OCR okuyucu (1100px Sweet-Spot)"""
+    """El yazısı ve renkli çocuk kitabı sayfaları için optimize edilmiş OCR okuyucu"""
     img_fixed = ImageOps.exif_transpose(img).convert("RGB")
     
-    # Bellek tüketimini 4 kat azaltmak için 1100px ölçekleme (Yazı okuma hassasiyeti tam korunur)
     img_ocr = img_fixed.copy()
-    img_ocr.thumbnail((1100, 1100), Image.Resampling.LANCZOS)
+    img_ocr.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
     try:
         img_ocr = ImageOps.autocontrast(img_ocr, cutoff=0.5)
     except Exception:
@@ -603,8 +602,20 @@ def process_single_image(img):
     w, h = img_ocr.size
     np_arr = np.array(img_ocr)
     
-    # EasyOCR inference (Düşük bellek ve 2 saniyede hızlı okuma)
-    ocr_raw = reader.readtext(np_arr, detail=1, paragraph=False, canvas_size=1200, mag_ratio=1.0)
+    # EL YAZISI OPTİMİZASYONU:
+    # mag_ratio=1.8: Harf kıvrımlarını büyüterek okur
+    # contrast_ths=0.05: Sarı/yeşil zeminlerdeki ince el yazısını yakalar
+    # low_text=0.3: Kopuk harf çizgilerini birleştirir
+    ocr_raw = reader.readtext(
+        np_arr,
+        detail=1,
+        paragraph=False,
+        mag_ratio=1.8,
+        contrast_ths=0.05,
+        adjust_contrast=0.6,
+        text_threshold=0.5,
+        low_text=0.3
+    )
     ordered_ocr = sort_reading_order(ocr_raw)
     
     boxes = []
@@ -623,7 +634,6 @@ def process_single_image(img):
         
     b64_str = compress_image_for_sheets(img_fixed)
     
-    # Belleği anında sıfırla (24+ sayfada RAM patlamasını önler)
     del img_fixed, img_ocr, np_arr
     gc.collect()
     
@@ -1168,6 +1178,7 @@ elif st.session_state.reading_mode:
             const layer = document.getElementById('boxes-layer');
             const wrap = document.getElementById('viewport-wrap');
 
+            // HER SAYFAYI EKRANIN BOYUTUNA TAM OTURTAN AKILLI HESAPLAYICI (HER CİHAZDA KUSURSUZ FIT)
             function fitPageToScreen() {{
                 if (!imgEl.naturalWidth || !imgEl.naturalHeight) return;
                 const availW = wrap.clientWidth * 0.96;
@@ -1507,7 +1518,7 @@ elif st.session_state.editor_mode:
                     st.button("🔗 Son Sayfa (Birleştirilemez)", disabled=True, use_container_width=True)
 
             if st.button(T("rescan_page_btn"), use_container_width=True):
-                with st.spinner("Sayfa güncel OCR motoru ile taranıyor..."):
+                with st.spinner("Sayfa el yazısı optimizasyonlu OCR ile taranıyor..."):
                     try:
                         img_bytes = base64.b64decode(curr_page['img_b64'])
                         orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
@@ -1536,7 +1547,7 @@ elif st.session_state.editor_mode:
                 table_data,
                 key=f"editor_table_{p_idx}_{len(curr_page['boxes'])}",
                 use_container_width=True,
-                height=350,
+                height=320,
                 column_config={
                     "Kaldır 🗑️": st.column_config.CheckboxColumn("Kaldır 🗑️", default=False),
                     "Metin (Fransızca)": st.column_config.TextColumn("Metin (Fransızca)", required=True)
@@ -1567,6 +1578,31 @@ elif st.session_state.editor_mode:
                 if st.button("🧹 Sayfa Nolarını Temizle", use_container_width=True):
                     curr_page["boxes"] = [b for b in curr_page["boxes"] if not b["text"].strip().isdigit()]
                     st.rerun()
+
+            # SAYFA METNİNİ TOPLU DÜZELTME PANELİ (HIZLI DÜZELTME İÇİN)
+            with st.expander("⚡ Bu Sayfanın Metnini Blok Halinde Toplu Düzelt"):
+                curr_joined = " ".join([b["text"] for b in curr_page["boxes"]])
+                bulk_input = st.text_area("Sayfada olması gereken doğru metin:", value=curr_joined, height=100)
+                if st.button("✨ Sayfa Metnini Bu Cümleyle Yenile"):
+                    if bulk_input.strip():
+                        # Cümleyi kelimelere bölerek kutular oluşturur
+                        words = [w for w in bulk_input.strip().split() if w]
+                        total_w = len(words)
+                        new_bulk_boxes = []
+                        for w_i, w_txt in enumerate(words):
+                            new_bulk_boxes.append({
+                                "id": f"b_{w_i}",
+                                "text": w_txt,
+                                "clean": clean_word_key(w_txt),
+                                "left": round(5 + (w_i % 6) * 15, 1),
+                                "top": round(20 + (w_i // 6) * 10, 1),
+                                "width": 14,
+                                "height": 8
+                            })
+                        curr_page["boxes"] = new_bulk_boxes
+                        st.success("Sayfa metni tek seferde yenilendi! 'Değişiklikleri Kaydet' ile kaydedebilirsiniz.")
+                        time.sleep(0.4)
+                        st.rerun()
 
             with st.expander("➕ Sayfaya Eksik Kalan Kelime / Cümle Ekle"):
                 missed_text = st.text_input("Görselde okunmamış metni buraya yazın:", key=f"missed_{p_idx}")
@@ -1631,7 +1667,7 @@ else:
             if st.button(T("delete_book"), use_container_width=True) and st.session_state.user_role == "admin":
                 delete_hybrid_book(selected_id); st.rerun()
 
-    # YENİ KİTAP OLUŞTURMA SEKMESİ (24+ SAYFA İÇİN GÜÇLENDİRİLMİŞ)
+    # YENİ KİTAP OLUŞTURMA SEKMESİ
     if st.session_state.user_role == "admin":
         with st.expander(T("add_tab")):
             st.markdown("### 📚 Yeni Kitap Oluştur & Sayfa Aktar")
@@ -1728,8 +1764,7 @@ else:
                     st.session_state.editor_book_title = book_title_input
                     st.session_state.editor_orig_book_id = None
                     st.session_state.editor_page_idx = 0
-                    st.session_state.editor_mode = True
-                    st.rerun()
+                    st.session_state.editor_mode = True; st.rerun()
 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
     
