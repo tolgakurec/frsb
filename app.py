@@ -8,6 +8,7 @@ import gc
 import uuid
 import urllib.request
 import urllib.parse
+import urllib.error
 import concurrent.futures
 from datetime import datetime
 from PIL import Image, ImageOps
@@ -153,7 +154,7 @@ UI_TRANSLATIONS = {
         "split_page_btn": "✂️ Bu Çift Sayfayı İkiye Böl",
         "merge_page_btn": "🔗 Sonraki Sayfa ile Birleştir (Sol + Sağ)",
         "rescan_page_btn": "🔄 Bu Sayfayı Tekrar Tara",
-        "ocr_processing": "Kitap hızla hazırlanıyor...",
+        "ocr_processing": "Kitap hazırlanıyor...",
         "reading_lang_label": "Okuma & Çeviri Dili:",
         "zen_close": "✕ Kapat",
         "zen_page": "Sayfa",
@@ -267,6 +268,7 @@ if "editor_book_title" not in st.session_state: st.session_state.editor_book_tit
 if "editor_orig_book_id" not in st.session_state: st.session_state.editor_orig_book_id = None
 if "editor_page_idx" not in st.session_state: st.session_state.editor_page_idx = 0
 if "staged_camera_pages" not in st.session_state: st.session_state.staged_camera_pages = []
+if "manual_gemini_key" not in st.session_state: st.session_state.manual_gemini_key = ""
 
 def T(key):
     lang = st.session_state.app_lang if st.session_state.app_lang in UI_TRANSLATIONS else "tr"
@@ -282,7 +284,7 @@ def translate_api(text, source_lang, target_lang):
     clients = ['gtx', 'dict-chrome-ex', 'te_lib']
     for client in clients:
         try:
-            url = f"https://translate.googleapis.com/translate_a/single?client={client}&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
+            url = f"[https://translate.googleapis.com/translate_a/single?client=](https://translate.googleapis.com/translate_a/single?client=){client}&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
             res = urllib.request.urlopen(req, timeout=4)
             data = json.loads(res.read().decode('utf-8'))
@@ -328,12 +330,12 @@ def get_ataturk_img_data():
     if not img_b64:
         img_b64 = get_file_base64("atatürk ve miti.jpg", "image/jpeg")
     if img_b64: return img_b64
-    return "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg"
+    return "[https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg)"
 
 def get_blue_danube_audio_data():
     audio_b64 = get_file_base64("blue_danube.mp3", "audio/mp3")
     if audio_b64: return audio_b64
-    return "https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
+    return "[https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3](https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3)"
 
 # ==========================================
 # 2. GOOGLE SHEETS ENTEGRASYONU
@@ -367,7 +369,7 @@ def get_gsheet_client():
     if not creds_dict: return None, "Google kimlik anahtarı bulunamadı!", ""
     sa_email = creds_dict.get("client_email", "Bilinmeyen Servis Hesabı")
     try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        scope = ["[https://spreadsheets.google.com/feeds](https://spreadsheets.google.com/feeds)", "[https://www.googleapis.com/auth/drive](https://www.googleapis.com/auth/drive)"]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         return client, None, sa_email
@@ -470,11 +472,15 @@ def delete_hybrid_book(book_id):
     load_book_content.clear()
 
 # ==========================================
-# 3. HİBRİT OKUMA MOTORU: GEMİNİ VISION + EASYOCR YEDEKLİ
+# 3. KUSURSUZ GEMINI VISION API & REST PROTOKOLÜ
 # ==========================================
-def get_gemini_api_key():
-    if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
-        return st.secrets["GEMINI_API_KEY"]
+def get_active_gemini_key():
+    if st.session_state.get("manual_gemini_key", "").strip():
+        return st.session_state["manual_gemini_key"].strip()
+    if hasattr(st, "secrets"):
+        for k in ["GEMINI_API_KEY", "gemini_api_key", "GEMINI_KEY"]:
+            if k in st.secrets and str(st.secrets[k]).strip():
+                return str(st.secrets[k]).strip()
     return None
 
 @st.cache_resource
@@ -482,66 +488,116 @@ def load_ocr():
     return easyocr.Reader(['fr', 'en'], gpu=False)
 
 def call_gemini_vision(base64_image, api_key):
-    """Gemini 1.5 Flash Vision API ile görseldeki metinleri JSON formatında okur"""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    """
+    Google Gemini Vision REST API çağrısı.
+    Fransız çocuk el yazısını (écriture cursive) tam doğrulukla ve koordinatlarıyla okur.
+    """
+    candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest"]
+    prompt = (
+        "You are an expert OCR engine for children's illustrated storybooks. "
+        "Carefully read all French text in this image, especially cursive handwriting (écriture cursive) and artistic fonts. "
+        "Return STRICTLY a JSON array of objects without markdown formatting or code fences. "
+        "Each object represents a line or distinct phrase and must contain:\n"
+        "- 'text': The exact transcribed French text (keep accents é,è,à,ç, apostrophes, punctuation).\n"
+        "- 'left': Float percentage (0 to 100) from image left edge.\n"
+        "- 'top': Float percentage (0 to 100) from image top edge.\n"
+        "- 'width': Float percentage (0 to 100) width of text.\n"
+        "- 'height': Float percentage (0 to 100) height of text.\n"
+        "Sort the objects in natural reading order (top-to-bottom, left-to-right)."
+    )
+
     payload = {
         "contents": [{
             "parts": [
-                {"text": "Extract all text in this image. Return strictly a JSON array where each object has 'text', 'left', 'top', 'width', 'height'. Coordinates must be percentage (0-100) floats representing bounding boxes relative to image dimensions. Only return the JSON array, no extra markdown."},
-                {"inline_data": {"mime_type": "image/jpeg", "data": base64_image}}
+                {"text": prompt},
+                {
+                    "inlineData": {
+                        "mimeType": "image/jpeg",
+                        "data": base64_image
+                    }
+                }
             ]
         }],
         "generationConfig": {
-            "response_mime_type": "application/json"
+            "responseMimeType": "application/json",
+            "temperature": 0.1
         }
     }
-    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={'Content-Type': 'application/json'})
-    try:
-        with urllib.request.urlopen(req, timeout=12) as response:
-            res_data = json.loads(response.read().decode('utf-8'))
-            text_resp = res_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "[]")
-            boxes = json.loads(text_resp)
-            if not isinstance(boxes, list): return None
-            # Standardize output for the app
-            clean_boxes = []
-            for i, b in enumerate(boxes):
-                clean_boxes.append({
-                    "id": f"b_{i}",
-                    "text": str(b.get("text", "")).strip(),
-                    "clean": clean_word_key(str(b.get("text", ""))),
-                    "left": float(b.get("left", 0)),
-                    "top": float(b.get("top", 0)),
-                    "width": float(b.get("width", 20)),
-                    "height": float(b.get("height", 5))
-                })
-            return clean_boxes
-    except Exception as e:
-        print(f"Gemini API hatası: {e}")
-        return None
+    
+    data_bytes = json.dumps(payload).encode("utf-8")
+    last_error = ""
+
+    for model in candidate_models:
+        url = f"[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/){model}:generateContent?key={api_key}"
+        req = urllib.request.Request(
+            url,
+            data=data_bytes,
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0"
+            }
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=14) as response:
+                res_body = response.read().decode("utf-8")
+                res_data = json.loads(res_body)
+                raw_text = res_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "[]").strip()
+                
+                # Kod çitlerini temizle
+                if raw_text.startswith("```"):
+                    raw_text = re.sub(r"^```[a-zA-Z]*\n?", "", raw_text)
+                    raw_text = re.sub(r"\n?```$", "", raw_text).strip()
+                    
+                parsed_boxes = json.loads(raw_text)
+                if isinstance(parsed_boxes, list) and len(parsed_boxes) > 0:
+                    clean_boxes = []
+                    for i, b in enumerate(parsed_boxes):
+                        t_val = str(b.get("text", "")).strip()
+                        if not t_val: continue
+                        clean_boxes.append({
+                            "id": f"b_{i}",
+                            "text": t_val,
+                            "clean": clean_word_key(t_val),
+                            "left": float(b.get("left", 5)),
+                            "top": float(b.get("top", 5)),
+                            "width": float(b.get("width", 30)),
+                            "height": float(b.get("height", 8))
+                        })
+                    if clean_boxes:
+                        return clean_boxes, model, None
+        except urllib.error.HTTPError as he:
+            err_content = he.read().decode("utf-8", errors="ignore")
+            last_error = f"{model} HTTP {he.code}: {err_content}"
+            continue
+        except Exception as e:
+            last_error = f"{model} Hata: {str(e)}"
+            continue
+
+    return None, None, last_error
 
 def process_single_image(img):
-    """
-    Anahtar varsa Gemini API'ye gönderir. 
-    Anahtar yoksa veya API çökerse otomatik EasyOCR'a döner.
-    """
     img_fixed = ImageOps.exif_transpose(img).convert("RGB")
     
-    # 1. Fotoğrafı Base64'e çevir ve kaydet
+    # Gemini için yüksek kaliteli 1200px Base64
     img_c = img_fixed.copy()
     img_c.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
-    img_c.save(buf, format="JPEG", quality=75)
-    b64_str = base64.b64encode(buf.getvalue()).decode("utf-8")
+    img_c.save(buf, format="JPEG", quality=80)
+    b64_gemini = base64.b64encode(buf.getvalue()).decode("utf-8")
     del img_c, buf
     
+    gemini_key = get_active_gemini_key()
     boxes = None
-    gemini_key = get_gemini_api_key()
+    engine_name = "EasyOCR"
+    error_msg = None
     
-    # 2. Eğer API Key varsa Gemini ile Tara
+    # 1. Gemini Vision ile dene
     if gemini_key:
-        boxes = call_gemini_vision(b64_str, gemini_key)
-        
-    # 3. Eğer API key yoksa veya Gemini cevap vermezse EasyOCR ile tara (Yedek Sistem)
+        boxes, used_model, error_msg = call_gemini_vision(b64_gemini, gemini_key)
+        if boxes:
+            engine_name = f"Gemini ({used_model})"
+            
+    # 2. Eğer Gemini anahtarı yoksa veya hata verdiyse EasyOCR'a dön
     if not boxes:
         reader = load_ocr()
         img_ocr = img_fixed.copy()
@@ -563,15 +619,16 @@ def process_single_image(img):
             t_clean = text.strip()
             if not t_clean: continue
             x_pts, y_pts = [p[0] for p in box], [p[1] for p in box]
-            min_x, max_x, min_y, max_y = min(x_pts), max(x_pts), min(y_pts), max(y_pts)
+            min_x, max_x = min(x_pts), max(x_pts)
+            min_y, max_y = min(y_pts), max(y_pts)
             boxes.append({
                 "id": f"b_{len(boxes)}", "text": t_clean, "clean": clean_word_key(t_clean),
                 "left": (min_x / w) * 100, "top": (min_y / h) * 100,
                 "width": ((max_x - min_x) / w) * 100, "height": ((max_y - min_y) / h) * 100
             })
         del img_ocr, np_arr
-    
-    # Son sıkıştırma (Google Sheets depolama için 650px)
+
+    # Google Sheets için sıkıştırılmış Base64
     img_s = img_fixed.copy()
     img_s.thumbnail((650, 850), Image.Resampling.LANCZOS)
     buf_s = io.BytesIO()
@@ -586,10 +643,9 @@ def process_single_image(img):
     del img_s, buf_s, img_fixed
     gc.collect()
     
-    return {"img_b64": final_b64, "boxes": boxes}
+    return {"img_b64": final_b64, "boxes": boxes}, engine_name, error_msg
 
 def sort_reading_order(ocr_items):
-    """Düşey çakışmalı yeni sıralama (Gemini dışı yedek EasyOCR için)"""
     if not ocr_items: return []
     parsed = []
     for item in ocr_items:
@@ -597,7 +653,8 @@ def sort_reading_order(ocr_items):
         t_clean = text.strip()
         if not t_clean: continue
         xs, ys = [p[0] for p in box], [p[1] for p in box]
-        min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
         parsed.append({
             'item': item, 'min_x': min_x, 'max_x': max_x, 'min_y': min_y, 'max_y': max_y,
             'cy': (min_y + max_y) / 2.0, 'h': max(max_y - min_y, 1.0)
@@ -716,7 +773,7 @@ def merge_two_pages(page1, page2):
     merged_img.paste(im1, (0, 0))
     merged_img.paste(im2, (im1.width, 0))
     
-    new_page_obj = process_single_image(merged_img)
+    new_page_obj, _, _ = process_single_image(merged_img)
     del im1, im2, merged_img
     gc.collect()
     return new_page_obj
@@ -776,30 +833,9 @@ elif st.session_state.miti_mode:
             [data-testid="stSidebar"], header, footer { display: none !important; }
             .block-container { padding: 0 !important; margin: 0 !important; max-width: 100vw !important; height: 100vh !important; overflow: hidden !important; background: #080c14 !important; }
             iframe { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; border: none !important; z-index: 1 !important; }
-            
-            div[data-testid="stButton"], .stButton {
-                position: fixed !important;
-                top: 14px !important;
-                left: 50% !important;
-                transform: translateX(-50%) !important;
-                z-index: 99999999 !important;
-            }
-            div[data-testid="stButton"] button, .stButton button {
-                background: #dc2626 !important;
-                border: 2px solid #fca5a5 !important;
-                color: #ffffff !important;
-                border-radius: 30px !important;
-                padding: 8px 32px !important;
-                font-weight: 800 !important;
-                font-size: 15px !important;
-                cursor: pointer !important;
-                box-shadow: 0 4px 25px rgba(220, 38, 38, 0.6) !important;
-                transition: all 0.2s ease !important;
-            }
-            div[data-testid="stButton"] button:hover, .stButton button:hover {
-                background: #b91c1c !important;
-                transform: scale(1.08) !important;
-            }
+            div[data-testid="stButton"], .stButton { position: fixed !important; top: 14px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 99999999 !important; }
+            div[data-testid="stButton"] button, .stButton button { background: #dc2626 !important; border: 2px solid #fca5a5 !important; color: #ffffff !important; border-radius: 30px !important; padding: 8px 32px !important; font-weight: 800 !important; font-size: 15px !important; cursor: pointer !important; box-shadow: 0 4px 25px rgba(220, 38, 38, 0.6) !important; transition: all 0.2s ease !important; }
+            div[data-testid="stButton"] button:hover, .stButton button:hover { background: #b91c1c !important; transform: scale(1.08) !important; }
         </style>
         """, unsafe_allow_html=True)
 
@@ -816,13 +852,11 @@ elif st.session_state.miti_mode:
         <style>
             * {{ box-sizing: border-box; }}
             body {{ margin: 0; padding: 0; overflow: hidden; background-color: #080c14; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
-            
             #col-photo {{ width: 28%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 65px 20px 20px 25px; background: #04060a; border-right: 1.5px dashed rgba(255,255,255,0.15); position: relative; }}
             #col-photo img {{ max-width: 100%; max-height: 82vh; object-fit: contain; border-radius: 12px; box-shadow: 0 15px 45px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.12); }}
             #cols-wrap {{ width: 72%; height: 100vh; display: flex; }}
             #col-french, #col-system {{ width: 50%; height: 100vh; padding: 75px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative; }}
             #col-french {{ border-right: 1.5px dashed rgba(255,255,255,0.15); }}
-            
             @media (max-width: 768px) {{
                 body {{ flex-direction: column !important; }}
                 #col-photo {{ width: 100% !important; height: 26vh !important; padding: 60px 10px 10px 10px !important; border-right: none !important; border-bottom: 1.5px dashed rgba(255,255,255,0.15) !important; }}
@@ -830,7 +864,6 @@ elif st.session_state.miti_mode:
                 #cols-wrap {{ width: 100% !important; height: 74vh !important; }}
                 #col-french, #col-system {{ padding: 15px 12px 30px 12px !important; font-size: 0.95rem !important; }}
             }}
-            
             .col-header {{ position: sticky; top: -75px; background: rgba(8, 12, 20, 0.95); backdrop-filter: blur(12px); padding: 10px 0 16px 0; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px; }}
             .listen-btn {{ display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1.5px solid #fbbf24; padding: 11px 18px; border-radius: 25px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14.5px; font-weight: bold; cursor: pointer; transition: all 0.25s ease; }}
             .listen-btn:hover {{ background: #fbbf24; color: #000; transform: translateY(-1px); }}
@@ -1101,11 +1134,25 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI (GEMINI VISION YENİDEN TARAMA)
+# 6. DÜZENLEYİCİ EKRANI (DURUM BİLGİLENDİRMELİ)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
     
+    # GEMINI DURUM VE GİRİŞ BARI
+    active_key = get_active_gemini_key()
+    col_k1, col_k2 = st.columns([1.5, 3])
+    with col_k1:
+        if active_key:
+            st.success("🟢 Gemini Vision API Aktif")
+        else:
+            st.warning("🟠 EasyOCR Devrede (Gemini Anahtarı Yok)")
+    with col_k2:
+        m_key = st.text_input("Gemini API Anahtarı (İsteğe bağlı):", value=st.session_state.manual_gemini_key, type="password", placeholder="AIzaSy...", label_visibility="collapsed")
+        if m_key != st.session_state.manual_gemini_key:
+            st.session_state.manual_gemini_key = m_key
+            st.rerun()
+
     col_t1, col_t2, col_t3, col_t4 = st.columns([2.5, 1.5, 1.5, 1])
     with col_t1:
         st.session_state.editor_book_title = st.text_input("Kitap Başlığı:", value=st.session_state.editor_book_title, label_visibility="collapsed")
@@ -1143,7 +1190,7 @@ elif st.session_state.editor_mode:
         with st.expander("⚙️ Gelişmiş & Toplu İşlemler"):
             col_b1, col_b2 = st.columns([2, 1])
             with col_b1:
-                if st.button("🔄 Tüm Kitabı Yeni OCR ile Baştan Tara (Toplu)", type="primary"):
+                if st.button("🔄 Tüm Kitabı Baştan Tara (Toplu)", type="primary"):
                     p_bar = st.progress(0)
                     s_txt = st.empty()
                     for idx, p in enumerate(pages):
@@ -1151,17 +1198,17 @@ elif st.session_state.editor_mode:
                         try:
                             img_bytes = base64.b64decode(p['img_b64'])
                             pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                            re_page = process_single_image(pil_img)
+                            re_page, engine_name, err = process_single_image(pil_img)
                             p['boxes'] = re_page['boxes']
                         except Exception:
                             pass
                         p_bar.progress((idx + 1) / total_p)
-                    s_txt.text("Tüm sayfaların OCR taraması tamamlandı!")
-                    st.success("Tüm sayfalar yeni OCR motoruyla tarandı! Kalıcı olması için 'Değişiklikleri Kaydet' butonuna basınız.")
+                    s_txt.text("Tüm sayfaların taraması tamamlandı!")
+                    st.success("Tüm sayfalar güncellendi! Kalıcı olması için 'Değişiklikleri Kaydet' butonuna basınız.")
                     time.sleep(0.5)
                     st.rerun()
             with col_b2:
-                st.caption("Eski kayıtlı kitaplardaki harf ve aksan okuma kalitesini tek seferde en üst seviyeye çıkarır.")
+                st.caption("Bütün kitabı seçili motorla baştan tarar.")
 
     with st.expander("➕ Bu Kitaba Yeni Sayfa(lar) Ekle", expanded=(total_p == 0)):
         add_mode = st.radio("Yeni Sayfa Ekleme Türü:", ["📸 Kameradan Çek & Kırp", "📁 Fotoğraf(lar) Yükle", "📄 Taranmış PDF Ekle"], horizontal=True, key="ed_add_mode")
@@ -1177,10 +1224,10 @@ elif st.session_state.editor_mode:
                 cropped_p = st_cropper(raw_c_img, realtime_update=True, box_color='#2563eb') if CROPPER_SUPPORT else raw_c_img
                 if st.button("✂️ Bu Sayfayı Kitabın Sonuna Ekle", type="primary", key="btn_crop_add_ed"):
                     with st.spinner("Sayfa taranıyor..."):
-                        new_p_obj = process_single_image(cropped_p)
+                        new_p_obj, engine_used, err = process_single_image(cropped_p)
                         pages.append(new_p_obj)
                         st.session_state.editor_page_idx = len(pages) - 1
-                        st.success(f"Sayfa {len(pages)} olarak eklendi! Kalıcı olması için yukarıdaki 'Değişiklikleri Kaydet' butonuna basınız.")
+                        st.success(f"Sayfa {len(pages)} olarak eklendi! (Motor: {engine_used})")
                         time.sleep(0.5)
                         st.rerun()
 
@@ -1195,10 +1242,13 @@ elif st.session_state.editor_mode:
                     b_img = ImageOps.exif_transpose(Image.open(nf)).convert("RGB")
                     if split_new_spreads and (b_img.width / b_img.height) > 1.05:
                         mid = b_img.width // 2
-                        pages.append(process_single_image(b_img.crop((0, 0, mid, b_img.height))))
-                        pages.append(process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height))))
+                        p1, _, _ = process_single_image(b_img.crop((0, 0, mid, b_img.height)))
+                        p2, _, _ = process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height)))
+                        pages.append(p1)
+                        pages.append(p2)
                     else:
-                        pages.append(process_single_image(b_img))
+                        p_single, _, _ = process_single_image(b_img)
+                        pages.append(p_single)
                     del b_img
                     gc.collect()
                     p_bar.progress((idx_f + 1) / total_n)
@@ -1231,10 +1281,13 @@ elif st.session_state.editor_mode:
                             base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
                             if split_new_spreads and (base_img.width / base_img.height) > 1.05:
                                 mid = base_img.width // 2
-                                pages.append(process_single_image(base_img.crop((0, 0, mid, base_img.height))))
-                                pages.append(process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height))))
+                                p1, _, _ = process_single_image(base_img.crop((0, 0, mid, base_img.height)))
+                                p2, _, _ = process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height)))
+                                pages.append(p1)
+                                pages.append(p2)
                             else:
-                                pages.append(process_single_image(base_img))
+                                p_single, _, _ = process_single_image(base_img)
+                                pages.append(p_single)
                             del pix, base_img
                             gc.collect()
                             p_bar.progress((step_i + 1) / tot_sel)
@@ -1290,11 +1343,11 @@ elif st.session_state.editor_mode:
                             w, h = orig_pil.size
                             mid_x = w // 2
                             
-                            left_img = orig_pil.crop((0, 0, mid_x, h))
-                            right_img = orig_pil.crop((mid_x, 0, w, h))
+                            p1, _, _ = process_single_image(orig_pil.crop((0, 0, mid_x, h)))
+                            p2, _, _ = process_single_image(orig_pil.crop((mid_x, 0, w, h)))
                             
-                            pages[p_idx] = process_single_image(left_img)
-                            pages.insert(p_idx + 1, process_single_image(right_img))
+                            pages[p_idx] = p1
+                            pages.insert(p_idx + 1, p2)
                             st.success("Sayfa başarıyla bölündü!")
                             time.sleep(0.4)
                             st.rerun()
@@ -1318,19 +1371,25 @@ elif st.session_state.editor_mode:
                     st.button("🔗 Son Sayfa (Birleştirilemez)", disabled=True, use_container_width=True)
 
             if st.button(T("rescan_page_btn"), use_container_width=True):
-                with st.spinner("Sayfa yüksek teknoloji ile taranıyor (Gemini veya EasyOCR)..."):
+                with st.spinner("Sayfa taranıyor..."):
                     try:
                         img_bytes = base64.b64decode(curr_page['img_b64'])
                         orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                        re_obj = process_single_image(orig_pil)
+                        re_obj, engine_used, err = process_single_image(orig_pil)
                         curr_page['boxes'] = re_obj['boxes']
-                        st.success("Sayfa başarıyla yeniden tarandı!")
-                        time.sleep(0.4)
+                        if "Gemini" in engine_used:
+                            st.success(f"✨ Başarılı! {engine_used} ile mükemmel şekilde okundu.")
+                        else:
+                            if err:
+                                st.warning(f"⚠️ Gemini Hatası: {err}. EasyOCR ile okundu.")
+                            else:
+                                st.info("Motor: EasyOCR kullanıldı.")
+                        time.sleep(0.5)
                         st.rerun()
                     except Exception as e:
                         st.error(f"Tarama hatası: {e}")
 
-            # SAYFA ÖNİZLEMESİ (TEMİZ HTML)
+            # SAYFA ÖNİZLEMESİ
             overlay_divs = "".join([
                 f'<div style="position:absolute;left:{b["left"]}%;top:{b["top"]}%;width:{b["width"]}%;height:{b["height"]}%;border:2px solid #38bdf8;background:rgba(56,189,248,0.15);pointer-events:none;box-sizing:border-box;border-radius:3px;">'
                 f'<span style="position:absolute;top:-15px;left:0;background:#0284c7;color:#ffffff;font-size:10px;font-weight:bold;padding:0 4px;border-radius:2px;line-height:14px;">#{b_i+1}</span>'
@@ -1348,7 +1407,7 @@ elif st.session_state.editor_mode:
 
         with col_right:
             st.markdown("### 🔤 Tespit Edilen Kelimeler ve Cümleler")
-            st.caption("Cümlelerin sırasını aşağıdaki ⬆️ / ⬇️ imleç butonlarıyla değiştirebilirsiniz. Böylece okurken alt satır ile üst satır asla karışmaz.")
+            st.caption("Cümlelerin sırasını aşağıdaki ⬆️ / ⬇️ imleç butonlarıyla değiştirebilirsiniz.")
 
             num_boxes = len(curr_page["boxes"])
             if num_boxes > 1:
@@ -1530,16 +1589,19 @@ else:
                         stat_text = st.empty()
                         
                         for idx_s, p_num in enumerate(range(start_p, end_p)):
-                            stat_text.text(f"Sayfa {idx_s + 1} / {count_p} taranıyor... (Lütfen bekleyin)")
+                            stat_text.text(f"Sayfa {idx_s + 1} / {count_p} taranıyor...")
                             pix = pdf_doc[p_num].get_pixmap(dpi=130)
                             base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
                             
                             if split_spreads and (base_img.width / base_img.height) > 1.05:
                                 mid = base_img.width // 2
-                                extracted_pages.append(process_single_image(base_img.crop((0, 0, mid, base_img.height))))
-                                extracted_pages.append(process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height))))
+                                p1, _, _ = process_single_image(base_img.crop((0, 0, mid, base_img.height)))
+                                p2, _, _ = process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height)))
+                                extracted_pages.append(p1)
+                                extracted_pages.append(p2)
                             else:
-                                extracted_pages.append(process_single_image(base_img))
+                                p_single, _, _ = process_single_image(base_img)
+                                extracted_pages.append(p_single)
                                 
                             del pix, base_img
                             gc.collect()
@@ -1560,13 +1622,13 @@ else:
                 active_pic = cam_pic if cam_pic else alt_file
                 if active_pic:
                     raw_img = ImageOps.exif_transpose(Image.open(active_pic)).convert("RGB")
-                    c_img = st_cropper(raw_img, realtime_update=True) if CROPPER_SUPPORT else raw_img
+                    c_img = st_cropper(raw_img, realtime_update=True, box_color='#2563eb') if CROPPER_SUPPORT else raw_img
                     if st.button("✂️ Sepete Ekle"):
                         buf = io.BytesIO(); c_img.save(buf, format="JPEG"); st.session_state.staged_camera_pages.append(buf.getvalue())
                         st.success(f"Eklendi! Sepette: {len(st.session_state.staged_camera_pages)}")
                 if len(st.session_state.staged_camera_pages) > 0:
                     if st.button("⚡ Sepettekileri Düzenleyiciye Aktar", type="primary"):
-                        st.session_state.editor_pages = [process_single_image(Image.open(io.BytesIO(b)).convert("RGB")) for b in st.session_state.staged_camera_pages]
+                        st.session_state.editor_pages = [process_single_image(Image.open(io.BytesIO(b)).convert("RGB"))[0] for b in st.session_state.staged_camera_pages]
                         st.session_state.staged_camera_pages = []
                         st.session_state.editor_book_title = book_title_input
                         st.session_state.editor_orig_book_id = None
@@ -1584,12 +1646,15 @@ else:
                     for f_i, file in enumerate(upl_files):
                         stat_text.text(f"Fotoğraf {f_i + 1} / {total_f} taranıyor...")
                         b_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
-                        if split_spreads and (b_img.width / b_img.height) > 1.05:
+                        if split_new_spreads and (b_img.width / b_img.height) > 1.05:
                             mid = b_img.width // 2
-                            extracted_pages.append(process_single_image(b_img.crop((0, 0, mid, b_img.height))))
-                            extracted_pages.append(process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height))))
+                            p1, _, _ = process_single_image(b_img.crop((0, 0, mid, b_img.height)))
+                            p2, _, _ = process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height)))
+                            extracted_pages.append(p1)
+                            extracted_pages.append(p2)
                         else:
-                            extracted_pages.append(process_single_image(b_img))
+                            p_single, _, _ = process_single_image(b_img)
+                            extracted_pages.append(p_single)
                         del b_img
                         gc.collect()
                         prog_bar.progress((f_i + 1) / total_f)
