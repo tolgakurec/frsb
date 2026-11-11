@@ -8,6 +8,7 @@ import gc
 import uuid
 import urllib.request
 import urllib.parse
+import concurrent.futures
 from datetime import datetime
 from PIL import Image, ImageOps
 import numpy as np
@@ -143,7 +144,7 @@ UI_TRANSLATIONS = {
         "save_and_read": "🚀 Kaydet & Hemen Oku",
         "exit_editor": "✕ Çık",
         "split_page_btn": "✂️ Bu Çift Sayfayı İkiye Böl",
-        "ocr_processing": "Görseller taranıyor...",
+        "ocr_processing": "Kitap hızla hazırlanıyor...",
         "reading_lang_label": "Okuma & Çeviri Dili:",
         "zen_close": "✕ Kapat",
         "zen_page": "Sayfa",
@@ -180,7 +181,7 @@ UI_TRANSLATIONS = {
         "save_and_read": "🚀 Save & Read Now",
         "exit_editor": "✕ Exit",
         "split_page_btn": "✂️ Split Double Page",
-        "ocr_processing": "Processing pages with OCR...",
+        "ocr_processing": "Preparing book...",
         "reading_lang_label": "Translation Language:",
         "zen_close": "✕ Close",
         "zen_page": "Page",
@@ -217,13 +218,14 @@ UI_TRANSLATIONS = {
         "save_and_read": "🚀 Запази и чети веднага",
         "exit_editor": "✕ Изход",
         "split_page_btn": "✂️ Раздели двойната страница",
-        "ocr_processing": "Обработка на страниците...",
+        "ocr_processing": "Подготовка на книгата...",
         "reading_lang_label": "Език за превод:",
         "zen_close": "✕ Затвори",
         "zen_page": "Страница",
         "zen_listen": "Слушай",
         "zen_stop": "Спри",
         "zen_page_trans": "Превод на страницата",
+        "zen_loading_trans": "Подготвя се превод...",
         "miti_title": "Младостта, оставена в София: Великолепието на една империя и една недовършена любов",
         "miti_exit": "✕ Изход",
         "listen_fr": "🔊 Слушай на френски",
@@ -258,7 +260,7 @@ def T(key):
     return UI_TRANSLATIONS[lang].get(key, UI_TRANSLATIONS["tr"].get(key, key))
 
 # ==========================================
-# 1. ÇEVİRİ MOTORU (KAYNAK VE HEDEF DİL TAM AYRIMI)
+# 1. ÇEVİRİ MOTORU (KAYNAK VE HEDEF DİL AYRIMI)
 # ==========================================
 @st.cache_data(show_spinner=False)
 def translate_api(text, source_lang, target_lang):
@@ -269,7 +271,7 @@ def translate_api(text, source_lang, target_lang):
         try:
             url = f"https://translate.googleapis.com/translate_a/single?client={client}&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-            res = urllib.request.urlopen(req, timeout=5)
+            res = urllib.request.urlopen(req, timeout=4)
             data = json.loads(res.read().decode('utf-8'))
             translated_parts = []
             if data and data[0]:
@@ -285,24 +287,17 @@ def translate_api(text, source_lang, target_lang):
 
 @st.cache_data(show_spinner=False)
 def translate_french_to_target(text, target_lang):
-    """KİTAPLAR İÇİN: Fransızca sayfaları ve kelimeleri sistem diline çevirir"""
-    if not text or not text.strip():
-        return ""
-    if target_lang == "fr":
-        return text
+    if not text or not text.strip(): return ""
+    if target_lang == "fr": return text
     return translate_api(text, source_lang="fr", target_lang=target_lang)
 
 @st.cache_data(show_spinner=False)
 def translate_turkish_to_target(text, target_lang):
-    """MİTİ HİKAYESİ İÇİN: Orijinal Türkçe metni seçilen dile çevirir"""
-    if not text or not text.strip():
-        return ""
-    if target_lang == "tr":
-        return text
+    if not text or not text.strip(): return ""
+    if target_lang == "tr": return text
     return translate_api(text, source_lang="tr", target_lang=target_lang)
 
 def get_file_base64(filename, mime_type):
-    """GitHub reposundaki yerel dosyayı (resim/mp3) Base64 olarak okur"""
     script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else "."
     paths = [filename, os.path.join(script_dir, filename)]
     for p in paths:
@@ -330,7 +325,7 @@ def get_blue_danube_audio_data():
     return "https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
 
 # ==========================================
-# 2. GOOGLE SHEETS ENTEGRASYONU
+# 2. GOOGLE SHEETS ENTEGRASYONU (ÖNBELLEKLİ & HIZLANDIRILMIŞ)
 # ==========================================
 def clean_private_key(key_str):
     if not key_str or not isinstance(key_str, str): return key_str
@@ -396,6 +391,7 @@ def record_thanks(email):
         return True
     except: return False
 
+@st.cache_data(ttl=600, show_spinner=False)
 def get_saved_books():
     sheet, err = get_sheet("Library")
     if not sheet: return [], err
@@ -410,6 +406,7 @@ def get_saved_books():
         return sorted(books_list, key=lambda x: x["title"]), None
     except Exception as e: return [], str(e)
 
+@st.cache_data(ttl=600, show_spinner=False)
 def load_book_content(book_id):
     sheet, err = get_sheet("Pages")
     if not sheet: return None, err
@@ -442,7 +439,11 @@ def save_hybrid_book(title, pages, old_book_id=None):
         lib_sheet.append_row([book_id, title, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(pages)])
         all_page_rows = [[book_id, idx + 1, page["img_b64"], json.dumps(page["boxes"], ensure_ascii=False)] for idx, page in enumerate(pages)]
         for i in range(0, len(all_page_rows), 10): pages_sheet.append_rows(all_page_rows[i:i + 10]); time.sleep(0.5)
-        return book_id, "Kitap kaydedildi!"
+        
+        # Önbelleği temizle (Yeni veri anında görünsün)
+        get_saved_books.clear()
+        load_book_content.clear()
+        return book_id, "Kitap başarıyla kaydedildi!"
     except Exception as e: return None, str(e)
 
 def delete_hybrid_book(book_id):
@@ -454,9 +455,12 @@ def delete_hybrid_book(book_id):
     if pages_sheet:
         rows_to_delete = [i + 2 for i, r in enumerate(pages_sheet.get_all_records()) if str(r.get("BookID", "")) == book_id]
         for row_idx in reversed(rows_to_delete): pages_sheet.delete_rows(row_idx); time.sleep(0.1)
+    
+    get_saved_books.clear()
+    load_book_content.clear()
 
 # ==========================================
-# 3. YÜKSEK ÇÖZÜNÜRLÜKLÜ OCR VE KELİME MOTORU
+# 3. YÜKSEK ÇÖZÜNÜRLÜKLÜ OCR VE PARALEL ÇEVİRİ MOTORU
 # ==========================================
 @st.cache_resource
 def load_ocr(): return easyocr.Reader(['fr', 'en'], gpu=False)
@@ -528,8 +532,9 @@ def get_words_dictionary(texts_list, target_lang):
             
     if not unique_items: return {}
     items_list = sorted(list(unique_items))
-    for i in range(0, len(items_list), 15):
-        batch = items_list[i:i + 15]
+    batch_size = 25  # Hızlı çeviri için 25'li gruplar
+    for i in range(0, len(items_list), batch_size):
+        batch = items_list[i:i + batch_size]
         combined = "\n".join(batch)
         t_combined = translate_french_to_target(combined, target_lang)
         lines = [line.strip() for line in t_combined.split("\n") if line.strip()]
@@ -539,38 +544,45 @@ def get_words_dictionary(texts_list, target_lang):
             for orig in batch: trans_map[orig] = translate_french_to_target(orig, target_lang)
     return trans_map
 
-def ensure_reading_ready(pages, target_lang):
-    for page in pages:
-        is_corrupted = (
-            target_lang != "fr" and
-            page.get("full_trans") == page.get("full_text") and
-            len(page.get("full_text", "")) > 5
-        )
-        if page.get("current_lang") != target_lang or "full_trans" not in page or "dictionary" not in page or is_corrupted:
-            raw_texts = [b.get("text", "").strip() for b in page.get("boxes", []) if b.get("text", "").strip()]
-            for b in page.get("boxes", []): b["clean"] = clean_word_key(b.get("text", ""))
-            full_str = build_coherent_page_text(page.get("boxes", []))
-            page["full_text"] = full_str
+def _translate_single_page_task(page, target_lang):
+    """Tek bir sayfayı bağımsız olarak çeviren iş parçacığı görevi"""
+    is_corrupted = (
+        target_lang != "fr" and
+        page.get("full_trans") == page.get("full_text") and
+        len(page.get("full_text", "")) > 5
+    )
+    if page.get("current_lang") != target_lang or "full_trans" not in page or "dictionary" not in page or is_corrupted:
+        raw_texts = [b.get("text", "").strip() for b in page.get("boxes", []) if b.get("text", "").strip()]
+        for b in page.get("boxes", []): b["clean"] = clean_word_key(b.get("text", ""))
+        full_str = build_coherent_page_text(page.get("boxes", []))
+        page["full_text"] = full_str
+        
+        if target_lang == "fr":
+            page["full_trans"] = full_str
+            page["dictionary"] = {}
+        else:
             page["full_trans"] = translate_french_to_target(full_str, target_lang)
             page["dictionary"] = get_words_dictionary(raw_texts, target_lang)
-            page["current_lang"] = target_lang
+        page["current_lang"] = target_lang
+    return page
+
+def ensure_reading_ready(pages, target_lang):
+    """Bütün sayfaları paralel (multi-threaded) olarak 1-2 saniyede hazırlar"""
+    if not pages: return pages
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        futures = [executor.submit(_translate_single_page_task, page, target_lang) for page in pages]
+        concurrent.futures.wait(futures)
     return pages
 
 def process_single_image(img):
-    """Yüksek çözünürlükte ve otomatik kontrast iyileştirmesiyle sayfayı okur"""
     img_fixed = ImageOps.exif_transpose(img).convert("RGB")
-    
-    # 1. OCR için yüksek çözünürlükte tut (1800 piksele kadar)
     img_ocr = img_fixed.copy()
     img_ocr.thumbnail((1800, 1800), Image.Resampling.LANCZOS)
-    try:
-        img_ocr = ImageOps.autocontrast(img_ocr, cutoff=0.5)
-    except:
-        pass
+    try: img_ocr = ImageOps.autocontrast(img_ocr, cutoff=0.5)
+    except: pass
         
     w, h = img_ocr.size
     np_arr = np.array(img_ocr)
-    
     ocr_raw = reader.readtext(np_arr, detail=1, paragraph=False)
     ordered_ocr = sort_reading_order(ocr_raw)
     
@@ -578,24 +590,17 @@ def process_single_image(img):
     for box, text, conf in ordered_ocr:
         t_clean = text.strip()
         if not t_clean: continue
-        x_pts = [p[0] for p in box]
-        y_pts = [p[1] for p in box]
-        min_x, max_x = min(x_pts), max(x_pts)
-        min_y, max_y = min(y_pts), max(y_pts)
+        x_pts, y_pts = [p[0] for p in box], [p[1] for p in box]
+        min_x, max_x, min_y, max_y = min(x_pts), max(x_pts), min(y_pts), max(y_pts)
         boxes.append({
-            "id": f"b_{len(boxes)}",
-            "text": t_clean,
-            "clean": clean_word_key(t_clean),
-            "left": (min_x / w) * 100,
-            "top": (min_y / h) * 100,
-            "width": ((max_x - min_x) / w) * 100,
-            "height": ((max_y - min_y) / h) * 100
+            "id": f"b_{len(boxes)}", "text": t_clean, "clean": clean_word_key(t_clean),
+            "left": (min_x / w) * 100, "top": (min_y / h) * 100,
+            "width": ((max_x - min_x) / w) * 100, "height": ((max_y - min_y) / h) * 100
         })
         
     b64_str = compress_image_for_sheets(img_fixed)
     del img_fixed, img_ocr, np_arr
     gc.collect()
-    
     return {"img_b64": b64_str, "boxes": boxes}
 
 # ==========================================
@@ -920,7 +925,7 @@ elif st.session_state.miti_mode:
     components.html(MITI_HTML, height=850, scrolling=False)
 
 # ==========================================
-# 5. OKUMA MODU (ZEN VIEWER)
+# 5. OKUMA MODU (ZEN VIEWER - KİTAP OKUYUCU)
 # ==========================================
 elif st.session_state.reading_mode:
     st.markdown(
@@ -972,7 +977,7 @@ elif st.session_state.reading_mode:
             .glass-btn.active {{ background: #2563eb !important; border-color: #60a5fa !important; }}
         </style>
     </head>
-    <body>
+    <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
         <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
         <div id="page-counter" class="glass-pill hud-item">{T('zen_page')} 1 / 1</div>
         
@@ -993,6 +998,11 @@ elif st.session_state.reading_mode:
             const targetFlag = "{LANGUAGES[st.session_state.app_lang]['flag']}";
             let currentIndex = 0, isPlaying = false, timer = null, wordIndices = [];
             const speeds = [0.7, 0.8, 1.0]; let speedIdx = 1;
+
+            let hudTimer = null;
+            function resetHudTimer() {{
+                clearTimeout(hudTimer);
+            }}
 
             function dismissCard() {{ document.getElementById('whisper-card').style.display = 'none'; clearTimeout(timer); }}
             function cycleSpeed() {{ speedIdx = (speedIdx + 1) % speeds.length; document.getElementById('speed-text').innerText = speeds[speedIdx] + "x"; if(isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke,100); }} }}
@@ -1099,7 +1109,7 @@ elif st.session_state.editor_mode:
                     st.error(msg)
     with col_t3:
         if st.button(T("save_and_read"), type="primary", use_container_width=True):
-            with st.spinner("Kaydediliyor ve çeviriler hazırlanıyor..."):
+            with st.spinner("Kaydediliyor ve çeviriler paralel hazırlanıyor..."):
                 saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
                 if saved_f:
                     st.session_state.uploaded_book_pages = ensure_reading_ready(st.session_state.editor_pages, st.session_state.app_lang)
@@ -1118,7 +1128,6 @@ elif st.session_state.editor_mode:
     pages = st.session_state.editor_pages
     total_p = len(pages)
 
-    # 1. KİTABA YENİ SAYFA EKLEME PANELİ (HER ZAMAN KULLANILABİLİR)
     with st.expander("➕ Bu Kitaba Yeni Sayfa(lar) Ekle", expanded=(total_p == 0)):
         add_mode = st.radio("Yeni Sayfa Ekleme Türü:", ["📸 Kameradan Çek & Kırp", "📁 Fotoğraf(lar) Yükle", "📄 Taranmış PDF Ekle"], horizontal=True, key="ed_add_mode")
         split_new_spreads = st.checkbox("📖 Yeni Çift Sayfaları Otomatik Böl", value=True, key="ed_split_box")
@@ -1246,7 +1255,6 @@ elif st.session_state.editor_mode:
             st.markdown("### 🔤 Tespit Edilen Kelimeler ve Cümleler")
             st.caption("Kelimeyi düzenleyebilir veya istemediğiniz satırları 'Kaldır 🗑️' kutusunu işaretleyip aşağıdaki butona basarak silebilirsiniz.")
 
-            # KUSURSUZ SATIR GÜNCELLEME VE SİLME SİSTEMİ
             table_data = [{"Kaldır 🗑️": False, "Metin (Fransızca)": b["text"]} for b in curr_page["boxes"]]
             edited_table = st.data_editor(
                 table_data,
@@ -1284,7 +1292,6 @@ elif st.session_state.editor_mode:
                     curr_page["boxes"] = [b for b in curr_page["boxes"] if not b["text"].strip().isdigit()]
                     st.rerun()
 
-            # MANUEL EKSİK METİN EKLEME
             with st.expander("➕ Sayfaya Eksik Kalan Kelime / Cümle Ekle"):
                 missed_text = st.text_input("Görselde okunmamış metni buraya yazın:", key=f"missed_{p_idx}")
                 if st.button("Metni Sayfaya Dahil Et", key=f"btn_missed_{p_idx}"):
@@ -1308,7 +1315,7 @@ else:
     with col_thanks:
         if st.button(T("thanks_btn"), use_container_width=True): record_thanks(st.session_state.user_email); st.toast(T("thanks_success"))
     with col_info2:
-        new_lang = st.selectbox("Dil", options=list(LANGUAGES.keys()), format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}", index=list(LANGUAGES.keys()).index(st.session_state.app_lang), label_visibility="collapsed")
+        new_lang = st.selectbox("Dil", options=list(LANGUAGES.keys()), format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}", index=list(LANGUAGES.keys()).index(st.session_state.app_lang) if st.session_state.app_lang in LANGUAGES else 0, label_visibility="collapsed")
         if new_lang != st.session_state.app_lang: st.session_state.app_lang = new_lang; st.rerun()
     with col_info3:
         if st.button(T("logout"), use_container_width=True): st.session_state.logged_in = False; st.rerun()
@@ -1348,7 +1355,6 @@ else:
             if st.button(T("delete_book"), use_container_width=True) and st.session_state.user_role == "admin":
                 delete_hybrid_book(selected_id); st.rerun()
 
-    # YENİ KİTAP OLUŞTURMA SEKMESİ
     if st.session_state.user_role == "admin":
         with st.expander(T("add_tab")):
             st.markdown("### 📚 Yeni Kitap Oluştur & Sayfa Aktar")
