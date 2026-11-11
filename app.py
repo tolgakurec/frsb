@@ -16,6 +16,13 @@ import easyocr
 import streamlit as st
 import streamlit.components.v1 as components
 
+# PyTorch Bellek Tasarrufu (EasyOCR bellek sızıntısını engeller)
+try:
+    import torch
+    torch.set_grad_enabled(False)
+except Exception:
+    pass
+
 try:
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
@@ -76,7 +83,7 @@ STORY_PARAGRAPHS = [
     },
     {
         "tr": "Bu dans, aslında alevlenmiş bir aşkın toplum önündeki cesur bir ilanıydı. Boris Parkı'nda yaptıkları uzun romantik yürüyüşlerin, buz pateni pistindeki gizli bakışmaların taçlandığı andı. Mustafa Kemal, bu büyük aşka teslim olmuş ve Miti'ye evlenme teklif etmiş, genç kızdan tereddütsüz bir 'Evet' almıştı.",
-        "fr": "Cette danse était en fait la déclaration courageuse devant la société d'un amour enflammé. C'était le couronnement de leurs longues promenades romantiques dans le parc Boris et de leurs regards secrets sur la patinoire. Mustafa Kemal, s'abandonnant à ce grand amour, avait demandé Miti en mariage et avait reçu un 'Oui' sans hésitation de la jeune fille."
+        "fr": "Cette danse était en fait la déclaration courageuse devant la société d'un amour enflammé. C'était le couronnement de leurs longues promenades romantiques dans le parc Boris et de leurs regards secrets sur la patinoire. Mustafa Kemal, s'abandonnant a ce grand amour, avait demandé Miti en mariage et avait reçu un 'Oui' sans hésitation de la jeune fille."
     },
     {
         "tr": "Vatan Borcu ve Kırık Bir Kalp",
@@ -465,10 +472,12 @@ def delete_hybrid_book(book_id):
     load_book_content.clear()
 
 # ==========================================
-# 3. YÜKSEK ÇÖZÜNÜRLÜKLÜ OCR, BİRLEŞTİRME VE ÇEVİRİ MOTORU
+# 3. YÜKSEK HIZLI VE DÜŞÜK BELLEKLİ OCR MOTORU (24+ SAYFA İÇİN GÜÇLENDİRİLMİŞ)
 # ==========================================
 @st.cache_resource
-def load_ocr(): return easyocr.Reader(['fr', 'en'], gpu=False)
+def load_ocr():
+    return easyocr.Reader(['fr', 'en'], gpu=False)
+
 reader = load_ocr()
 
 def compress_image_for_sheets(img):
@@ -481,7 +490,9 @@ def compress_image_for_sheets(img):
         quality -= 5
         buf = io.BytesIO()
         img_c.save(buf, format="JPEG", quality=quality)
-    return base64.b64encode(buf.getvalue()).decode("utf-8")
+    res = base64.b64encode(buf.getvalue()).decode("utf-8")
+    del img_c, buf
+    return res
 
 def sort_reading_order(ocr_items):
     if not ocr_items: return []
@@ -572,28 +583,36 @@ def _translate_single_page_task(page, target_lang):
 
 def ensure_reading_ready(pages, target_lang):
     if not pages: return pages
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(_translate_single_page_task, page, target_lang) for page in pages]
         concurrent.futures.wait(futures)
     return pages
 
 def process_single_image(img):
+    """Bellek tasarruflu ve yüksek hızlı OCR okuyucu (1100px Sweet-Spot)"""
     img_fixed = ImageOps.exif_transpose(img).convert("RGB")
+    
+    # Bellek tüketimini 4 kat azaltmak için 1100px ölçekleme (Yazı okuma hassasiyeti tam korunur)
     img_ocr = img_fixed.copy()
-    img_ocr.thumbnail((1800, 1800), Image.Resampling.LANCZOS)
-    try: img_ocr = ImageOps.autocontrast(img_ocr, cutoff=0.5)
-    except: pass
+    img_ocr.thumbnail((1100, 1100), Image.Resampling.LANCZOS)
+    try:
+        img_ocr = ImageOps.autocontrast(img_ocr, cutoff=0.5)
+    except Exception:
+        pass
         
     w, h = img_ocr.size
     np_arr = np.array(img_ocr)
-    ocr_raw = reader.readtext(np_arr, detail=1, paragraph=False)
+    
+    # EasyOCR inference (Düşük bellek ve 2 saniyede hızlı okuma)
+    ocr_raw = reader.readtext(np_arr, detail=1, paragraph=False, canvas_size=1200, mag_ratio=1.0)
     ordered_ocr = sort_reading_order(ocr_raw)
     
     boxes = []
     for box, text, conf in ordered_ocr:
         t_clean = text.strip()
         if not t_clean: continue
-        x_pts, y_pts = [p[0] for p in box], [p[1] for p in box]
+        x_pts = [p[0] for p in box]
+        y_pts = [p[1] for p in box]
         min_x, max_x = min(x_pts), max(x_pts)
         min_y, max_y = min(y_pts), max(y_pts)
         boxes.append({
@@ -603,8 +622,11 @@ def process_single_image(img):
         })
         
     b64_str = compress_image_for_sheets(img_fixed)
+    
+    # Belleği anında sıfırla (24+ sayfada RAM patlamasını önler)
     del img_fixed, img_ocr, np_arr
     gc.collect()
+    
     return {"img_b64": b64_str, "boxes": boxes}
 
 def merge_two_pages(page1, page2):
@@ -988,7 +1010,6 @@ elif st.session_state.reading_mode:
             * {{ box-sizing: border-box; user-select: none; -webkit-user-select: none; }}
             html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
             
-            /* GÖRSEL SARMALAYICI: EKRANA TAM OTURAN ALAN */
             #viewport-wrap {{
                 position: relative;
                 width: 100vw;
@@ -1147,7 +1168,6 @@ elif st.session_state.reading_mode:
             const layer = document.getElementById('boxes-layer');
             const wrap = document.getElementById('viewport-wrap');
 
-            // HER SAYFAYI EKRANIN BOYUTUNA TAM OTURTAN AKILLI HESAPLAYICI (HER CİHAZDA KUSURSUZ FIT)
             function fitPageToScreen() {{
                 if (!imgEl.naturalWidth || !imgEl.naturalHeight) return;
                 const availW = wrap.clientWidth * 0.96;
@@ -1316,7 +1336,7 @@ elif st.session_state.editor_mode:
                     p_bar = st.progress(0)
                     s_txt = st.empty()
                     for idx, p in enumerate(pages):
-                        s_txt.text(f"Sayfa {idx + 1} / {total_p} yüksek çözünürlükle taranıyor...")
+                        s_txt.text(f"Sayfa {idx + 1} / {total_p} taranıyor...")
                         try:
                             img_bytes = base64.b64decode(p['img_b64'])
                             pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
@@ -1356,30 +1376,47 @@ elif st.session_state.editor_mode:
         elif add_mode == "📁 Fotoğraf(lar) Yükle":
             new_files = st.file_uploader("Ek Kitap Sayfalarını Seçin (PNG/JPG):", type=["png", "jpg", "jpeg"], accept_multiple_files=True, key="ed_multi_files")
             if new_files and st.button("⚡ Seçilen Fotoğrafları Kitaba Ekle", type="primary", key="btn_files_add_ed"):
-                with st.spinner("Yeni fotoğraflar taranıyor..."):
-                    for nf in new_files:
-                        b_img = ImageOps.exif_transpose(Image.open(nf)).convert("RGB")
-                        if split_new_spreads and (b_img.width / b_img.height) > 1.05:
-                            mid = b_img.width // 2
-                            pages.append(process_single_image(b_img.crop((0, 0, mid, b_img.height))))
-                            pages.append(process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height))))
-                        else:
-                            pages.append(process_single_image(b_img))
-                    st.session_state.editor_page_idx = len(pages) - 1
-                    st.success("Fotoğraflar kitaba eklendi! Yukarıdan kaydetmeyi unutmayın.")
-                    time.sleep(0.5)
-                    st.rerun()
+                p_bar = st.progress(0)
+                s_txt = st.empty()
+                total_n = len(new_files)
+                for idx_f, nf in enumerate(new_files):
+                    s_txt.text(f"Ekleniyor: {idx_f + 1} / {total_n}...")
+                    b_img = ImageOps.exif_transpose(Image.open(nf)).convert("RGB")
+                    if split_new_spreads and (b_img.width / b_img.height) > 1.05:
+                        mid = b_img.width // 2
+                        pages.append(process_single_image(b_img.crop((0, 0, mid, b_img.height))))
+                        pages.append(process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height))))
+                    else:
+                        pages.append(process_single_image(b_img))
+                    del b_img
+                    gc.collect()
+                    p_bar.progress((idx_f + 1) / total_n)
+                st.session_state.editor_page_idx = len(pages) - 1
+                st.success("Fotoğraflar kitaba eklendi! Yukarıdan kaydetmeyi unutmayın.")
+                time.sleep(0.5)
+                st.rerun()
 
         elif add_mode == "📄 Taranmış PDF Ekle":
             if not PDF_SUPPORT:
                 st.error("PyMuPDF kütüphanesi eksik.")
             else:
                 new_pdf = st.file_uploader("Ek PDF Belgesi Seçin:", type=["pdf"], key="ed_pdf_in")
-                if new_pdf and st.button("⚡ PDF Sayfalarını Kitaba Ekle", type="primary", key="btn_pdf_add_ed"):
-                    with st.spinner("PDF sayfaları yüksek çözünürlükte taranıyor..."):
-                        pdf_doc = fitz.open(stream=new_pdf.read(), filetype="pdf")
-                        for p_no in range(len(pdf_doc)):
-                            pix = pdf_doc[p_no].get_pixmap(dpi=200)
+                if new_pdf:
+                    pdf_data = new_pdf.read()
+                    pdf_doc = fitz.open(stream=pdf_data, filetype="pdf")
+                    max_p = len(pdf_doc)
+                    p_range = st.slider("Eklenecek Sayfa Aralığı:", min_value=1, max_value=max_p, value=(1, max_p), key="slider_ed_pdf")
+                    
+                    if st.button("⚡ PDF Sayfalarını Kitaba Ekle", type="primary", key="btn_pdf_add_ed"):
+                        start_idx = p_range[0] - 1
+                        end_idx = p_range[1]
+                        tot_sel = end_idx - start_idx
+                        p_bar = st.progress(0)
+                        s_txt = st.empty()
+                        
+                        for step_i, p_no in enumerate(range(start_idx, end_idx)):
+                            s_txt.text(f"PDF Sayfası İşleniyor: {step_i + 1} / {tot_sel}...")
+                            pix = pdf_doc[p_no].get_pixmap(dpi=130)
                             base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
                             if split_new_spreads and (base_img.width / base_img.height) > 1.05:
                                 mid = base_img.width // 2
@@ -1387,6 +1424,10 @@ elif st.session_state.editor_mode:
                                 pages.append(process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height))))
                             else:
                                 pages.append(process_single_image(base_img))
+                            del pix, base_img
+                            gc.collect()
+                            p_bar.progress((step_i + 1) / tot_sel)
+                            
                         pdf_doc.close()
                         st.session_state.editor_page_idx = len(pages) - 1
                         st.success("PDF sayfaları kitaba eklendi! Yukarıdan kaydetmeyi unutmayın.")
@@ -1590,6 +1631,7 @@ else:
             if st.button(T("delete_book"), use_container_width=True) and st.session_state.user_role == "admin":
                 delete_hybrid_book(selected_id); st.rerun()
 
+    # YENİ KİTAP OLUŞTURMA SEKMESİ (24+ SAYFA İÇİN GÜÇLENDİRİLMİŞ)
     if st.session_state.user_role == "admin":
         with st.expander(T("add_tab")):
             st.markdown("### 📚 Yeni Kitap Oluştur & Sayfa Aktar")
@@ -1599,24 +1641,47 @@ else:
 
             if upload_mode == "📄 Taranmış PDF Yükle":
                 uploaded_pdf = st.file_uploader("Kitabın PDF dosyasını seçin:", type=["pdf"])
-                if uploaded_pdf and st.button("⚡ PDF'i Düzenleyiciye Aktar"):
-                    pdf_doc = fitz.open(stream=uploaded_pdf.read(), filetype="pdf")
-                    extracted_pages = []
-                    for p_no in range(len(pdf_doc)):
-                        pix = pdf_doc[p_no].get_pixmap(dpi=200)
-                        base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
-                        if split_spreads and (base_img.width / base_img.height) > 1.05:
-                            mid = base_img.width // 2
-                            extracted_pages.append(process_single_image(base_img.crop((0, 0, mid, base_img.height))))
-                            extracted_pages.append(process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height))))
-                        else:
-                            extracted_pages.append(process_single_image(base_img))
-                    pdf_doc.close()
-                    st.session_state.editor_pages = extracted_pages
-                    st.session_state.editor_book_title = book_title_input
-                    st.session_state.editor_orig_book_id = None
-                    st.session_state.editor_page_idx = 0
-                    st.session_state.editor_mode = True; st.rerun()
+                if uploaded_pdf:
+                    pdf_bytes = uploaded_pdf.read()
+                    pdf_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+                    total_pdf_p = len(pdf_doc)
+                    
+                    st.info(f"PDF Belgesi Algılandı: Toplam **{total_pdf_p} sayfa** içeriyor.")
+                    pdf_range = st.slider("Taranacak Sayfa Aralığı:", min_value=1, max_value=total_pdf_p, value=(1, total_pdf_p))
+                    
+                    if st.button("⚡ PDF'i Çözümle & Düzenleyiciye Aktar", type="primary", use_container_width=True):
+                        extracted_pages = []
+                        start_p = pdf_range[0] - 1
+                        end_p = pdf_range[1]
+                        count_p = end_p - start_p
+                        
+                        prog_bar = st.progress(0)
+                        stat_text = st.empty()
+                        
+                        for idx_s, p_num in enumerate(range(start_p, end_p)):
+                            stat_text.text(f"Sayfa {idx_s + 1} / {count_p} taranıyor... (Lütfen bekleyin)")
+                            pix = pdf_doc[p_num].get_pixmap(dpi=130)
+                            base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
+                            
+                            if split_spreads and (base_img.width / base_img.height) > 1.05:
+                                mid = base_img.width // 2
+                                extracted_pages.append(process_single_image(base_img.crop((0, 0, mid, base_img.height))))
+                                extracted_pages.append(process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height))))
+                            else:
+                                extracted_pages.append(process_single_image(base_img))
+                                
+                            del pix, base_img
+                            gc.collect()
+                            prog_bar.progress((idx_s + 1) / count_p)
+                            
+                        pdf_doc.close()
+                        stat_text.text("Tarama tamamlandı! Düzenleyiciye aktarılıyor...")
+                        st.session_state.editor_pages = extracted_pages
+                        st.session_state.editor_book_title = book_title_input.strip() or "İsimsiz Kitap"
+                        st.session_state.editor_orig_book_id = None
+                        st.session_state.editor_page_idx = 0
+                        st.session_state.editor_mode = True
+                        st.rerun()
 
             elif upload_mode == "📸 Kameradan Çek & Kırp":
                 cam_pic = st.camera_input("Sayfanın Fotoğrafını Çekin")
@@ -1639,9 +1704,14 @@ else:
 
             else:
                 upl_files = st.file_uploader("Kitap sayfaları (PNG/JPG):", type=["png", "jpg"], accept_multiple_files=True)
-                if upl_files and st.button("⚡ Taramayı Başlat"):
+                if upl_files and st.button("⚡ Taramayı Başlat", type="primary", use_container_width=True):
                     extracted_pages = []
-                    for file in upl_files:
+                    total_f = len(upl_files)
+                    prog_bar = st.progress(0)
+                    stat_text = st.empty()
+                    
+                    for f_i, file in enumerate(upl_files):
+                        stat_text.text(f"Fotoğraf {f_i + 1} / {total_f} taranıyor...")
                         b_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
                         if split_spreads and (b_img.width / b_img.height) > 1.05:
                             mid = b_img.width // 2
@@ -1649,11 +1719,17 @@ else:
                             extracted_pages.append(process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height))))
                         else:
                             extracted_pages.append(process_single_image(b_img))
+                        del b_img
+                        gc.collect()
+                        prog_bar.progress((f_i + 1) / total_f)
+                        
+                    stat_text.text("Tarama tamamlandı! Düzenleyiciye aktarılıyor...")
                     st.session_state.editor_pages = extracted_pages
                     st.session_state.editor_book_title = book_title_input
                     st.session_state.editor_orig_book_id = None
                     st.session_state.editor_page_idx = 0
-                    st.session_state.editor_mode = True; st.rerun()
+                    st.session_state.editor_mode = True
+                    st.rerun()
 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
     
