@@ -608,7 +608,6 @@ def process_single_image(img):
     return {"img_b64": b64_str, "boxes": boxes}
 
 def merge_two_pages(page1, page2):
-    """İki sayfayı yatay olarak (sol + sağ) birleştirir ve tek sayfa olarak tarar"""
     b1 = base64.b64decode(page1['img_b64'])
     b2 = base64.b64decode(page2['img_b64'])
     im1 = Image.open(io.BytesIO(b1)).convert("RGB")
@@ -877,7 +876,7 @@ elif st.session_state.miti_mode:
                     stopReading();
                     return;
                 }}
-                if (isReading) { stopReading(); }
+                if (isReading) {{ stopReading(); }}
 
                 try {{
                     if (music && !music.paused) {{
@@ -972,6 +971,14 @@ elif st.session_state.reading_mode:
         st.rerun()
 
     pages = ensure_reading_ready(st.session_state.uploaded_book_pages, st.session_state.app_lang)
+    target_flag = LANGUAGES[st.session_state.app_lang]["flag"]
+    txt_page = T("zen_page")
+    txt_listen = T("zen_listen")
+    txt_stop = T("zen_stop")
+    txt_trans = T("zen_page_trans")
+    txt_loading = T("zen_loading_trans")
+    pages_json = json.dumps(pages)
+
     HTML_VIEWER = f"""
     <!DOCTYPE html>
     <html>
@@ -980,31 +987,142 @@ elif st.session_state.reading_mode:
         <style>
             * {{ box-sizing: border-box; user-select: none; -webkit-user-select: none; }}
             html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
-            #viewport-wrap {{ position: relative; width: 100vw; height: calc(100vh - 120px); margin-top: 48px; display: flex; align-items: center; justify-content: center; }}
-            #stage {{ position: relative; max-width: 98vw; max-height: calc(100vh - 120px); display: inline-block; }}
-            #book-img {{ max-width: 98vw; max-height: calc(100vh - 120px); width: auto; height: auto; display: block; margin: auto; object-fit: contain; box-shadow: 0 0 35px rgba(0,0,0,0.85); border-radius: 4px; }}
-            #boxes-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }}
-            .word-hitbox {{ position: absolute; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.01); pointer-events: auto; transition: background 0.15s ease, outline 0.15s ease; }}
-            .word-hitbox:hover, .word-hitbox:active {{ background: rgba(254,240,138,0.45); outline: 2px solid #facc15; }}
-            .karaoke-lit {{ background: rgba(250,204,21,0.65) !important; outline: 2px solid #eab308 !important; }}
-            .glass-pill {{ position: fixed; top: 10px; left: 18px; background: rgba(15,23,42,0.45); backdrop-filter: blur(14px); color: #94a3b8; font-weight: 500; font-size: 13px; padding: 5px 14px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 1000; }}
+            
+            /* GÖRSEL SARMALAYICI: EKRANA TAM OTURAN ALAN */
+            #viewport-wrap {{
+                position: relative;
+                width: 100vw;
+                height: calc(100vh - 90px);
+                margin-top: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }}
+            #stage {{
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 0 35px rgba(0,0,0,0.85);
+                border-radius: 6px;
+                background: #000;
+            }}
+            #book-img {{
+                width: 100%;
+                height: 100%;
+                display: block;
+                border-radius: 6px;
+            }}
+            #boxes-layer {{
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+            }}
+            .word-hitbox {{
+                position: absolute;
+                border-radius: 4px;
+                cursor: pointer;
+                background: rgba(255,255,255,0.01);
+                pointer-events: auto;
+                transition: background 0.15s ease, outline 0.15s ease;
+            }}
+            .word-hitbox:hover, .word-hitbox:active {{
+                background: rgba(254,240,138,0.45);
+                outline: 2px solid #facc15;
+            }}
+            .karaoke-lit {{
+                background: rgba(250,204,21,0.65) !important;
+                outline: 2px solid #eab308 !important;
+            }}
+            .glass-pill {{
+                position: fixed;
+                top: 10px;
+                left: 18px;
+                background: rgba(15,23,42,0.45);
+                backdrop-filter: blur(14px);
+                color: #94a3b8;
+                font-weight: 500;
+                font-size: 13px;
+                padding: 5px 14px;
+                border-radius: 25px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+                z-index: 1000;
+            }}
             
             #whisper-card {{ 
-                position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.92); 
-                backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); color: #ffffff; padding: 14px 22px; 
-                border-radius: 18px; font-size: 15px; box-shadow: 0 12px 40px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.18); 
-                display: none; z-index: 1001; max-width: 680px; width: 90vw; line-height: 1.6;
+                position: fixed;
+                bottom: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(15,23,42,0.92); 
+                backdrop-filter: blur(24px);
+                -webkit-backdrop-filter: blur(24px);
+                color: #ffffff;
+                padding: 14px 22px; 
+                border-radius: 18px;
+                font-size: 15px;
+                box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+                border: 1px solid rgba(255,255,255,0.18); 
+                display: none;
+                z-index: 1001;
+                max-width: 680px;
+                width: 90vw;
+                line-height: 1.6;
             }}
-            .card-close-btn {{ position: absolute; top: 8px; right: 12px; background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; }}
+            .card-close-btn {{
+                position: absolute;
+                top: 8px;
+                right: 12px;
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                font-size: 16px;
+                cursor: pointer;
+            }}
             
-            .glass-dock {{ position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(15,23,42,0.5); backdrop-filter: blur(16px); padding: 6px 12px; border-radius: 35px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); z-index: 1000; }}
-            .glass-btn {{ background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); padding: 7px 14px; border-radius: 25px; font-weight: 500; font-size: 13.5px; cursor: pointer; }}
-            .glass-btn.active {{ background: #2563eb !important; border-color: #60a5fa !important; }}
+            .glass-dock {{
+                position: fixed;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                background: rgba(15,23,42,0.5);
+                backdrop-filter: blur(16px);
+                padding: 6px 12px;
+                border-radius: 35px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+                z-index: 1000;
+            }}
+            .glass-btn {{
+                background: rgba(255,255,255,0.06);
+                color: #e2e8f0;
+                border: 1px solid rgba(255,255,255,0.12);
+                padding: 7px 14px;
+                border-radius: 25px;
+                font-weight: 500;
+                font-size: 13.5px;
+                cursor: pointer;
+            }}
+            .glass-btn.active {{
+                background: #2563eb !important;
+                border-color: #60a5fa !important;
+            }}
         </style>
     </head>
-    <body>
-        <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
-        <div id="page-counter" class="glass-pill hud-item">{T('zen_page')} 1 / 1</div>
+    <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
+        <div id="viewport-wrap">
+            <div id="stage">
+                <img id="book-img" src="">
+                <div id="boxes-layer"></div>
+            </div>
+        </div>
+        <div id="page-counter" class="glass-pill hud-item">{txt_page} 1 / 1</div>
         
         <div id="whisper-card">
             <button class="card-close-btn" onclick="dismissCard()">✕</button>
@@ -1014,27 +1132,69 @@ elif st.session_state.reading_mode:
         <div id="main-dock" class="glass-dock hud-item">
             <button id="btn-prev" class="glass-btn" onclick="prevPage()">⬅️</button>
             <button id="btn-speed" class="glass-btn" onclick="cycleSpeed()">⚡ <span id="speed-text">0.8x</span></button>
-            <button id="btn-karaoke" class="glass-btn" onclick="toggleKaraoke()">🎤 <span id="k-text">{T('zen_listen')}</span></button>
-            <button id="btn-trans" class="glass-btn" onclick="toggleTranslation()">{LANGUAGES[st.session_state.app_lang]['flag']} <span>{T('zen_page_trans')}</span></button>
+            <button id="btn-karaoke" class="glass-btn" onclick="toggleKaraoke()">🎤 <span id="k-text">{txt_listen}</span></button>
+            <button id="btn-trans" class="glass-btn" onclick="toggleTranslation()">{target_flag} <span>{txt_trans}</span></button>
             <button id="btn-next" class="glass-btn" onclick="nextPage()">➡️</button>
         </div>
         <script>
-            const allPages = {json.dumps(pages)};
-            const targetFlag = "{LANGUAGES[st.session_state.app_lang]['flag']}";
+            const allPages = {pages_json};
+            const targetFlag = "{target_flag}";
             let currentIndex = 0, isPlaying = false, timer = null, wordIndices = [];
             const speeds = [0.7, 0.8, 1.0]; let speedIdx = 1;
 
-            function dismissCard() {{ document.getElementById('whisper-card').style.display = 'none'; clearTimeout(timer); }}
-            function cycleSpeed() {{ speedIdx = (speedIdx + 1) % speeds.length; document.getElementById('speed-text').innerText = speeds[speedIdx] + "x"; if(isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke,100); }} }}
+            const imgEl = document.getElementById('book-img');
+            const stage = document.getElementById('stage');
+            const layer = document.getElementById('boxes-layer');
+            const wrap = document.getElementById('viewport-wrap');
+
+            // HER SAYFAYI EKRANIN BOYUTUNA TAM OTURTAN AKILLI HESAPLAYICI (HER CİHAZDA KUSURSUZ FIT)
+            function fitPageToScreen() {{
+                if (!imgEl.naturalWidth || !imgEl.naturalHeight) return;
+                const availW = wrap.clientWidth * 0.96;
+                const availH = wrap.clientHeight * 0.96;
+                
+                const scale = Math.min(availW / imgEl.naturalWidth, availH / imgEl.naturalHeight);
+                const targetW = Math.round(imgEl.naturalWidth * scale);
+                const targetH = Math.round(imgEl.naturalHeight * scale);
+                
+                stage.style.width = targetW + 'px';
+                stage.style.height = targetH + 'px';
+                imgEl.style.width = targetW + 'px';
+                imgEl.style.height = targetH + 'px';
+                layer.style.width = targetW + 'px';
+                layer.style.height = targetH + 'px';
+            }}
+
+            window.addEventListener('resize', fitPageToScreen);
+
+            let hudTimer = null;
+            function resetHudTimer() {{
+                clearTimeout(hudTimer);
+            }}
+
+            function dismissCard() {{
+                document.getElementById('whisper-card').style.display = 'none';
+                clearTimeout(timer);
+            }}
+
+            function cycleSpeed() {{
+                speedIdx = (speedIdx + 1) % speeds.length;
+                document.getElementById('speed-text').innerText = speeds[speedIdx] + "x";
+                if (isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke, 100); }}
+            }}
 
             function loadPage(idx) {{
                 if (idx < 0 || idx >= allPages.length) return;
                 stopKaraoke(); currentIndex = idx; const page = allPages[idx];
-                document.getElementById('book-img').src = "data:image/jpeg;base64," + page.img_b64;
-                document.getElementById('page-counter').innerText = `{T('zen_page')} ${{idx + 1}} / ${{allPages.length}}`;
+                
+                imgEl.onload = () => {{ fitPageToScreen(); }};
+                imgEl.src = "data:image/jpeg;base64," + page.img_b64;
+                if (imgEl.complete) {{ fitPageToScreen(); }}
+
+                document.getElementById('page-counter').innerText = `{txt_page} ${{idx + 1}} / ${{allPages.length}}`;
                 document.getElementById('btn-prev').disabled = (idx === 0);
                 document.getElementById('btn-next').disabled = (idx === allPages.length - 1);
-                dismissCard(); document.getElementById('boxes-layer').innerHTML = ''; wordIndices = []; let charOffset = 0;
+                dismissCard(); layer.innerHTML = ''; wordIndices = []; let charOffset = 0;
                 
                 (page.boxes || []).forEach((b, i) => {{
                     wordIndices.push({{ idx: i, start: charOffset, end: charOffset + b.text.length }});
@@ -1060,7 +1220,7 @@ elif st.session_state.reading_mode:
                         const u = new SpeechSynthesisUtterance(b.text); u.lang = 'fr-FR'; u.rate = speeds[speedIdx]; window.speechSynthesis.speak(u);
                         timer = setTimeout(dismissCard, 4500);
                     }};
-                    document.getElementById('boxes-layer').appendChild(d);
+                    layer.appendChild(d);
                 }});
             }}
             function nextPage() {{ if (currentIndex < allPages.length - 1) loadPage(currentIndex + 1); }}
@@ -1068,14 +1228,14 @@ elif st.session_state.reading_mode:
 
             function toggleTranslation() {{
                 clearTimeout(timer);
-                const tText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : "{T('zen_loading_trans')}";
+                const tText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : "{txt_loading}";
                 const card = document.getElementById('whisper-card');
                 
                 if (card.style.display === 'block' && card.dataset.type === 'page') {{
                     dismissCard();
                 }} else {{ 
                     document.getElementById('whisper-body').innerHTML = `
-                        <div style="font-size: 13.5px; font-weight: 600; color: #93c5fd; margin-bottom: 6px;">📝 {T('zen_page_trans')} (${{targetFlag}})</div>
+                        <div style="font-size: 13.5px; font-weight: 600; color: #93c5fd; margin-bottom: 6px;">📝 {txt_trans} (${{targetFlag}})</div>
                         <div style="font-size: 15px; color: #f8fafc; text-align: left; line-height: 1.65; max-height: 40vh; overflow-y: auto;">${{tText}}</div>
                     `;
                     card.style.display = 'block'; 
@@ -1085,7 +1245,7 @@ elif st.session_state.reading_mode:
 
             function toggleKaraoke() {{ if (isPlaying) stopKaraoke(); else playKaraoke(); }}
             function playKaraoke() {{
-                window.speechSynthesis.cancel(); isPlaying = true; document.getElementById('btn-karaoke').classList.add('active'); document.getElementById('k-text').innerText = "{T('zen_stop')}";
+                window.speechSynthesis.cancel(); isPlaying = true; document.getElementById('btn-karaoke').classList.add('active'); document.getElementById('k-text').innerText = "{txt_stop}";
                 const page = allPages[currentIndex]; let fSent = (page.boxes || []).map(b => b.text).join(' ');
                 let u = new SpeechSynthesisUtterance(fSent); u.lang = 'fr-FR'; u.rate = speeds[speedIdx];
                 u.onboundary = (e) => {{
@@ -1096,7 +1256,7 @@ elif st.session_state.reading_mode:
                 }};
                 u.onend = stopKaraoke; u.onerror = stopKaraoke; window.speechSynthesis.speak(u);
             }}
-            function stopKaraoke() {{ isPlaying = false; window.speechSynthesis.cancel(); document.getElementById('btn-karaoke').classList.remove('active'); document.getElementById('k-text').innerText = "{T('zen_listen')}"; document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); }}
+            function stopKaraoke() {{ isPlaying = false; window.speechSynthesis.cancel(); document.getElementById('btn-karaoke').classList.remove('active'); document.getElementById('k-text').innerText = "{txt_listen}"; document.querySelectorAll('.word-hitbox').forEach(el => el.classList.remove('karaoke-lit')); }}
             
             window.addEventListener('keydown', (e) => {{ if (e.key === 'ArrowRight') nextPage(); if (e.key === 'ArrowLeft') prevPage(); }});
             let touchStartX = 0;
@@ -1148,7 +1308,6 @@ elif st.session_state.editor_mode:
     pages = st.session_state.editor_pages
     total_p = len(pages)
 
-    # 1. TOPLU VE GELİŞMİŞ İŞLEMLER
     if total_p > 0:
         with st.expander("⚙️ Gelişmiş & Toplu İşlemler"):
             col_b1, col_b2 = st.columns([2, 1])
@@ -1163,7 +1322,7 @@ elif st.session_state.editor_mode:
                             pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
                             re_page = process_single_image(pil_img)
                             p['boxes'] = re_page['boxes']
-                        except Exception as e:
+                        except Exception:
                             pass
                         p_bar.progress((idx + 1) / total_p)
                     s_txt.text("Tüm sayfaların OCR taraması tamamlandı!")
@@ -1173,7 +1332,6 @@ elif st.session_state.editor_mode:
             with col_b2:
                 st.caption("Eski kayıtlı kitaplardaki harf ve aksan okuma kalitesini tek seferde en üst seviyeye çıkarır.")
 
-    # 2. YENİ SAYFA EKLEME PANELİ
     with st.expander("➕ Bu Kitaba Yeni Sayfa(lar) Ekle", expanded=(total_p == 0)):
         add_mode = st.radio("Yeni Sayfa Ekleme Türü:", ["📸 Kameradan Çek & Kırp", "📁 Fotoğraf(lar) Yükle", "📄 Taranmış PDF Ekle"], horizontal=True, key="ed_add_mode")
         split_new_spreads = st.checkbox("📖 Yeni Çift Sayfaları Otomatik Böl", value=True, key="ed_split_box")
@@ -1270,7 +1428,6 @@ elif st.session_state.editor_mode:
                     st.session_state.editor_page_idx = max(0, min(p_idx, len(pages) - 1))
                     st.rerun()
 
-            # SAYFA BÖLME, BİRLEŞTİRME VE TEK SAYFAYI YENİDEN TARAMA BUTONLARI
             col_act1, col_act2 = st.columns([1, 1])
             with col_act1:
                 if st.button(T("split_page_btn"), type="primary", use_container_width=True):
@@ -1308,7 +1465,6 @@ elif st.session_state.editor_mode:
                 else:
                     st.button("🔗 Son Sayfa (Birleştirilemez)", disabled=True, use_container_width=True)
 
-            # TEK SAYFAYI YENİDEN TARAMA BUTONU
             if st.button(T("rescan_page_btn"), use_container_width=True):
                 with st.spinner("Sayfa güncel OCR motoru ile taranıyor..."):
                     try:
