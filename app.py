@@ -144,6 +144,8 @@ UI_TRANSLATIONS = {
         "save_and_read": "🚀 Kaydet & Hemen Oku",
         "exit_editor": "✕ Çık",
         "split_page_btn": "✂️ Bu Çift Sayfayı İkiye Böl",
+        "merge_page_btn": "🔗 Sonraki Sayfa ile Birleştir (Sol + Sağ)",
+        "rescan_page_btn": "🔄 Bu Sayfayı Yeni OCR ile Tekrar Tara",
         "ocr_processing": "Kitap hızla hazırlanıyor...",
         "reading_lang_label": "Okuma & Çeviri Dili:",
         "zen_close": "✕ Kapat",
@@ -181,6 +183,8 @@ UI_TRANSLATIONS = {
         "save_and_read": "🚀 Save & Read Now",
         "exit_editor": "✕ Exit",
         "split_page_btn": "✂️ Split Double Page",
+        "merge_page_btn": "🔗 Merge with Next Page (Left + Right)",
+        "rescan_page_btn": "🔄 Re-scan Page with New OCR",
         "ocr_processing": "Preparing book...",
         "reading_lang_label": "Translation Language:",
         "zen_close": "✕ Close",
@@ -218,6 +222,8 @@ UI_TRANSLATIONS = {
         "save_and_read": "🚀 Запази и чети веднага",
         "exit_editor": "✕ Изход",
         "split_page_btn": "✂️ Раздели двойната страница",
+        "merge_page_btn": "🔗 Обедини със следващата страница",
+        "rescan_page_btn": "🔄 Сканирай отново с новия OCR",
         "ocr_processing": "Подготовка на книгата...",
         "reading_lang_label": "Език за превод:",
         "zen_close": "✕ Затвори",
@@ -325,7 +331,7 @@ def get_blue_danube_audio_data():
     return "https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
 
 # ==========================================
-# 2. GOOGLE SHEETS ENTEGRASYONU (ÖNBELLEKLİ & HIZLANDIRILMIŞ)
+# 2. GOOGLE SHEETS ENTEGRASYONU (ÖNBELLEKLİ)
 # ==========================================
 def clean_private_key(key_str):
     if not key_str or not isinstance(key_str, str): return key_str
@@ -440,7 +446,6 @@ def save_hybrid_book(title, pages, old_book_id=None):
         all_page_rows = [[book_id, idx + 1, page["img_b64"], json.dumps(page["boxes"], ensure_ascii=False)] for idx, page in enumerate(pages)]
         for i in range(0, len(all_page_rows), 10): pages_sheet.append_rows(all_page_rows[i:i + 10]); time.sleep(0.5)
         
-        # Önbelleği temizle (Yeni veri anında görünsün)
         get_saved_books.clear()
         load_book_content.clear()
         return book_id, "Kitap başarıyla kaydedildi!"
@@ -460,7 +465,7 @@ def delete_hybrid_book(book_id):
     load_book_content.clear()
 
 # ==========================================
-# 3. YÜKSEK ÇÖZÜNÜRLÜKLÜ OCR VE PARALEL ÇEVİRİ MOTORU
+# 3. YÜKSEK ÇÖZÜNÜRLÜKLÜ OCR, BİRLEŞTİRME VE ÇEVİRİ MOTORU
 # ==========================================
 @st.cache_resource
 def load_ocr(): return easyocr.Reader(['fr', 'en'], gpu=False)
@@ -532,7 +537,7 @@ def get_words_dictionary(texts_list, target_lang):
             
     if not unique_items: return {}
     items_list = sorted(list(unique_items))
-    batch_size = 25  # Hızlı çeviri için 25'li gruplar
+    batch_size = 25
     for i in range(0, len(items_list), batch_size):
         batch = items_list[i:i + batch_size]
         combined = "\n".join(batch)
@@ -545,7 +550,6 @@ def get_words_dictionary(texts_list, target_lang):
     return trans_map
 
 def _translate_single_page_task(page, target_lang):
-    """Tek bir sayfayı bağımsız olarak çeviren iş parçacığı görevi"""
     is_corrupted = (
         target_lang != "fr" and
         page.get("full_trans") == page.get("full_text") and
@@ -567,7 +571,6 @@ def _translate_single_page_task(page, target_lang):
     return page
 
 def ensure_reading_ready(pages, target_lang):
-    """Bütün sayfaları paralel (multi-threaded) olarak 1-2 saniyede hazırlar"""
     if not pages: return pages
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
         futures = [executor.submit(_translate_single_page_task, page, target_lang) for page in pages]
@@ -591,7 +594,8 @@ def process_single_image(img):
         t_clean = text.strip()
         if not t_clean: continue
         x_pts, y_pts = [p[0] for p in box], [p[1] for p in box]
-        min_x, max_x, min_y, max_y = min(x_pts), max(x_pts), min(y_pts), max(y_pts)
+        min_x, max_x = min(x_pts), max(x_pts)
+        min_y, max_y = min(y_pts), max(y_pts)
         boxes.append({
             "id": f"b_{len(boxes)}", "text": t_clean, "clean": clean_word_key(t_clean),
             "left": (min_x / w) * 100, "top": (min_y / h) * 100,
@@ -602,6 +606,29 @@ def process_single_image(img):
     del img_fixed, img_ocr, np_arr
     gc.collect()
     return {"img_b64": b64_str, "boxes": boxes}
+
+def merge_two_pages(page1, page2):
+    """İki sayfayı yatay olarak (sol + sağ) birleştirir ve tek sayfa olarak tarar"""
+    b1 = base64.b64decode(page1['img_b64'])
+    b2 = base64.b64decode(page2['img_b64'])
+    im1 = Image.open(io.BytesIO(b1)).convert("RGB")
+    im2 = Image.open(io.BytesIO(b2)).convert("RGB")
+    
+    target_h = max(im1.height, im2.height)
+    if im1.height != target_h:
+        im1 = im1.resize((int(im1.width * (target_h / im1.height)), target_h), Image.Resampling.LANCZOS)
+    if im2.height != target_h:
+        im2 = im2.resize((int(im2.width * (target_h / im2.height)), target_h), Image.Resampling.LANCZOS)
+        
+    merged_w = im1.width + im2.width
+    merged_img = Image.new('RGB', (merged_w, target_h), (255, 255, 255))
+    merged_img.paste(im1, (0, 0))
+    merged_img.paste(im2, (im1.width, 0))
+    
+    new_page_obj = process_single_image(merged_img)
+    del im1, im2, merged_img
+    gc.collect()
+    return new_page_obj
 
 # ==========================================
 # 4. GİRİŞ EKRANI
@@ -850,9 +877,7 @@ elif st.session_state.miti_mode:
                     stopReading();
                     return;
                 }}
-                if (isReading) {{
-                    stopReading();
-                }}
+                if (isReading) { stopReading(); }
 
                 try {{
                     if (music && !music.paused) {{
@@ -977,7 +1002,7 @@ elif st.session_state.reading_mode:
             .glass-btn.active {{ background: #2563eb !important; border-color: #60a5fa !important; }}
         </style>
     </head>
-    <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
+    <body>
         <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
         <div id="page-counter" class="glass-pill hud-item">{T('zen_page')} 1 / 1</div>
         
@@ -998,11 +1023,6 @@ elif st.session_state.reading_mode:
             const targetFlag = "{LANGUAGES[st.session_state.app_lang]['flag']}";
             let currentIndex = 0, isPlaying = false, timer = null, wordIndices = [];
             const speeds = [0.7, 0.8, 1.0]; let speedIdx = 1;
-
-            let hudTimer = null;
-            function resetHudTimer() {{
-                clearTimeout(hudTimer);
-            }}
 
             function dismissCard() {{ document.getElementById('whisper-card').style.display = 'none'; clearTimeout(timer); }}
             function cycleSpeed() {{ speedIdx = (speedIdx + 1) % speeds.length; document.getElementById('speed-text').innerText = speeds[speedIdx] + "x"; if(isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke,100); }} }}
@@ -1090,7 +1110,7 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI (TAM KUSURSUZ SATIR VE SAYFA YÖNETİMİ)
+# 6. DÜZENLEYİCİ EKRANI (BİRLEŞTİRME & YENİDEN TARAMA DESTEĞİ)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
@@ -1128,6 +1148,32 @@ elif st.session_state.editor_mode:
     pages = st.session_state.editor_pages
     total_p = len(pages)
 
+    # 1. TOPLU VE GELİŞMİŞ İŞLEMLER
+    if total_p > 0:
+        with st.expander("⚙️ Gelişmiş & Toplu İşlemler"):
+            col_b1, col_b2 = st.columns([2, 1])
+            with col_b1:
+                if st.button("🔄 Tüm Kitabı Yeni OCR ile Baştan Tara (Toplu)", type="primary"):
+                    p_bar = st.progress(0)
+                    s_txt = st.empty()
+                    for idx, p in enumerate(pages):
+                        s_txt.text(f"Sayfa {idx + 1} / {total_p} yüksek çözünürlükle taranıyor...")
+                        try:
+                            img_bytes = base64.b64decode(p['img_b64'])
+                            pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                            re_page = process_single_image(pil_img)
+                            p['boxes'] = re_page['boxes']
+                        except Exception as e:
+                            pass
+                        p_bar.progress((idx + 1) / total_p)
+                    s_txt.text("Tüm sayfaların OCR taraması tamamlandı!")
+                    st.success("Tüm sayfalar yeni OCR motoruyla tarandı! Kalıcı olması için 'Değişiklikleri Kaydet' butonuna basınız.")
+                    time.sleep(0.5)
+                    st.rerun()
+            with col_b2:
+                st.caption("Eski kayıtlı kitaplardaki harf ve aksan okuma kalitesini tek seferde en üst seviyeye çıkarır.")
+
+    # 2. YENİ SAYFA EKLEME PANELİ
     with st.expander("➕ Bu Kitaba Yeni Sayfa(lar) Ekle", expanded=(total_p == 0)):
         add_mode = st.radio("Yeni Sayfa Ekleme Türü:", ["📸 Kameradan Çek & Kırp", "📁 Fotoğraf(lar) Yükle", "📄 Taranmış PDF Ekle"], horizontal=True, key="ed_add_mode")
         split_new_spreads = st.checkbox("📖 Yeni Çift Sayfaları Otomatik Böl", value=True, key="ed_split_box")
@@ -1224,24 +1270,57 @@ elif st.session_state.editor_mode:
                     st.session_state.editor_page_idx = max(0, min(p_idx, len(pages) - 1))
                     st.rerun()
 
-            if st.button(T("split_page_btn"), type="primary", use_container_width=True):
-                with st.spinner("Sayfa ortadan ikiye bölünüyor ve yeniden okunuyor..."):
+            # SAYFA BÖLME, BİRLEŞTİRME VE TEK SAYFAYI YENİDEN TARAMA BUTONLARI
+            col_act1, col_act2 = st.columns([1, 1])
+            with col_act1:
+                if st.button(T("split_page_btn"), type="primary", use_container_width=True):
+                    with st.spinner("Sayfa ortadan ikiye bölünüyor ve yeniden okunuyor..."):
+                        try:
+                            img_bytes = base64.b64decode(curr_page['img_b64'])
+                            orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                            w, h = orig_pil.size
+                            mid_x = w // 2
+                            
+                            left_img = orig_pil.crop((0, 0, mid_x, h))
+                            right_img = orig_pil.crop((mid_x, 0, w, h))
+                            
+                            pages[p_idx] = process_single_image(left_img)
+                            pages.insert(p_idx + 1, process_single_image(right_img))
+                            st.success("Sayfa başarıyla bölündü!")
+                            time.sleep(0.4)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Bölme hatası: {e}")
+
+            with col_act2:
+                if p_idx < total_p - 1:
+                    if st.button(T("merge_page_btn"), type="secondary", use_container_width=True):
+                        with st.spinner("Sayfalar yan yana birleştirilip taranıyor..."):
+                            try:
+                                merged_obj = merge_two_pages(pages[p_idx], pages[p_idx + 1])
+                                pages[p_idx] = merged_obj
+                                pages.pop(p_idx + 1)
+                                st.success("İki sayfa başarıyla birleştirildi!")
+                                time.sleep(0.4)
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Birleştirme hatası: {e}")
+                else:
+                    st.button("🔗 Son Sayfa (Birleştirilemez)", disabled=True, use_container_width=True)
+
+            # TEK SAYFAYI YENİDEN TARAMA BUTONU
+            if st.button(T("rescan_page_btn"), use_container_width=True):
+                with st.spinner("Sayfa güncel OCR motoru ile taranıyor..."):
                     try:
                         img_bytes = base64.b64decode(curr_page['img_b64'])
                         orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                        w, h = orig_pil.size
-                        mid_x = w // 2
-                        
-                        left_img = orig_pil.crop((0, 0, mid_x, h))
-                        right_img = orig_pil.crop((mid_x, 0, w, h))
-                        
-                        pages[p_idx] = process_single_image(left_img)
-                        pages.insert(p_idx + 1, process_single_image(right_img))
-                        st.success("Sayfa başarıyla bölündü!")
+                        re_obj = process_single_image(orig_pil)
+                        curr_page['boxes'] = re_obj['boxes']
+                        st.success("Sayfa başarıyla yeniden tarandı!")
                         time.sleep(0.4)
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Bölme hatası: {e}")
+                        st.error(f"Tarama hatası: {e}")
 
             st.markdown(
                 f"""
