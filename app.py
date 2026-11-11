@@ -404,6 +404,7 @@ def record_thanks(email):
     except: return False
 
 def get_saved_books():
+    """Canlı Google Sheets okuyucu (Önbelleksiz, her zaman en güncel veriyi çeker)"""
     sheet, err = get_sheet("Library")
     if not sheet: return [], err
     for attempt in range(2):
@@ -469,9 +470,10 @@ def delete_hybrid_book(book_id):
         for row_idx in reversed(rows_to_delete): pages_sheet.delete_rows(row_idx); time.sleep(0.1)
 
 # ==========================================
-# 3. ZIRHLI GEMINI VISION API & REST PROTOKOLÜ
+# 3. ZIRHLI GEMINI VISION API MOTORU
 # ==========================================
 def sanitize_gemini_key(raw_key):
+    """Anahtardaki tüm köşeli parantez, tırnak ve boşlukları söker"""
     if not raw_key: return ""
     return re.sub(r"[^a-zA-Z0-9_\-\.]", "", str(raw_key)).strip()
 
@@ -485,24 +487,19 @@ def get_active_gemini_key():
                 if val: return val
     return None
 
-def build_gemini_url(api_key):
-    clean_k = sanitize_gemini_key(api_key)
-    # Başına hiçbir karakterin kaçmasına izin vermeyen katı formatlama
-    return f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={clean_k}"
-
 @st.cache_resource
 def load_ocr():
     return easyocr.Reader(['fr', 'en'], gpu=False)
 
 def call_gemini_vision_native(base64_image, api_key):
     """
-    Kusursuz ve protokole tam uyan Gemini Vision çağrısı.
+    HTTP Header (x-goog-api-key) üzerinden çalışan, URL bozunmasından etkilenmeyen kesin Gemini Vision çağrısı.
     """
     clean_key = sanitize_gemini_key(api_key)
     if not clean_key:
         return None, "API Key boş veya geçersiz."
         
-    url = build_gemini_url(clean_key)
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     
     prompt = (
         "You are an expert OCR engine for French children's picture books. "
@@ -540,6 +537,7 @@ def call_gemini_vision_native(base64_image, api_key):
         data=req_data,
         headers={
             "Content-Type": "application/json",
+            "x-goog-api-key": clean_key,
             "User-Agent": "Mozilla/5.0"
         }
     )
@@ -1152,7 +1150,6 @@ elif st.session_state.reading_mode:
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
     
-    # GEMINI DURUM VE GİRİŞ BARI
     active_key = get_active_gemini_key()
     col_k1, col_k2, col_k3 = st.columns([1.5, 2.2, 1])
     with col_k1:
@@ -1161,7 +1158,7 @@ elif st.session_state.editor_mode:
         else:
             st.warning("🟠 EasyOCR Devrede (Anahtar Yok)")
     with col_k2:
-        m_key = st.text_input("Gemini API Anahtarı:", value=st.session_state.manual_gemini_key, type="password", placeholder="AIzaSy...", label_visibility="collapsed")
+        m_key = st.text_input("Gemini API Anahtarı:", value=st.session_state.manual_gemini_key, type="password", placeholder="AQ...", label_visibility="collapsed")
         clean_m_key = sanitize_gemini_key(m_key)
         if clean_m_key != st.session_state.manual_gemini_key:
             st.session_state.manual_gemini_key = clean_m_key
@@ -1172,10 +1169,19 @@ elif st.session_state.editor_mode:
                 st.error("Önce API anahtarınızı girin!")
             else:
                 with st.spinner("Google sunucularına bağlanılıyor..."):
-                    test_url = build_gemini_url(active_key)
+                    clean_k = sanitize_gemini_key(active_key)
+                    test_url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)"
                     try:
                         t_data = json.dumps({"contents": [{"parts": [{"text": "Say 'OK'"}]}]}).encode("utf-8")
-                        t_req = urllib.request.Request(test_url, data=t_data, headers={"Content-Type": "application/json"})
+                        t_req = urllib.request.Request(
+                            test_url,
+                            data=t_data,
+                            headers={
+                                "Content-Type": "application/json",
+                                "x-goog-api-key": clean_k,
+                                "User-Agent": "Mozilla/5.0"
+                            }
+                        )
                         with urllib.request.urlopen(t_req, timeout=12) as t_resp:
                             if t_resp.status == 200:
                                 st.toast("✅ Mükemmel! Gemini API bağlantısı %100 çalışıyor.")
