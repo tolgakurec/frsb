@@ -224,7 +224,6 @@ UI_TRANSLATIONS = {
         "zen_listen": "Слушай",
         "zen_stop": "Спри",
         "zen_page_trans": "Превод на страницата",
-        "zen_loading_trans": "Подготвя се превод...",
         "miti_title": "Младостта, оставена в София: Великолепието на една империя и една недовършена любов",
         "miti_exit": "✕ Изход",
         "listen_fr": "🔊 Слушай на френски",
@@ -259,11 +258,10 @@ def T(key):
     return UI_TRANSLATIONS[lang].get(key, UI_TRANSLATIONS["tr"].get(key, key))
 
 # ==========================================
-# 1. TEMEL ÇEVİRİ MOTORU (KAYNAK VE HEDEF DİL TAM AYRIMI)
+# 1. ÇEVİRİ MOTORU (KAYNAK VE HEDEF DİL TAM AYRIMI)
 # ==========================================
 @st.cache_data(show_spinner=False)
 def translate_api(text, source_lang, target_lang):
-    """Herhangi bir kaynaktan hedefe Google Translate üzerinden çeviri yapar"""
     if not text or not text.strip() or source_lang == target_lang:
         return text
     clients = ['gtx', 'dict-chrome-ex', 'te_lib']
@@ -458,21 +456,22 @@ def delete_hybrid_book(book_id):
         for row_idx in reversed(rows_to_delete): pages_sheet.delete_rows(row_idx); time.sleep(0.1)
 
 # ==========================================
-# 3. OCR, ÇEVİRİ VE DİNAMİK SÖZLÜK MOTORU
+# 3. YÜKSEK ÇÖZÜNÜRLÜKLÜ OCR VE KELİME MOTORU
 # ==========================================
 @st.cache_resource
 def load_ocr(): return easyocr.Reader(['fr', 'en'], gpu=False)
 reader = load_ocr()
 
 def compress_image_for_sheets(img):
-    img.thumbnail((600, 800), Image.Resampling.LANCZOS)
+    img_c = img.copy()
+    img_c.thumbnail((650, 850), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
-    quality = 40
-    img.save(buf, format="JPEG", quality=quality)
+    quality = 45
+    img_c.save(buf, format="JPEG", quality=quality)
     while len(buf.getvalue()) > 35000 and quality > 10:
         quality -= 5
         buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=quality)
+        img_c.save(buf, format="JPEG", quality=quality)
     return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 def sort_reading_order(ocr_items):
@@ -518,9 +517,7 @@ def build_coherent_page_text(boxes):
 
 @st.cache_data(show_spinner=False)
 def get_words_dictionary(texts_list, target_lang):
-    """Kelimeleri Fransızca'dan seçilen hedef dile çevirir"""
-    if target_lang == "fr":
-        return {}
+    if target_lang == "fr": return {}
     trans_map, unique_items = {}, set()
     for raw in texts_list:
         clean = clean_word_key(raw)
@@ -529,9 +526,7 @@ def get_words_dictionary(texts_list, target_lang):
             w_clean = clean_word_key(word)
             if len(w_clean) > 1: unique_items.add(w_clean)
             
-    if not unique_items:
-        return {}
-
+    if not unique_items: return {}
     items_list = sorted(list(unique_items))
     for i in range(0, len(items_list), 15):
         batch = items_list[i:i + 15]
@@ -545,9 +540,7 @@ def get_words_dictionary(texts_list, target_lang):
     return trans_map
 
 def ensure_reading_ready(pages, target_lang):
-    """Sayfaların seçilen hedef dilde hazır olduğundan ve önbellek hatası olmadığından emin olur"""
     for page in pages:
-        # Eğer sayfa daha önce hatalı çevrilip Fransızca olarak önbelleğe kalmışsa yeniden çevir
         is_corrupted = (
             target_lang != "fr" and
             page.get("full_trans") == page.get("full_text") and
@@ -564,21 +557,45 @@ def ensure_reading_ready(pages, target_lang):
     return pages
 
 def process_single_image(img):
-    img_opt = img.copy()
-    img_opt.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
-    w, h = img_opt.size
-    ordered_ocr = sort_reading_order(reader.readtext(np.array(img_opt), detail=1, paragraph=False))
+    """Yüksek çözünürlükte ve otomatik kontrast iyileştirmesiyle sayfayı okur"""
+    img_fixed = ImageOps.exif_transpose(img).convert("RGB")
+    
+    # 1. OCR için yüksek çözünürlükte tut (1800 piksele kadar)
+    img_ocr = img_fixed.copy()
+    img_ocr.thumbnail((1800, 1800), Image.Resampling.LANCZOS)
+    try:
+        img_ocr = ImageOps.autocontrast(img_ocr, cutoff=0.5)
+    except:
+        pass
+        
+    w, h = img_ocr.size
+    np_arr = np.array(img_ocr)
+    
+    ocr_raw = reader.readtext(np_arr, detail=1, paragraph=False)
+    ordered_ocr = sort_reading_order(ocr_raw)
+    
     boxes = []
     for box, text, conf in ordered_ocr:
-        x_pts, y_pts = [p[0] for p in box], [p[1] for p in box]
-        min_x, max_x, min_y, max_y = min(x_pts), max(x_pts), min(y_pts), max(y_pts)
+        t_clean = text.strip()
+        if not t_clean: continue
+        x_pts = [p[0] for p in box]
+        y_pts = [p[1] for p in box]
+        min_x, max_x = min(x_pts), max(x_pts)
+        min_y, max_y = min(y_pts), max(y_pts)
         boxes.append({
-            "id": f"b_{len(boxes)}", "text": text, "clean": clean_word_key(text),
-            "left": (min_x / w) * 100, "top": (min_y / h) * 100,
-            "width": ((max_x - min_x) / w) * 100, "height": ((max_y - min_y) / h) * 100
+            "id": f"b_{len(boxes)}",
+            "text": t_clean,
+            "clean": clean_word_key(t_clean),
+            "left": (min_x / w) * 100,
+            "top": (min_y / h) * 100,
+            "width": ((max_x - min_x) / w) * 100,
+            "height": ((max_y - min_y) / h) * 100
         })
-    b64_str = compress_image_for_sheets(img_opt)
-    del img_opt; gc.collect()
+        
+    b64_str = compress_image_for_sheets(img_fixed)
+    del img_fixed, img_ocr, np_arr
+    gc.collect()
+    
     return {"img_b64": b64_str, "boxes": boxes}
 
 # ==========================================
@@ -608,14 +625,13 @@ if not st.session_state.logged_in:
             else: st.warning(T("email_warn"))
 
 # ==========================================
-# 4.1. MİTİ & ATATÜRK ANMA SAYFASI (3 SÜTUNLU KUSURSUZ TASARIM)
+# 4.1. MİTİ & ATATÜRK ANMA SAYFASI
 # ==========================================
 elif st.session_state.miti_mode:
     target_lang = st.session_state.app_lang
     img_data_uri = get_ataturk_img_data()
     audio_data_uri = get_blue_danube_audio_data()
     
-    # Paragrafları seçilen dile göre hazırla
     if target_lang == "tr":
         prepared_pairs = [{"fr": p["fr"], "sys": p["tr"]} for p in STORY_PARAGRAPHS]
     elif target_lang == "fr":
@@ -660,12 +676,10 @@ elif st.session_state.miti_mode:
             div[data-testid="stButton"] button:hover, .stButton button:hover {
                 background: #b91c1c !important;
                 transform: scale(1.08) !important;
-                box-shadow: 0 6px 30px rgba(220, 38, 38, 0.8) !important;
             }
         </style>
         """, unsafe_allow_html=True)
 
-    # ÇIKIŞ BUTONU (Ekranın Tam Üstünde ve Belirgin)
     if st.button(T("miti_exit"), key="btn_top_exit"):
         st.session_state.miti_mode = False
         st.rerun()
@@ -680,7 +694,6 @@ elif st.session_state.miti_mode:
             * {{ box-sizing: border-box; }}
             body {{ margin: 0; padding: 0; overflow: hidden; background-color: #080c14; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
             
-            /* Sütun 1: Sabit Fotoğraf (Sol Sütun) */
             #col-photo {{
                 width: 28%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
                 padding: 65px 20px 20px 25px; background: #04060a; border-right: 1.5px dashed rgba(255,255,255,0.15); position: relative;
@@ -690,18 +703,12 @@ elif st.session_state.miti_mode:
                 box-shadow: 0 15px 45px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.12);
             }}
             
-            /* Metin Sütunları Sarmalayıcısı */
-            #cols-wrap {{
-                width: 72%; height: 100vh; display: flex;
-            }}
-            
-            /* Sütun 2 ve 3: Metin Sütunları */
+            #cols-wrap {{ width: 72%; height: 100vh; display: flex; }}
             #col-french, #col-system {{
                 width: 50%; height: 100vh; padding: 75px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative;
             }}
             #col-french {{ border-right: 1.5px dashed rgba(255,255,255,0.15); }}
             
-            /* Mobilde Esnek Yerleşim */
             @media (max-width: 768px) {{
                 body {{ flex-direction: column !important; }}
                 #col-photo {{ width: 100% !important; height: 26vh !important; padding: 60px 10px 10px 10px !important; border-right: none !important; border-bottom: 1.5px dashed rgba(255,255,255,0.15) !important; }}
@@ -710,7 +717,6 @@ elif st.session_state.miti_mode:
                 #col-french, #col-system {{ padding: 15px 12px 30px 12px !important; font-size: 0.95rem !important; }}
             }}
             
-            /* Sticky Başlıklar ve Dinle Butonları */
             .col-header {{
                 position: sticky; top: -75px; background: rgba(8, 12, 20, 0.95); backdrop-filter: blur(12px);
                 padding: 10px 0 16px 0; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px;
@@ -724,53 +730,34 @@ elif st.session_state.miti_mode:
             .listen-btn:hover {{ background: #fbbf24; color: #000; transform: translateY(-1px); }}
             .listen-btn.active {{ background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }}
             
-            /* Metin Paragrafları */
-            .story-p {{
-                font-size: 1.05rem; line-height: 1.85; margin-bottom: 18px; color: #cbd5e1;
-                padding: 10px 14px; border-radius: 6px; transition: all 0.3s ease; text-align: justify;
-            }}
-            .story-title {{
-                font-size: 1.35rem; font-weight: bold; color: #fbbf24; margin-bottom: 20px; line-height: 1.4; text-align: left;
-                padding: 8px 12px;
-            }}
+            .story-p {{ font-size: 1.05rem; line-height: 1.85; margin-bottom: 18px; color: #cbd5e1; padding: 10px 14px; border-radius: 6px; transition: all 0.3s ease; text-align: justify; }}
+            .story-title {{ font-size: 1.35rem; font-weight: bold; color: #fbbf24; margin-bottom: 20px; line-height: 1.4; text-align: left; padding: 8px 12px; }}
             
-            /* Kindle Stili Canlı Vurgulama */
             .highlight {{
-                background-color: rgba(250, 204, 21, 0.28) !important;
-                color: #ffffff !important;
-                border-left: 5px solid #facc15 !important;
-                padding-left: 16px !important;
-                box-shadow: 0 0 20px rgba(250, 204, 21, 0.2) !important;
-                border-radius: 4px !important;
+                background-color: rgba(250, 204, 21, 0.28) !important; color: #ffffff !important;
+                border-left: 5px solid #facc15 !important; padding-left: 16px !important; box-shadow: 0 0 20px rgba(250, 204, 21, 0.2) !important; border-radius: 4px !important;
             }}
             
             ::-webkit-scrollbar {{ width: 5px; }}
             ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
             
-            /* Müzik Kontrol Butonu */
             #music-toggle {{
                 position: fixed; bottom: 15px; left: 15px; z-index: 1000;
                 background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.2);
                 color: #fbbf24; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-family: sans-serif;
                 cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px);
-                transition: all 0.2s;
             }}
-            #music-toggle:hover {{ background: rgba(251, 191, 36, 0.2); transform: scale(1.04); }}
         </style>
     </head>
     <body>
-        <!-- Yerel MP3 Dosyasından Doğrudan Çalan Ses Öğesi -->
         <audio id="bgMusic" src="{audio_data_uri}" loop preload="auto"></audio>
-
         <button id="music-toggle" onclick="toggleMusic(event)">🎵 <span id="m-state">Vals Çalıyor</span></button>
 
-        <!-- 1. SÜTUN: ATATÜRK & MİTİ DANS FOTOĞRAFI -->
         <div id="col-photo">
             <img src="{img_data_uri}" alt="Atatürk ve Miti">
         </div>
 
         <div id="cols-wrap">
-            <!-- 2. SÜTUN: FRANSIZCA METİN -->
             <div id="col-french">
                 <div class="col-header">
                     <button class="listen-btn" id="btn-listen-fr" onclick="startReading('fr')">{T('listen_fr')}</button>
@@ -778,7 +765,6 @@ elif st.session_state.miti_mode:
                 <div id="french-content"></div>
             </div>
 
-            <!-- 3. SÜTUN: SİSTEM DİLİ METİN -->
             <div id="col-system">
                 <div class="col-header">
                     <button class="listen-btn" id="btn-listen-sys" onclick="startReading('sys')">{T('listen_sys')}</button>
@@ -794,7 +780,6 @@ elif st.session_state.miti_mode:
             const music = document.getElementById("bgMusic");
             music.volume = 0.35;
 
-            // Metinleri Sütunlara Yerleştir
             let frHtml = "", sysHtml = "";
             paragraphs.forEach((p, idx) => {{
                 let cls = (idx === 0 || idx === 2 || idx === 5 || idx === 8 || idx === 12) ? "story-title" : "story-p";
@@ -804,7 +789,6 @@ elif st.session_state.miti_mode:
             frContent.innerHTML = frHtml;
             sysContent.innerHTML = sysHtml;
 
-            // Müziği Güvenli Başlatma
             function playMusicSafe() {{
                 if (!music) return;
                 const p = music.play();
@@ -820,7 +804,6 @@ elif st.session_state.miti_mode:
             window.addEventListener("DOMContentLoaded", playMusicSafe);
             setTimeout(playMusicSafe, 400);
 
-            // Mobilde ilk dokunuşta müziği tetikle
             window.addEventListener("touchstart", () => {{
                 if (music.paused && !isReading) playMusicSafe();
             }}, {{ once: true }});
@@ -838,7 +821,6 @@ elif st.session_state.miti_mode:
                 }}
             }}
 
-            // KINDLE STİLİ SENKRONİZE OKUMA & OTOMATİK KAYDIRMA
             let isReading = false;
             let currentLang = "";
             let currentIdx = 0;
@@ -898,18 +880,15 @@ elif st.session_state.miti_mode:
                 }}
                 currentIdx = idx;
 
-                // 1. İki sütunda aynı anda paragrafı vurgula
                 document.querySelectorAll(".story-p, .story-title").forEach(el => el.classList.remove("highlight"));
                 const frEl = document.getElementById(`fr_p_${{idx}}`);
                 const sysEl = document.getElementById(`sys_p_${{idx}}`);
                 if (frEl) frEl.classList.add("highlight");
                 if (sysEl) sysEl.classList.add("highlight");
 
-                // 2. Ekranı okunan paragrafın hizasına otomatik kaydır (Auto-scroll)
                 if (frEl) {{ frEl.scrollIntoView({{ behavior: 'smooth', block: 'center' }}); }}
                 if (sysEl) {{ sysEl.scrollIntoView({{ behavior: 'smooth', block: 'center' }}); }}
 
-                // 3. Seslendirmeyi başlat
                 const textToSpeak = (currentLang === 'fr') ? paragraphs[idx].fr : paragraphs[idx].sys;
                 if (!window.speechSynthesis) return;
 
@@ -941,7 +920,7 @@ elif st.session_state.miti_mode:
     components.html(MITI_HTML, height=850, scrolling=False)
 
 # ==========================================
-# 5. OKUMA MODU (ZEN VIEWER - KİTAP OKUYUCU)
+# 5. OKUMA MODU (ZEN VIEWER)
 # ==========================================
 elif st.session_state.reading_mode:
     st.markdown(
@@ -981,24 +960,10 @@ elif st.session_state.reading_mode:
             .glass-pill {{ position: fixed; top: 10px; left: 18px; background: rgba(15,23,42,0.45); backdrop-filter: blur(14px); color: #94a3b8; font-weight: 500; font-size: 13px; padding: 5px 14px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 1000; }}
             
             #whisper-card {{ 
-                position: fixed; 
-                bottom: 80px; 
-                left: 50%; 
-                transform: translateX(-50%); 
-                background: rgba(15,23,42,0.92); 
-                backdrop-filter: blur(24px); 
-                -webkit-backdrop-filter: blur(24px); 
-                color: #ffffff; 
-                padding: 14px 22px; 
-                border-radius: 18px; 
-                font-size: 15px; 
-                box-shadow: 0 12px 40px rgba(0,0,0,0.7); 
-                border: 1px solid rgba(255,255,255,0.18); 
-                display: none; 
-                z-index: 1001; 
-                max-width: 680px; 
-                width: 90vw; 
-                line-height: 1.6;
+                position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.92); 
+                backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); color: #ffffff; padding: 14px 22px; 
+                border-radius: 18px; font-size: 15px; box-shadow: 0 12px 40px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.18); 
+                display: none; z-index: 1001; max-width: 680px; width: 90vw; line-height: 1.6;
             }}
             .card-close-btn {{ position: absolute; top: 8px; right: 12px; background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; }}
             
@@ -1007,7 +972,7 @@ elif st.session_state.reading_mode:
             .glass-btn.active {{ background: #2563eb !important; border-color: #60a5fa !important; }}
         </style>
     </head>
-    <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
+    <body>
         <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
         <div id="page-counter" class="glass-pill hud-item">{T('zen_page')} 1 / 1</div>
         
@@ -1028,11 +993,6 @@ elif st.session_state.reading_mode:
             const targetFlag = "{LANGUAGES[st.session_state.app_lang]['flag']}";
             let currentIndex = 0, isPlaying = false, timer = null, wordIndices = [];
             const speeds = [0.7, 0.8, 1.0]; let speedIdx = 1;
-
-            let hudTimer = null;
-            function resetHudTimer() {{
-                clearTimeout(hudTimer);
-            }}
 
             function dismissCard() {{ document.getElementById('whisper-card').style.display = 'none'; clearTimeout(timer); }}
             function cycleSpeed() {{ speedIdx = (speedIdx + 1) % speeds.length; document.getElementById('speed-text').innerText = speeds[speedIdx] + "x"; if(isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke,100); }} }}
@@ -1120,65 +1080,224 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI (ADMIN)
+# 6. DÜZENLEYİCİ EKRANI (TAM KUSURSUZ SATIR VE SAYFA YÖNETİMİ)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
+    
     col_t1, col_t2, col_t3, col_t4 = st.columns([2.5, 1.5, 1.5, 1])
-    with col_t1: st.session_state.editor_book_title = st.text_input("Kitap Başlığı:", value=st.session_state.editor_book_title, label_visibility="collapsed")
+    with col_t1:
+        st.session_state.editor_book_title = st.text_input("Kitap Başlığı:", value=st.session_state.editor_book_title, label_visibility="collapsed")
     with col_t2:
         if st.button(T("save_changes"), type="secondary", use_container_width=True):
-            saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
-            if saved_f: st.session_state.editor_orig_book_id = saved_f; st.success(msg)
-            else: st.error(msg)
+            with st.spinner("Veritabanı güncelleniyor..."):
+                saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
+                if saved_f:
+                    st.session_state.editor_orig_book_id = saved_f
+                    st.success(msg)
+                else:
+                    st.error(msg)
     with col_t3:
         if st.button(T("save_and_read"), type="primary", use_container_width=True):
-            saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
-            if saved_f:
-                st.session_state.uploaded_book_pages = ensure_reading_ready(st.session_state.editor_pages, st.session_state.app_lang)
-                st.session_state.current_book_title = st.session_state.editor_book_title
-                st.session_state.editor_mode = False; st.session_state.reading_mode = True; st.rerun()
+            with st.spinner("Kaydediliyor ve çeviriler hazırlanıyor..."):
+                saved_f, msg = save_hybrid_book(st.session_state.editor_book_title, st.session_state.editor_pages, st.session_state.editor_orig_book_id)
+                if saved_f:
+                    st.session_state.uploaded_book_pages = ensure_reading_ready(st.session_state.editor_pages, st.session_state.app_lang)
+                    st.session_state.current_book_title = st.session_state.editor_book_title
+                    st.session_state.editor_mode = False
+                    st.session_state.reading_mode = True
+                    st.rerun()
+                else:
+                    st.error(msg)
     with col_t4:
-        if st.button(T("exit_editor"), use_container_width=True): st.session_state.editor_mode = False; st.rerun()
+        if st.button(T("exit_editor"), use_container_width=True):
+            st.session_state.editor_mode = False
+            st.rerun()
 
     st.divider()
     pages = st.session_state.editor_pages
     total_p = len(pages)
-    if total_p == 0: st.warning("Bu kitapta sayfa bulunmuyor.")
+
+    # 1. KİTABA YENİ SAYFA EKLEME PANELİ (HER ZAMAN KULLANILABİLİR)
+    with st.expander("➕ Bu Kitaba Yeni Sayfa(lar) Ekle", expanded=(total_p == 0)):
+        add_mode = st.radio("Yeni Sayfa Ekleme Türü:", ["📸 Kameradan Çek & Kırp", "📁 Fotoğraf(lar) Yükle", "📄 Taranmış PDF Ekle"], horizontal=True, key="ed_add_mode")
+        split_new_spreads = st.checkbox("📖 Yeni Çift Sayfaları Otomatik Böl", value=True, key="ed_split_box")
+        
+        if add_mode == "📸 Kameradan Çek & Kırp":
+            c_input = st.camera_input("Yeni Sayfanın Fotoğrafını Çekin", key="ed_cam_in")
+            alt_c_file = st.file_uploader("veya Telefondan Tek Fotoğraf Seçin:", type=["png", "jpg", "jpeg"], key="ed_alt_c")
+            act_pic = c_input if c_input else alt_c_file
+            if act_pic:
+                raw_c_img = ImageOps.exif_transpose(Image.open(act_pic)).convert("RGB")
+                st.write("📐 **Sayfayı Çerçeveyle Kırpın:**")
+                cropped_p = st_cropper(raw_c_img, realtime_update=True, box_color='#2563eb') if CROPPER_SUPPORT else raw_c_img
+                if st.button("✂️ Bu Sayfayı Kitabın Sonuna Ekle", type="primary", key="btn_crop_add_ed"):
+                    with st.spinner("Sayfa taranıyor..."):
+                        new_p_obj = process_single_image(cropped_p)
+                        pages.append(new_p_obj)
+                        st.session_state.editor_page_idx = len(pages) - 1
+                        st.success(f"Sayfa {len(pages)} olarak eklendi! Kalıcı olması için yukarıdaki 'Değişiklikleri Kaydet' butonuna basınız.")
+                        time.sleep(0.5)
+                        st.rerun()
+
+        elif add_mode == "📁 Fotoğraf(lar) Yükle":
+            new_files = st.file_uploader("Ek Kitap Sayfalarını Seçin (PNG/JPG):", type=["png", "jpg", "jpeg"], accept_multiple_files=True, key="ed_multi_files")
+            if new_files and st.button("⚡ Seçilen Fotoğrafları Kitaba Ekle", type="primary", key="btn_files_add_ed"):
+                with st.spinner("Yeni fotoğraflar taranıyor..."):
+                    for nf in new_files:
+                        b_img = ImageOps.exif_transpose(Image.open(nf)).convert("RGB")
+                        if split_new_spreads and (b_img.width / b_img.height) > 1.05:
+                            mid = b_img.width // 2
+                            pages.append(process_single_image(b_img.crop((0, 0, mid, b_img.height))))
+                            pages.append(process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height))))
+                        else:
+                            pages.append(process_single_image(b_img))
+                    st.session_state.editor_page_idx = len(pages) - 1
+                    st.success("Fotoğraflar kitaba eklendi! Yukarıdan kaydetmeyi unutmayın.")
+                    time.sleep(0.5)
+                    st.rerun()
+
+        elif add_mode == "📄 Taranmış PDF Ekle":
+            if not PDF_SUPPORT:
+                st.error("PyMuPDF kütüphanesi eksik.")
+            else:
+                new_pdf = st.file_uploader("Ek PDF Belgesi Seçin:", type=["pdf"], key="ed_pdf_in")
+                if new_pdf and st.button("⚡ PDF Sayfalarını Kitaba Ekle", type="primary", key="btn_pdf_add_ed"):
+                    with st.spinner("PDF sayfaları yüksek çözünürlükte taranıyor..."):
+                        pdf_doc = fitz.open(stream=new_pdf.read(), filetype="pdf")
+                        for p_no in range(len(pdf_doc)):
+                            pix = pdf_doc[p_no].get_pixmap(dpi=200)
+                            base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
+                            if split_new_spreads and (base_img.width / base_img.height) > 1.05:
+                                mid = base_img.width // 2
+                                pages.append(process_single_image(base_img.crop((0, 0, mid, base_img.height))))
+                                pages.append(process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height))))
+                            else:
+                                pages.append(process_single_image(base_img))
+                        pdf_doc.close()
+                        st.session_state.editor_page_idx = len(pages) - 1
+                        st.success("PDF sayfaları kitaba eklendi! Yukarıdan kaydetmeyi unutmayın.")
+                        time.sleep(0.5)
+                        st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if total_p == 0:
+        st.info("Kitapta henüz sayfa bulunmuyor. Lütfen yukarıdaki panelden sayfa ekleyin.")
     else:
-        if st.session_state.editor_page_idx >= total_p: st.session_state.editor_page_idx = total_p - 1
+        if st.session_state.editor_page_idx >= total_p:
+            st.session_state.editor_page_idx = total_p - 1
         p_idx = st.session_state.editor_page_idx
         curr_page = pages[p_idx]
 
-        col_left, col_right = st.columns([1, 1.4])
+        col_left, col_right = st.columns([1, 1.35])
         with col_left:
+            st.markdown(f"### 📄 {T('zen_page')} {p_idx + 1} / {total_p}")
             row_sel, row_up, row_down, row_del = st.columns([2, 1, 1, 1])
             with row_sel:
-                new_idx = st.selectbox("Sayfa Git:", list(range(total_p)), index=p_idx, label_visibility="collapsed")
-                if new_idx != p_idx: st.session_state.editor_page_idx = new_idx; st.rerun()
+                new_idx = st.selectbox("Sayfa Git:", options=list(range(total_p)), format_func=lambda i: f"{T('zen_page')} {i + 1}", index=p_idx, label_visibility="collapsed")
+                if new_idx != p_idx:
+                    st.session_state.editor_page_idx = new_idx
+                    st.rerun()
+            with row_up:
+                if st.button("⬆️", disabled=(p_idx == 0)):
+                    pages[p_idx], pages[p_idx - 1] = pages[p_idx - 1], pages[p_idx]
+                    st.session_state.editor_page_idx -= 1
+                    st.rerun()
+            with row_down:
+                if st.button("⬇️", disabled=(p_idx == total_p - 1)):
+                    pages[p_idx], pages[p_idx + 1] = pages[p_idx + 1], pages[p_idx]
+                    st.session_state.editor_page_idx += 1
+                    st.rerun()
             with row_del:
-                if st.button("🗑️"):
-                    pages.pop(p_idx); st.session_state.editor_page_idx = max(0, min(p_idx, len(pages)-1)); st.rerun()
+                if st.button("🗑️ Sayfayı Sil"):
+                    pages.pop(p_idx)
+                    st.session_state.editor_page_idx = max(0, min(p_idx, len(pages) - 1))
+                    st.rerun()
 
             if st.button(T("split_page_btn"), type="primary", use_container_width=True):
-                img_bytes = base64.b64decode(curr_page['img_b64'])
-                orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                w, h = orig_pil.size; mid_x = w // 2
-                lp, rp = orig_pil.crop((0,0,mid_x,h)), orig_pil.crop((mid_x,0,w,h))
-                pages[p_idx] = process_single_image(lp)
-                pages.insert(p_idx + 1, process_single_image(rp))
-                st.rerun()
+                with st.spinner("Sayfa ortadan ikiye bölünüyor ve yeniden okunuyor..."):
+                    try:
+                        img_bytes = base64.b64decode(curr_page['img_b64'])
+                        orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                        w, h = orig_pil.size
+                        mid_x = w // 2
+                        
+                        left_img = orig_pil.crop((0, 0, mid_x, h))
+                        right_img = orig_pil.crop((mid_x, 0, w, h))
+                        
+                        pages[p_idx] = process_single_image(left_img)
+                        pages.insert(p_idx + 1, process_single_image(right_img))
+                        st.success("Sayfa başarıyla bölündü!")
+                        time.sleep(0.4)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Bölme hatası: {e}")
 
-            st.markdown(f"""<div style="text-align: center; background: #0f172a; padding: 10px;"><img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-height: 400px;" /></div>""", unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style="text-align: center; background: #0f172a; border-radius: 8px; padding: 10px; margin-top: 10px;">
+                    <img src="data:image/jpeg;base64,{curr_page['img_b64']}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 4px;" />
+                </div>
+                """, unsafe_allow_html=True
+            )
 
         with col_right:
-            st.markdown("### 🔤 Tespit Edilen Kelimeler")
-            table_data = [{"Kaldır 🗑️": False, "Metin": b["text"]} for b in curr_page["boxes"]]
-            edited_table = st.data_editor(table_data, key=f"tbl_{p_idx}", use_container_width=True, height=380)
-            if st.button("🔄 Değişiklikleri Uygula", type="primary"):
-                curr_page["boxes"] = [b for i, b in enumerate(curr_page["boxes"]) if not edited_table[i]["Kaldır 🗑️"] and edited_table[i]["Metin"].strip()]
-                for i, b in enumerate(curr_page["boxes"]): b["text"] = edited_table[i]["Metin"].strip(); b["clean"] = clean_word_key(b["text"])
-                st.rerun()
+            st.markdown("### 🔤 Tespit Edilen Kelimeler ve Cümleler")
+            st.caption("Kelimeyi düzenleyebilir veya istemediğiniz satırları 'Kaldır 🗑️' kutusunu işaretleyip aşağıdaki butona basarak silebilirsiniz.")
+
+            # KUSURSUZ SATIR GÜNCELLEME VE SİLME SİSTEMİ
+            table_data = [{"Kaldır 🗑️": False, "Metin (Fransızca)": b["text"]} for b in curr_page["boxes"]]
+            edited_table = st.data_editor(
+                table_data,
+                key=f"editor_table_{p_idx}_{len(curr_page['boxes'])}",
+                use_container_width=True,
+                height=350,
+                column_config={
+                    "Kaldır 🗑️": st.column_config.CheckboxColumn("Kaldır 🗑️", default=False),
+                    "Metin (Fransızca)": st.column_config.TextColumn("Metin (Fransızca)", required=True)
+                }
+            )
+
+            col_app1, col_app2 = st.columns([2, 1.2])
+            with col_app1:
+                if st.button("🔄 Değişiklikleri Bu Sayfaya Uygula", type="primary", use_container_width=True):
+                    new_boxes = []
+                    for i, row in enumerate(edited_table):
+                        is_deleted = row.get("Kaldır 🗑️", False)
+                        text_val = str(row.get("Metin (Fransızca)", "")).strip()
+                        if not is_deleted and text_val:
+                            if i < len(curr_page["boxes"]):
+                                box_obj = dict(curr_page["boxes"][i])
+                            else:
+                                box_obj = {"id": f"b_{len(new_boxes)}", "left": 10, "top": 10, "width": 80, "height": 8}
+                            box_obj["text"] = text_val
+                            box_obj["clean"] = clean_word_key(text_val)
+                            new_boxes.append(box_obj)
+                    curr_page["boxes"] = new_boxes
+                    st.success("Bu sayfanın kelimeleri başarıyla güncellendi!")
+                    time.sleep(0.3)
+                    st.rerun()
+
+            with col_app2:
+                if st.button("🧹 Sayfa Nolarını Temizle", use_container_width=True):
+                    curr_page["boxes"] = [b for b in curr_page["boxes"] if not b["text"].strip().isdigit()]
+                    st.rerun()
+
+            # MANUEL EKSİK METİN EKLEME
+            with st.expander("➕ Sayfaya Eksik Kalan Kelime / Cümle Ekle"):
+                missed_text = st.text_input("Görselde okunmamış metni buraya yazın:", key=f"missed_{p_idx}")
+                if st.button("Metni Sayfaya Dahil Et", key=f"btn_missed_{p_idx}"):
+                    if missed_text.strip():
+                        new_b = {
+                            "id": f"b_{len(curr_page['boxes'])}",
+                            "text": missed_text.strip(),
+                            "clean": clean_word_key(missed_text.strip()),
+                            "left": 10, "top": 85, "width": 80, "height": 8
+                        }
+                        curr_page["boxes"].append(new_b)
+                        st.success("Metin sayfaya eklendi!")
+                        st.rerun()
 
 # ==========================================
 # 7. ANA KÜTÜPHANE EKRANI
@@ -1189,7 +1308,7 @@ else:
     with col_thanks:
         if st.button(T("thanks_btn"), use_container_width=True): record_thanks(st.session_state.user_email); st.toast(T("thanks_success"))
     with col_info2:
-        new_lang = st.selectbox("Dil", options=list(LANGUAGES.keys()), format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}", index=list(LANGUAGES.keys()).index(st.session_state.app_lang) if st.session_state.app_lang in LANGUAGES else 0, label_visibility="collapsed")
+        new_lang = st.selectbox("Dil", options=list(LANGUAGES.keys()), format_func=lambda x: f"{LANGUAGES[x]['flag']} {LANGUAGES[x]['name']}", index=list(LANGUAGES.keys()).index(st.session_state.app_lang), label_visibility="collapsed")
         if new_lang != st.session_state.app_lang: st.session_state.app_lang = new_lang; st.rerun()
     with col_info3:
         if st.button(T("logout"), use_container_width=True): st.session_state.logged_in = False; st.rerun()
@@ -1209,19 +1328,27 @@ else:
                     book_pages, l_err = load_book_content(selected_id)
                     if book_pages:
                         st.session_state.uploaded_book_pages = book_pages
+                        st.session_state.current_book_title = next((b["title"] for b in saved_books if b["book_id"] == selected_id), "")
                         st.session_state.reading_mode = True; st.rerun()
+                    else:
+                        st.error(l_err)
         with col_e:
             if st.button(T("edit_book"), use_container_width=True) and st.session_state.user_role == "admin":
-                book_pages, l_err = load_book_content(selected_id)
-                if book_pages:
-                    st.session_state.editor_pages = book_pages
-                    st.session_state.editor_orig_book_id = selected_id
-                    st.session_state.editor_book_title = next((b["title"] for b in saved_books if b["book_id"] == selected_id), "")
-                    st.session_state.editor_mode = True; st.rerun()
+                with st.spinner("Kitap düzenleyiciye yükleniyor..."):
+                    book_pages, l_err = load_book_content(selected_id)
+                    if book_pages:
+                        st.session_state.editor_pages = book_pages
+                        st.session_state.editor_orig_book_id = selected_id
+                        st.session_state.editor_book_title = next((b["title"] for b in saved_books if b["book_id"] == selected_id), "")
+                        st.session_state.editor_page_idx = 0
+                        st.session_state.editor_mode = True; st.rerun()
+                    else:
+                        st.error(l_err)
         with col_d:
             if st.button(T("delete_book"), use_container_width=True) and st.session_state.user_role == "admin":
                 delete_hybrid_book(selected_id); st.rerun()
 
+    # YENİ KİTAP OLUŞTURMA SEKMESİ
     if st.session_state.user_role == "admin":
         with st.expander(T("add_tab")):
             st.markdown("### 📚 Yeni Kitap Oluştur & Sayfa Aktar")
@@ -1235,13 +1362,19 @@ else:
                     pdf_doc = fitz.open(stream=uploaded_pdf.read(), filetype="pdf")
                     extracted_pages = []
                     for p_no in range(len(pdf_doc)):
-                        base_img = Image.open(io.BytesIO(pdf_doc[p_no].get_pixmap(dpi=150).tobytes("jpeg"))).convert("RGB")
+                        pix = pdf_doc[p_no].get_pixmap(dpi=200)
+                        base_img = Image.open(io.BytesIO(pix.tobytes("jpeg"))).convert("RGB")
                         if split_spreads and (base_img.width / base_img.height) > 1.05:
-                            extracted_pages.append(process_single_image(base_img.crop((0, 0, base_img.width // 2, base_img.height))))
-                            extracted_pages.append(process_single_image(base_img.crop((base_img.width // 2, 0, base_img.width, base_img.height))))
-                        else: extracted_pages.append(process_single_image(base_img))
+                            mid = base_img.width // 2
+                            extracted_pages.append(process_single_image(base_img.crop((0, 0, mid, base_img.height))))
+                            extracted_pages.append(process_single_image(base_img.crop((mid, 0, base_img.width, base_img.height))))
+                        else:
+                            extracted_pages.append(process_single_image(base_img))
                     pdf_doc.close()
-                    st.session_state.editor_pages = extracted_pages; st.session_state.editor_book_title = book_title_input
+                    st.session_state.editor_pages = extracted_pages
+                    st.session_state.editor_book_title = book_title_input
+                    st.session_state.editor_orig_book_id = None
+                    st.session_state.editor_page_idx = 0
                     st.session_state.editor_mode = True; st.rerun()
 
             elif upload_mode == "📸 Kameradan Çek & Kırp":
@@ -1257,7 +1390,11 @@ else:
                 if len(st.session_state.staged_camera_pages) > 0:
                     if st.button("⚡ Sepettekileri Düzenleyiciye Aktar", type="primary"):
                         st.session_state.editor_pages = [process_single_image(Image.open(io.BytesIO(b)).convert("RGB")) for b in st.session_state.staged_camera_pages]
-                        st.session_state.staged_camera_pages = []; st.session_state.editor_book_title = book_title_input; st.session_state.editor_mode = True; st.rerun()
+                        st.session_state.staged_camera_pages = []
+                        st.session_state.editor_book_title = book_title_input
+                        st.session_state.editor_orig_book_id = None
+                        st.session_state.editor_page_idx = 0
+                        st.session_state.editor_mode = True; st.rerun()
 
             else:
                 upl_files = st.file_uploader("Kitap sayfaları (PNG/JPG):", type=["png", "jpg"], accept_multiple_files=True)
@@ -1265,15 +1402,21 @@ else:
                     extracted_pages = []
                     for file in upl_files:
                         b_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
-                        if split_spreads and (b_img.width / base_img.height) > 1.05:
-                            extracted_pages.append(process_single_image(b_img.crop((0, 0, b_img.width // 2, b_img.height))))
-                            extracted_pages.append(process_single_image(b_img.crop((b_img.width // 2, 0, b_img.width, b_img.height))))
-                        else: extracted_pages.append(process_single_image(b_img))
-                    st.session_state.editor_pages = extracted_pages; st.session_state.editor_book_title = book_title_input; st.session_state.editor_mode = True; st.rerun()
+                        if split_spreads and (b_img.width / b_img.height) > 1.05:
+                            mid = b_img.width // 2
+                            extracted_pages.append(process_single_image(b_img.crop((0, 0, mid, b_img.height))))
+                            extracted_pages.append(process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height))))
+                        else:
+                            extracted_pages.append(process_single_image(b_img))
+                    st.session_state.editor_pages = extracted_pages
+                    st.session_state.editor_book_title = book_title_input
+                    st.session_state.editor_orig_book_id = None
+                    st.session_state.editor_page_idx = 0
+                    st.session_state.editor_mode = True; st.rerun()
 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
     
-    # GİRİŞ EKRANINDA ORTADA ATATÜRK FOTOĞRAFI & ANMA BUTONU
+    # ATATÜRK VE MİTİ ANMA BUTONU
     st.markdown(
         f"""
         <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding-top: 5px; margin-bottom: 15px;">
