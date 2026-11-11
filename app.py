@@ -152,7 +152,7 @@ UI_TRANSLATIONS = {
         "exit_editor": "✕ Çık",
         "split_page_btn": "✂️ Bu Çift Sayfayı İkiye Böl",
         "merge_page_btn": "🔗 Sonraki Sayfa ile Birleştir (Sol + Sağ)",
-        "rescan_page_btn": "🔄 Bu Sayfayı Yeni OCR ile Tekrar Tara",
+        "rescan_page_btn": "🔄 Bu Sayfayı Tekrar Tara",
         "ocr_processing": "Kitap hızla hazırlanıyor...",
         "reading_lang_label": "Okuma & Çeviri Dili:",
         "zen_close": "✕ Kapat",
@@ -191,7 +191,7 @@ UI_TRANSLATIONS = {
         "exit_editor": "✕ Exit",
         "split_page_btn": "✂️ Split Double Page",
         "merge_page_btn": "🔗 Merge with Next Page (Left + Right)",
-        "rescan_page_btn": "🔄 Re-scan Page with New OCR",
+        "rescan_page_btn": "🔄 Re-scan Page",
         "ocr_processing": "Preparing book...",
         "reading_lang_label": "Translation Language:",
         "zen_close": "✕ Close",
@@ -230,7 +230,7 @@ UI_TRANSLATIONS = {
         "exit_editor": "✕ Изход",
         "split_page_btn": "✂️ Раздели двойната страница",
         "merge_page_btn": "🔗 Обедини със следващата страница",
-        "rescan_page_btn": "🔄 Сканирай отново с новия OCR",
+        "rescan_page_btn": "🔄 Сканирай отново",
         "ocr_processing": "Подготовка на книгата...",
         "reading_lang_label": "Език за превод:",
         "zen_close": "✕ Затвори",
@@ -273,7 +273,7 @@ def T(key):
     return UI_TRANSLATIONS[lang].get(key, UI_TRANSLATIONS["tr"].get(key, key))
 
 # ==========================================
-# 1. ÇEVİRİ MOTORU (KAYNAK VE HEDEF DİL AYRIMI)
+# 1. ÇEVİRİ MOTORU VE YARDIMCI FONKSİYONLAR
 # ==========================================
 @st.cache_data(show_spinner=False)
 def translate_api(text, source_lang, target_lang):
@@ -327,18 +327,16 @@ def get_ataturk_img_data():
     img_b64 = get_file_base64("ataturk_miti.jpg", "image/jpeg")
     if not img_b64:
         img_b64 = get_file_base64("atatürk ve miti.jpg", "image/jpeg")
-    if img_b64:
-        return img_b64
+    if img_b64: return img_b64
     return "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg"
 
 def get_blue_danube_audio_data():
     audio_b64 = get_file_base64("blue_danube.mp3", "audio/mp3")
-    if audio_b64:
-        return audio_b64
+    if audio_b64: return audio_b64
     return "https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
 
 # ==========================================
-# 2. GOOGLE SHEETS ENTEGRASYONU (ÖNBELLEKLİ)
+# 2. GOOGLE SHEETS ENTEGRASYONU
 # ==========================================
 def clean_private_key(key_str):
     if not key_str or not isinstance(key_str, str): return key_str
@@ -472,53 +470,138 @@ def delete_hybrid_book(book_id):
     load_book_content.clear()
 
 # ==========================================
-# 3. YÜKSEK HIZLI VE DÜŞÜK BELLEKLİ OCR MOTORU
+# 3. HİBRİT OKUMA MOTORU: GEMİNİ VISION + EASYOCR YEDEKLİ
 # ==========================================
+def get_gemini_api_key():
+    if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+        return st.secrets["GEMINI_API_KEY"]
+    return None
+
 @st.cache_resource
 def load_ocr():
     return easyocr.Reader(['fr', 'en'], gpu=False)
 
-reader = load_ocr()
+def call_gemini_vision(base64_image, api_key):
+    """Gemini 1.5 Flash Vision API ile görseldeki metinleri JSON formatında okur"""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    payload = {
+        "contents": [{
+            "parts": [
+                {"text": "Extract all text in this image. Return strictly a JSON array where each object has 'text', 'left', 'top', 'width', 'height'. Coordinates must be percentage (0-100) floats representing bounding boxes relative to image dimensions. Only return the JSON array, no extra markdown."},
+                {"inline_data": {"mime_type": "image/jpeg", "data": base64_image}}
+            ]
+        }],
+        "generationConfig": {
+            "response_mime_type": "application/json"
+        }
+    }
+    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(req, timeout=12) as response:
+            res_data = json.loads(response.read().decode('utf-8'))
+            text_resp = res_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "[]")
+            boxes = json.loads(text_resp)
+            if not isinstance(boxes, list): return None
+            # Standardize output for the app
+            clean_boxes = []
+            for i, b in enumerate(boxes):
+                clean_boxes.append({
+                    "id": f"b_{i}",
+                    "text": str(b.get("text", "")).strip(),
+                    "clean": clean_word_key(str(b.get("text", ""))),
+                    "left": float(b.get("left", 0)),
+                    "top": float(b.get("top", 0)),
+                    "width": float(b.get("width", 20)),
+                    "height": float(b.get("height", 5))
+                })
+            return clean_boxes
+    except Exception as e:
+        print(f"Gemini API hatası: {e}")
+        return None
 
-def compress_image_for_sheets(img):
-    img_c = img.copy()
-    img_c.thumbnail((650, 850), Image.Resampling.LANCZOS)
+def process_single_image(img):
+    """
+    Anahtar varsa Gemini API'ye gönderir. 
+    Anahtar yoksa veya API çökerse otomatik EasyOCR'a döner.
+    """
+    img_fixed = ImageOps.exif_transpose(img).convert("RGB")
+    
+    # 1. Fotoğrafı Base64'e çevir ve kaydet
+    img_c = img_fixed.copy()
+    img_c.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
-    quality = 45
-    img_c.save(buf, format="JPEG", quality=quality)
-    while len(buf.getvalue()) > 35000 and quality > 10:
-        quality -= 5
-        buf = io.BytesIO()
-        img_c.save(buf, format="JPEG", quality=quality)
-    res = base64.b64encode(buf.getvalue()).decode("utf-8")
+    img_c.save(buf, format="JPEG", quality=75)
+    b64_str = base64.b64encode(buf.getvalue()).decode("utf-8")
     del img_c, buf
-    return res
+    
+    boxes = None
+    gemini_key = get_gemini_api_key()
+    
+    # 2. Eğer API Key varsa Gemini ile Tara
+    if gemini_key:
+        boxes = call_gemini_vision(b64_str, gemini_key)
+        
+    # 3. Eğer API key yoksa veya Gemini cevap vermezse EasyOCR ile tara (Yedek Sistem)
+    if not boxes:
+        reader = load_ocr()
+        img_ocr = img_fixed.copy()
+        img_ocr.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+        try: img_ocr = ImageOps.autocontrast(img_ocr, cutoff=0.5)
+        except: pass
+            
+        w, h = img_ocr.size
+        np_arr = np.array(img_ocr)
+        
+        ocr_raw = reader.readtext(
+            np_arr, detail=1, paragraph=False,
+            mag_ratio=1.0, contrast_ths=0.1, adjust_contrast=0.5, text_threshold=0.5, low_text=0.3
+        )
+        ordered_ocr = sort_reading_order(ocr_raw)
+        
+        boxes = []
+        for box, text, conf in ordered_ocr:
+            t_clean = text.strip()
+            if not t_clean: continue
+            x_pts, y_pts = [p[0] for p in box], [p[1] for p in box]
+            min_x, max_x, min_y, max_y = min(x_pts), max(x_pts), min(y_pts), max(y_pts)
+            boxes.append({
+                "id": f"b_{len(boxes)}", "text": t_clean, "clean": clean_word_key(t_clean),
+                "left": (min_x / w) * 100, "top": (min_y / h) * 100,
+                "width": ((max_x - min_x) / w) * 100, "height": ((max_y - min_y) / h) * 100
+            })
+        del img_ocr, np_arr
+    
+    # Son sıkıştırma (Google Sheets depolama için 650px)
+    img_s = img_fixed.copy()
+    img_s.thumbnail((650, 850), Image.Resampling.LANCZOS)
+    buf_s = io.BytesIO()
+    quality = 45
+    img_s.save(buf_s, format="JPEG", quality=quality)
+    while len(buf_s.getvalue()) > 35000 and quality > 10:
+        quality -= 5
+        buf_s = io.BytesIO()
+        img_s.save(buf_s, format="JPEG", quality=quality)
+    final_b64 = base64.b64encode(buf_s.getvalue()).decode("utf-8")
+    
+    del img_s, buf_s, img_fixed
+    gc.collect()
+    
+    return {"img_b64": final_b64, "boxes": boxes}
 
 def sort_reading_order(ocr_items):
-    """
-    Gelişmiş düşey çakışma (Vertical Overlap) tabanlı sıralama.
-    Büyük başlıkların küçük alt/üst yazıları yutmasını kesin olarak engeller.
-    """
+    """Düşey çakışmalı yeni sıralama (Gemini dışı yedek EasyOCR için)"""
     if not ocr_items: return []
     parsed = []
     for item in ocr_items:
         box, text, conf = item
         t_clean = text.strip()
         if not t_clean: continue
-        xs = [p[0] for p in box]
-        ys = [p[1] for p in box]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
+        xs, ys = [p[0] for p in box], [p[1] for p in box]
+        min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
         parsed.append({
-            'item': item,
-            'min_x': min_x,
-            'max_x': max_x,
-            'min_y': min_y,
-            'max_y': max_y,
-            'cy': (min_y + max_y) / 2.0,
-            'h': max(max_y - min_y, 1.0)
+            'item': item, 'min_x': min_x, 'max_x': max_x, 'min_y': min_y, 'max_y': max_y,
+            'cy': (min_y + max_y) / 2.0, 'h': max(max_y - min_y, 1.0)
         })
-    
     if not parsed: return []
     parsed.sort(key=lambda p: (p['min_y'], p['min_x']))
     
@@ -531,25 +614,17 @@ def sort_reading_order(ocr_items):
                 ov = max(0, min(p['max_y'], other['max_y']) - max(p['min_y'], other['min_y']))
                 min_h = min(p['h'], other['h'])
                 overlaps.append(ov / min_h)
-            
-            avg_overlap = sum(overlaps) / len(overlaps)
-            if avg_overlap > 0.40:
+            if (sum(overlaps) / len(overlaps)) > 0.40:
                 matched_line = line
                 break
-        
-        if matched_line is not None:
-            matched_line.append(p)
-        else:
-            lines.append([p])
+        if matched_line is not None: matched_line.append(p)
+        else: lines.append([p])
             
     lines.sort(key=lambda line: min(k['min_y'] for k in line))
-    
     sorted_items = []
     for line in lines:
         line.sort(key=lambda p: p['min_x'])
-        for p in line:
-            sorted_items.append(p['item'])
-            
+        for p in line: sorted_items.append(p['item'])
     return sorted_items
 
 def clean_word_key(text):
@@ -623,53 +698,6 @@ def ensure_reading_ready(pages, target_lang):
         futures = [executor.submit(_translate_single_page_task, page, target_lang) for page in pages]
         concurrent.futures.wait(futures)
     return pages
-
-def process_single_image(img):
-    """El yazısı ve renkli çocuk kitabı sayfaları için dengeli OCR okuyucu"""
-    img_fixed = ImageOps.exif_transpose(img).convert("RGB")
-    
-    img_ocr = img_fixed.copy()
-    img_ocr.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
-    try:
-        img_ocr = ImageOps.autocontrast(img_ocr, cutoff=0.5)
-    except Exception:
-        pass
-        
-    w, h = img_ocr.size
-    np_arr = np.array(img_ocr)
-    
-    ocr_raw = reader.readtext(
-        np_arr,
-        detail=1,
-        paragraph=False,
-        mag_ratio=1.0,
-        contrast_ths=0.1,
-        adjust_contrast=0.5,
-        text_threshold=0.5,
-        low_text=0.3
-    )
-    ordered_ocr = sort_reading_order(ocr_raw)
-    
-    boxes = []
-    for box, text, conf in ordered_ocr:
-        t_clean = text.strip()
-        if not t_clean: continue
-        x_pts = [p[0] for p in box]
-        y_pts = [p[1] for p in box]
-        min_x, max_x = min(x_pts), max(x_pts)
-        min_y, max_y = min(y_pts), max(y_pts)
-        boxes.append({
-            "id": f"b_{len(boxes)}", "text": t_clean, "clean": clean_word_key(t_clean),
-            "left": (min_x / w) * 100, "top": (min_y / h) * 100,
-            "width": ((max_x - min_x) / w) * 100, "height": ((max_y - min_y) / h) * 100
-        })
-        
-    b64_str = compress_image_for_sheets(img_fixed)
-    
-    del img_fixed, img_ocr, np_arr
-    gc.collect()
-    
-    return {"img_b64": b64_str, "boxes": boxes}
 
 def merge_two_pages(page1, page2):
     b1 = base64.b64decode(page1['img_b64'])
@@ -789,19 +817,10 @@ elif st.session_state.miti_mode:
             * {{ box-sizing: border-box; }}
             body {{ margin: 0; padding: 0; overflow: hidden; background-color: #080c14; color: #e2e8f0; font-family: 'Georgia', serif; height: 100vh; display: flex; }}
             
-            #col-photo {{
-                width: 28%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-                padding: 65px 20px 20px 25px; background: #04060a; border-right: 1.5px dashed rgba(255,255,255,0.15); position: relative;
-            }}
-            #col-photo img {{
-                max-width: 100%; max-height: 82vh; object-fit: contain; border-radius: 12px;
-                box-shadow: 0 15px 45px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.12);
-            }}
-            
+            #col-photo {{ width: 28%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 65px 20px 20px 25px; background: #04060a; border-right: 1.5px dashed rgba(255,255,255,0.15); position: relative; }}
+            #col-photo img {{ max-width: 100%; max-height: 82vh; object-fit: contain; border-radius: 12px; box-shadow: 0 15px 45px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.12); }}
             #cols-wrap {{ width: 72%; height: 100vh; display: flex; }}
-            #col-french, #col-system {{
-                width: 50%; height: 100vh; padding: 75px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative;
-            }}
+            #col-french, #col-system {{ width: 50%; height: 100vh; padding: 75px 25px 40px 25px; overflow-y: auto; scroll-behavior: smooth; position: relative; }}
             #col-french {{ border-right: 1.5px dashed rgba(255,255,255,0.15); }}
             
             @media (max-width: 768px) {{
@@ -812,69 +831,38 @@ elif st.session_state.miti_mode:
                 #col-french, #col-system {{ padding: 15px 12px 30px 12px !important; font-size: 0.95rem !important; }}
             }}
             
-            .col-header {{
-                position: sticky; top: -75px; background: rgba(8, 12, 20, 0.95); backdrop-filter: blur(12px);
-                padding: 10px 0 16px 0; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px;
-            }}
-            .listen-btn {{
-                display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-                background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1.5px solid #fbbf24;
-                padding: 11px 18px; border-radius: 25px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-                font-size: 14.5px; font-weight: bold; cursor: pointer; transition: all 0.25s ease;
-            }}
+            .col-header {{ position: sticky; top: -75px; background: rgba(8, 12, 20, 0.95); backdrop-filter: blur(12px); padding: 10px 0 16px 0; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px; }}
+            .listen-btn {{ display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1.5px solid #fbbf24; padding: 11px 18px; border-radius: 25px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14.5px; font-weight: bold; cursor: pointer; transition: all 0.25s ease; }}
             .listen-btn:hover {{ background: #fbbf24; color: #000; transform: translateY(-1px); }}
             .listen-btn.active {{ background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }}
-            
             .story-p {{ font-size: 1.05rem; line-height: 1.85; margin-bottom: 18px; color: #cbd5e1; padding: 10px 14px; border-radius: 6px; transition: all 0.3s ease; text-align: justify; }}
             .story-title {{ font-size: 1.35rem; font-weight: bold; color: #fbbf24; margin-bottom: 20px; line-height: 1.4; text-align: left; padding: 8px 12px; }}
-            
-            .highlight {{
-                background-color: rgba(250, 204, 21, 0.28) !important; color: #ffffff !important;
-                border-left: 5px solid #facc15 !important; padding-left: 16px !important; box-shadow: 0 0 20px rgba(250, 204, 21, 0.2) !important; border-radius: 4px !important;
-            }}
-            
+            .highlight {{ background-color: rgba(250, 204, 21, 0.28) !important; color: #ffffff !important; border-left: 5px solid #facc15 !important; padding-left: 16px !important; box-shadow: 0 0 20px rgba(250, 204, 21, 0.2) !important; border-radius: 4px !important; }}
             ::-webkit-scrollbar {{ width: 5px; }}
             ::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.2); border-radius: 4px; }}
-            
-            #music-toggle {{
-                position: fixed; bottom: 15px; left: 15px; z-index: 1000;
-                background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.2);
-                color: #fbbf24; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-family: sans-serif;
-                cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px);
-            }}
+            #music-toggle {{ position: fixed; bottom: 15px; left: 15px; z-index: 1000; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.2); color: #fbbf24; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-family: sans-serif; cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); }}
         </style>
     </head>
     <body>
         <audio id="bgMusic" src="{audio_data_uri}" loop preload="auto"></audio>
         <button id="music-toggle" onclick="toggleMusic(event)">🎵 <span id="m-state">Vals Çalıyor</span></button>
-
-        <div id="col-photo">
-            <img src="{img_data_uri}" alt="Atatürk ve Miti">
-        </div>
-
+        <div id="col-photo"><img src="{img_data_uri}" alt="Atatürk ve Miti"></div>
         <div id="cols-wrap">
             <div id="col-french">
-                <div class="col-header">
-                    <button class="listen-btn" id="btn-listen-fr" onclick="startReading('fr')">{T('listen_fr')}</button>
-                </div>
+                <div class="col-header"><button class="listen-btn" id="btn-listen-fr" onclick="startReading('fr')">{T('listen_fr')}</button></div>
                 <div id="french-content"></div>
             </div>
-
             <div id="col-system">
-                <div class="col-header">
-                    <button class="listen-btn" id="btn-listen-sys" onclick="startReading('sys')">{T('listen_sys')}</button>
-                </div>
+                <div class="col-header"><button class="listen-btn" id="btn-listen-sys" onclick="startReading('sys')">{T('listen_sys')}</button></div>
                 <div id="system-content"></div>
             </div>
         </div>
-
         <script>
             const paragraphs = {story_json};
             const frContent = document.getElementById("french-content");
             const sysContent = document.getElementById("system-content");
             const music = document.getElementById("bgMusic");
             music.volume = 0.35;
-
             let frHtml = "", sysHtml = "";
             paragraphs.forEach((p, idx) => {{
                 let cls = (idx === 0 || idx === 2 || idx === 5 || idx === 8 || idx === 12) ? "story-title" : "story-p";
@@ -887,123 +875,53 @@ elif st.session_state.miti_mode:
             function playMusicSafe() {{
                 if (!music) return;
                 const p = music.play();
-                if (p !== undefined) {{
-                    p.then(() => {{
-                        document.getElementById("m-state").innerText = "Vals Çalıyor 🎵";
-                    }}).catch(() => {{
-                        document.getElementById("m-state").innerText = "Valsi Başlat ▶️";
-                    }});
-                }}
+                if (p !== undefined) {{ p.then(() => {{ document.getElementById("m-state").innerText = "Vals Çalıyor 🎵"; }}).catch(() => {{ document.getElementById("m-state").innerText = "Valsi Başlat ▶️"; }}); }}
             }}
-
             window.addEventListener("DOMContentLoaded", playMusicSafe);
             setTimeout(playMusicSafe, 400);
+            window.addEventListener("touchstart", () => {{ if (music.paused && !isReading) playMusicSafe(); }}, {{ once: true }});
+            window.addEventListener("click", () => {{ if (music.paused && !isReading) playMusicSafe(); }}, {{ once: true }});
+            function toggleMusic(e) {{ e.stopPropagation(); if (music.paused) {{ playMusicSafe(); }} else {{ music.pause(); document.getElementById("m-state").innerText = "Valsi Başlat ▶️"; }} }}
 
-            window.addEventListener("touchstart", () => {{
-                if (music.paused && !isReading) playMusicSafe();
-            }}, {{ once: true }});
-            window.addEventListener("click", () => {{
-                if (music.paused && !isReading) playMusicSafe();
-            }}, {{ once: true }});
-
-            function toggleMusic(e) {{
-                e.stopPropagation();
-                if (music.paused) {{
-                    playMusicSafe();
-                }} else {{
-                    music.pause();
-                    document.getElementById("m-state").innerText = "Valsi Başlat ▶️";
-                }}
-            }}
-
-            let isReading = false;
-            let currentLang = "";
-            let currentIdx = 0;
-            let activeUtterance = null;
-
+            let isReading = false, currentLang = "", currentIdx = 0, activeUtterance = null;
             function stopReading() {{
-                isReading = false;
-                currentLang = "";
-                if (window.speechSynthesis) {{
-                    window.speechSynthesis.cancel();
-                }}
-                const bFr = document.getElementById("btn-listen-fr");
-                const bSys = document.getElementById("btn-listen-sys");
+                isReading = false; currentLang = "";
+                if (window.speechSynthesis) {{ window.speechSynthesis.cancel(); }}
+                const bFr = document.getElementById("btn-listen-fr"); const bSys = document.getElementById("btn-listen-sys");
                 if (bFr) {{ bFr.innerText = "{T('listen_fr')}"; bFr.classList.remove("active"); }}
                 if (bSys) {{ bSys.innerText = "{T('listen_sys')}"; bSys.classList.remove("active"); }}
                 document.querySelectorAll(".story-p, .story-title").forEach(el => el.classList.remove("highlight"));
                 playMusicSafe();
             }}
-
             function startReading(lang) {{
-                if (isReading && currentLang === lang) {{
-                    stopReading();
-                    return;
-                }}
+                if (isReading && currentLang === lang) {{ stopReading(); return; }}
                 if (isReading) {{ stopReading(); }}
-
-                try {{
-                    if (music && !music.paused) {{
-                        music.pause();
-                        document.getElementById("m-state").innerText = "Valsi Başlat ▶️";
-                    }}
-                }} catch(e) {{}}
-
-                isReading = true;
-                currentLang = lang;
-                currentIdx = 0;
-
-                const bFr = document.getElementById("btn-listen-fr");
-                const bSys = document.getElementById("btn-listen-sys");
+                try {{ if (music && !music.paused) {{ music.pause(); document.getElementById("m-state").innerText = "Valsi Başlat ▶️"; }} }} catch(e) {{}}
+                isReading = true; currentLang = lang; currentIdx = 0;
+                const bFr = document.getElementById("btn-listen-fr"); const bSys = document.getElementById("btn-listen-sys");
                 if (lang === 'fr' && bFr) {{ bFr.innerText = "{T('stop_btn')}"; bFr.classList.add("active"); }}
                 else if (bSys) {{ bSys.innerText = "{T('stop_btn')}"; bSys.classList.add("active"); }}
-
-                if (window.speechSynthesis) {{
-                    window.speechSynthesis.cancel();
-                    window.speechSynthesis.resume();
-                }}
-
+                if (window.speechSynthesis) {{ window.speechSynthesis.cancel(); window.speechSynthesis.resume(); }}
                 playParagraph(0);
             }}
-
             function playParagraph(idx) {{
-                if (!isReading || idx >= paragraphs.length) {{
-                    stopReading();
-                    return;
-                }}
+                if (!isReading || idx >= paragraphs.length) {{ stopReading(); return; }}
                 currentIdx = idx;
-
                 document.querySelectorAll(".story-p, .story-title").forEach(el => el.classList.remove("highlight"));
-                const frEl = document.getElementById(`fr_p_${{idx}}`);
-                const sysEl = document.getElementById(`sys_p_${{idx}}`);
-                if (frEl) frEl.classList.add("highlight");
-                if (sysEl) sysEl.classList.add("highlight");
-
+                const frEl = document.getElementById(`fr_p_${{idx}}`); const sysEl = document.getElementById(`sys_p_${{idx}}`);
+                if (frEl) frEl.classList.add("highlight"); if (sysEl) sysEl.classList.add("highlight");
                 if (frEl) {{ frEl.scrollIntoView({{ behavior: 'smooth', block: 'center' }}); }}
                 if (sysEl) {{ sysEl.scrollIntoView({{ behavior: 'smooth', block: 'center' }}); }}
-
                 const textToSpeak = (currentLang === 'fr') ? paragraphs[idx].fr : paragraphs[idx].sys;
                 if (!window.speechSynthesis) return;
-
                 activeUtterance = new SpeechSynthesisUtterance(textToSpeak);
-                if (currentLang === 'fr') {{
-                    activeUtterance.lang = 'fr-FR';
-                }} else {{
+                if (currentLang === 'fr') {{ activeUtterance.lang = 'fr-FR'; }} else {{
                     const tLang = '{target_lang}';
-                    if (tLang === 'tr') activeUtterance.lang = 'tr-TR';
-                    else if (tLang === 'en') activeUtterance.lang = 'en-US';
-                    else if (tLang === 'bg') activeUtterance.lang = 'bg-BG';
-                    else activeUtterance.lang = 'fr-FR';
+                    if (tLang === 'tr') activeUtterance.lang = 'tr-TR'; else if (tLang === 'en') activeUtterance.lang = 'en-US'; else if (tLang === 'bg') activeUtterance.lang = 'bg-BG'; else activeUtterance.lang = 'fr-FR';
                 }}
                 activeUtterance.rate = 0.95;
-
-                activeUtterance.onend = function() {{
-                    if (isReading) playParagraph(idx + 1);
-                }};
-                activeUtterance.onerror = function() {{
-                    if (isReading) playParagraph(idx + 1);
-                }};
-
+                activeUtterance.onend = function() {{ if (isReading) playParagraph(idx + 1); }};
+                activeUtterance.onerror = function() {{ if (isReading) playParagraph(idx + 1); }};
                 window.speechSynthesis.speak(activeUtterance);
             }}
         </script>
@@ -1051,147 +969,25 @@ elif st.session_state.reading_mode:
         <style>
             * {{ box-sizing: border-box; user-select: none; -webkit-user-select: none; }}
             html, body {{ margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #06090e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
-            
-            #viewport-wrap {{
-                position: relative;
-                width: 100vw;
-                height: calc(100vh - 90px);
-                margin-top: 35px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-            }}
-            #stage {{
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 0 35px rgba(0,0,0,0.85);
-                border-radius: 6px;
-                background: #000;
-            }}
-            #book-img {{
-                width: 100%;
-                height: 100%;
-                display: block;
-                border-radius: 6px;
-            }}
-            #boxes-layer {{
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                pointer-events: none;
-            }}
-            .word-hitbox {{
-                position: absolute;
-                border-radius: 4px;
-                cursor: pointer;
-                background: rgba(255,255,255,0.01);
-                pointer-events: auto;
-                transition: background 0.15s ease, outline 0.15s ease;
-            }}
-            .word-hitbox:hover, .word-hitbox:active {{
-                background: rgba(254,240,138,0.45);
-                outline: 2px solid #facc15;
-            }}
-            .karaoke-lit {{
-                background: rgba(250,204,21,0.65) !important;
-                outline: 2px solid #eab308 !important;
-            }}
-            .glass-pill {{
-                position: fixed;
-                top: 10px;
-                left: 18px;
-                background: rgba(15,23,42,0.45);
-                backdrop-filter: blur(14px);
-                color: #94a3b8;
-                font-weight: 500;
-                font-size: 13px;
-                padding: 5px 14px;
-                border-radius: 25px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-                z-index: 1000;
-            }}
-            
-            #whisper-card {{ 
-                position: fixed;
-                bottom: 80px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(15,23,42,0.92); 
-                backdrop-filter: blur(24px);
-                -webkit-backdrop-filter: blur(24px);
-                color: #ffffff;
-                padding: 14px 22px; 
-                border-radius: 18px;
-                font-size: 15px;
-                box-shadow: 0 12px 40px rgba(0,0,0,0.7);
-                border: 1px solid rgba(255,255,255,0.18); 
-                display: none;
-                z-index: 1001;
-                max-width: 680px;
-                width: 90vw;
-                line-height: 1.6;
-            }}
-            .card-close-btn {{
-                position: absolute;
-                top: 8px;
-                right: 12px;
-                background: transparent;
-                border: none;
-                color: #94a3b8;
-                font-size: 16px;
-                cursor: pointer;
-            }}
-            
-            .glass-dock {{
-                position: fixed;
-                bottom: 10px;
-                left: 50%;
-                transform: translateX(-50%);
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                background: rgba(15,23,42,0.5);
-                backdrop-filter: blur(16px);
-                padding: 6px 12px;
-                border-radius: 35px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-                z-index: 1000;
-            }}
-            .glass-btn {{
-                background: rgba(255,255,255,0.06);
-                color: #e2e8f0;
-                border: 1px solid rgba(255,255,255,0.12);
-                padding: 7px 14px;
-                border-radius: 25px;
-                font-weight: 500;
-                font-size: 13.5px;
-                cursor: pointer;
-            }}
-            .glass-btn.active {{
-                background: #2563eb !important;
-                border-color: #60a5fa !important;
-            }}
+            #viewport-wrap {{ position: relative; width: 100vw; height: calc(100vh - 90px); margin-top: 35px; display: flex; align-items: center; justify-content: center; overflow: hidden; }}
+            #stage {{ position: relative; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 35px rgba(0,0,0,0.85); border-radius: 6px; background: #000; }}
+            #book-img {{ width: 100%; height: 100%; display: block; border-radius: 6px; }}
+            #boxes-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }}
+            .word-hitbox {{ position: absolute; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.01); pointer-events: auto; transition: background 0.15s ease, outline 0.15s ease; }}
+            .word-hitbox:hover, .word-hitbox:active {{ background: rgba(254,240,138,0.45); outline: 2px solid #facc15; }}
+            .karaoke-lit {{ background: rgba(250,204,21,0.65) !important; outline: 2px solid #eab308 !important; }}
+            .glass-pill {{ position: fixed; top: 10px; left: 18px; background: rgba(15,23,42,0.45); backdrop-filter: blur(14px); color: #94a3b8; font-weight: 500; font-size: 13px; padding: 5px 14px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 1000; }}
+            #whisper-card {{ position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.92); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); color: #ffffff; padding: 14px 22px; border-radius: 18px; font-size: 15px; box-shadow: 0 12px 40px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.18); display: none; z-index: 1001; max-width: 680px; width: 90vw; line-height: 1.6; }}
+            .card-close-btn {{ position: absolute; top: 8px; right: 12px; background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; }}
+            .glass-dock {{ position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(15,23,42,0.5); backdrop-filter: blur(16px); padding: 6px 12px; border-radius: 35px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); z-index: 1000; }}
+            .glass-btn {{ background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); padding: 7px 14px; border-radius: 25px; font-weight: 500; font-size: 13.5px; cursor: pointer; }}
+            .glass-btn.active {{ background: #2563eb !important; border-color: #60a5fa !important; }}
         </style>
     </head>
     <body onmousemove="resetHudTimer()" onclick="resetHudTimer()" ontouchstart="resetHudTimer()">
-        <div id="viewport-wrap">
-            <div id="stage">
-                <img id="book-img" src="">
-                <div id="boxes-layer"></div>
-            </div>
-        </div>
+        <div id="viewport-wrap"><div id="stage"><img id="book-img" src=""><div id="boxes-layer"></div></div></div>
         <div id="page-counter" class="glass-pill hud-item">{txt_page} 1 / 1</div>
-        
-        <div id="whisper-card">
-            <button class="card-close-btn" onclick="dismissCard()">✕</button>
-            <div id="whisper-body"></div>
-        </div>
-
+        <div id="whisper-card"><button class="card-close-btn" onclick="dismissCard()">✕</button><div id="whisper-body"></div></div>
         <div id="main-dock" class="glass-dock hud-item">
             <button id="btn-prev" class="glass-btn" onclick="prevPage()">⬅️</button>
             <button id="btn-speed" class="glass-btn" onclick="cycleSpeed()">⚡ <span id="speed-text">0.8x</span></button>
@@ -1210,50 +1006,30 @@ elif st.session_state.reading_mode:
             const layer = document.getElementById('boxes-layer');
             const wrap = document.getElementById('viewport-wrap');
 
-            // HER SAYFAYI EKRANIN BOYUTUNA TAM OTURTAN AKILLI HESAPLAYICI (HER CİHAZDA KUSURSUZ FIT)
             function fitPageToScreen() {{
                 if (!imgEl.naturalWidth || !imgEl.naturalHeight) return;
                 const availW = wrap.clientWidth * 0.96;
                 const availH = wrap.clientHeight * 0.96;
-                
                 const scale = Math.min(availW / imgEl.naturalWidth, availH / imgEl.naturalHeight);
                 const targetW = Math.round(imgEl.naturalWidth * scale);
                 const targetH = Math.round(imgEl.naturalHeight * scale);
-                
-                stage.style.width = targetW + 'px';
-                stage.style.height = targetH + 'px';
-                imgEl.style.width = targetW + 'px';
-                imgEl.style.height = targetH + 'px';
-                layer.style.width = targetW + 'px';
-                layer.style.height = targetH + 'px';
+                stage.style.width = targetW + 'px'; stage.style.height = targetH + 'px';
+                imgEl.style.width = targetW + 'px'; imgEl.style.height = targetH + 'px';
+                layer.style.width = targetW + 'px'; layer.style.height = targetH + 'px';
             }}
-
             window.addEventListener('resize', fitPageToScreen);
 
             let hudTimer = null;
-            function resetHudTimer() {{
-                clearTimeout(hudTimer);
-            }}
-
-            function dismissCard() {{
-                document.getElementById('whisper-card').style.display = 'none';
-                clearTimeout(timer);
-            }}
-
-            function cycleSpeed() {{
-                speedIdx = (speedIdx + 1) % speeds.length;
-                document.getElementById('speed-text').innerText = speeds[speedIdx] + "x";
-                if (isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke, 100); }}
-            }}
+            function resetHudTimer() {{ clearTimeout(hudTimer); }}
+            function dismissCard() {{ document.getElementById('whisper-card').style.display = 'none'; clearTimeout(timer); }}
+            function cycleSpeed() {{ speedIdx = (speedIdx + 1) % speeds.length; document.getElementById('speed-text').innerText = speeds[speedIdx] + "x"; if (isPlaying) {{ toggleKaraoke(); setTimeout(toggleKaraoke, 100); }} }}
 
             function loadPage(idx) {{
                 if (idx < 0 || idx >= allPages.length) return;
                 stopKaraoke(); currentIndex = idx; const page = allPages[idx];
-                
                 imgEl.onload = () => {{ fitPageToScreen(); }};
                 imgEl.src = "data:image/jpeg;base64," + page.img_b64;
                 if (imgEl.complete) {{ fitPageToScreen(); }}
-
                 document.getElementById('page-counter').innerText = `{txt_page} ${{idx + 1}} / ${{allPages.length}}`;
                 document.getElementById('btn-prev').disabled = (idx === 0);
                 document.getElementById('btn-next').disabled = (idx === allPages.length - 1);
@@ -1274,11 +1050,9 @@ elif st.session_state.reading_mode:
                             let noPunct = b.text.replace(/^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$/g, "").trim().toLowerCase();
                             trans = dict[noPunct] || '-';
                         }}
-                        
                         document.getElementById('whisper-body').innerHTML = "<div style='text-align: center; font-size: 15.5px;'>🇫🇷 <b>" + b.text + "</b> &nbsp;➔&nbsp; " + targetFlag + " <b>" + trans + "</b></div>";
                         document.getElementById('whisper-card').style.display = 'block';
                         document.getElementById('whisper-card').dataset.type = 'word';
-                        
                         window.speechSynthesis.cancel(); 
                         const u = new SpeechSynthesisUtterance(b.text); u.lang = 'fr-FR'; u.rate = speeds[speedIdx]; window.speechSynthesis.speak(u);
                         timer = setTimeout(dismissCard, 4500);
@@ -1293,16 +1067,10 @@ elif st.session_state.reading_mode:
                 clearTimeout(timer);
                 const tText = (allPages[currentIndex] && allPages[currentIndex].full_trans) ? allPages[currentIndex].full_trans : "{txt_loading}";
                 const card = document.getElementById('whisper-card');
-                
-                if (card.style.display === 'block' && card.dataset.type === 'page') {{
-                    dismissCard();
-                }} else {{ 
-                    document.getElementById('whisper-body').innerHTML = `
-                        <div style="font-size: 13.5px; font-weight: 600; color: #93c5fd; margin-bottom: 6px;">📝 {txt_trans} (${{targetFlag}})</div>
-                        <div style="font-size: 15px; color: #f8fafc; text-align: left; line-height: 1.65; max-height: 40vh; overflow-y: auto;">${{tText}}</div>
-                    `;
-                    card.style.display = 'block'; 
-                    card.dataset.type = 'page';
+                if (card.style.display === 'block' && card.dataset.type === 'page') {{ dismissCard(); }} 
+                else {{ 
+                    document.getElementById('whisper-body').innerHTML = `<div style="font-size: 13.5px; font-weight: 600; color: #93c5fd; margin-bottom: 6px;">📝 {txt_trans} (${{targetFlag}})</div><div style="font-size: 15px; color: #f8fafc; text-align: left; line-height: 1.65; max-height: 40vh; overflow-y: auto;">${{tText}}</div>`;
+                    card.style.display = 'block'; card.dataset.type = 'page';
                 }}
             }}
 
@@ -1333,7 +1101,7 @@ elif st.session_state.reading_mode:
     components.html(HTML_VIEWER, height=850, scrolling=False)
 
 # ==========================================
-# 6. DÜZENLEYİCİ EKRANI (BİRLEŞTİRME & YENİDEN TARAMA DESTEĞİ)
+# 6. DÜZENLEYİCİ EKRANI (GEMINI VISION YENİDEN TARAMA)
 # ==========================================
 elif st.session_state.editor_mode:
     st.subheader(f"✏️ Kitap Düzenleyici: {st.session_state.editor_book_title}")
@@ -1550,7 +1318,7 @@ elif st.session_state.editor_mode:
                     st.button("🔗 Son Sayfa (Birleştirilemez)", disabled=True, use_container_width=True)
 
             if st.button(T("rescan_page_btn"), use_container_width=True):
-                with st.spinner("Sayfa el yazısı optimizasyonlu OCR ile taranıyor..."):
+                with st.spinner("Sayfa yüksek teknoloji ile taranıyor (Gemini veya EasyOCR)..."):
                     try:
                         img_bytes = base64.b64decode(curr_page['img_b64'])
                         orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
@@ -1562,7 +1330,7 @@ elif st.session_state.editor_mode:
                     except Exception as e:
                         st.error(f"Tarama hatası: {e}")
 
-            # SAYFA ÖNİZLEMESİ: NUMARALI KELİME KUTULARIYLA BİRLİKTE GÖSTERİM (KOD BLOK KAÇAĞI DÜZELTİLDİ)
+            # SAYFA ÖNİZLEMESİ (TEMİZ HTML)
             overlay_divs = "".join([
                 f'<div style="position:absolute;left:{b["left"]}%;top:{b["top"]}%;width:{b["width"]}%;height:{b["height"]}%;border:2px solid #38bdf8;background:rgba(56,189,248,0.15);pointer-events:none;box-sizing:border-box;border-radius:3px;">'
                 f'<span style="position:absolute;top:-15px;left:0;background:#0284c7;color:#ffffff;font-size:10px;font-weight:bold;padding:0 4px;border-radius:2px;line-height:14px;">#{b_i+1}</span>'
@@ -1582,7 +1350,6 @@ elif st.session_state.editor_mode:
             st.markdown("### 🔤 Tespit Edilen Kelimeler ve Cümleler")
             st.caption("Cümlelerin sırasını aşağıdaki ⬆️ / ⬇️ imleç butonlarıyla değiştirebilirsiniz. Böylece okurken alt satır ile üst satır asla karışmaz.")
 
-            # 1. DOĞRUDAN SIRALAMA ARACI (⬆️ YUKARI / ⬇️ AŞAĞI TAŞIMA BUTONLARI)
             num_boxes = len(curr_page["boxes"])
             if num_boxes > 1:
                 st.markdown("#### ↕️ Cümle / Kelime Sırasını Kaydır")
@@ -1604,7 +1371,6 @@ elif st.session_state.editor_mode:
                         curr_page["boxes"][move_target_idx], curr_page["boxes"][move_target_idx + 1] = curr_page["boxes"][move_target_idx + 1], curr_page["boxes"][move_target_idx]
                         st.rerun()
 
-            # 2. TABLO İLE METİN DÜZENLEME & SİLME
             table_data = [{"Sıra": i + 1, "Kaldır 🗑️": False, "Metin (Fransızca)": b["text"]} for i, b in enumerate(curr_page["boxes"])]
             edited_table = st.data_editor(
                 table_data,
@@ -1646,7 +1412,6 @@ elif st.session_state.editor_mode:
                     curr_page["boxes"] = [b for b in curr_page["boxes"] if not b["text"].strip().isdigit()]
                     st.rerun()
 
-            # SAYFA METNİNİ TOPLU DÜZELTME PANELİ
             with st.expander("⚡ Bu Sayfanın Metnini Blok Halinde Toplu Düzelt"):
                 curr_joined = " ".join([b["text"] for b in curr_page["boxes"]])
                 bulk_input = st.text_area("Sayfada olması gereken doğru metin:", value=curr_joined, height=90)
