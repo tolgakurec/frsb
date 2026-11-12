@@ -282,9 +282,10 @@ def translate_api(text, source_lang, target_lang):
     if not text or not text.strip() or source_lang == target_lang:
         return text
     clients = ['gtx', 'dict-chrome-ex', 'te_lib']
+    base_url = "ht" + "tps://translate.googleapis" + ".com/translate_a/single"
     for client in clients:
         try:
-            url = f"https://translate.googleapis.com/translate_a/single?client={client}&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
+            url = f"{base_url}?client={client}&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
             res = urllib.request.urlopen(req, timeout=4)
             data = json.loads(res.read().decode('utf-8'))
@@ -330,12 +331,12 @@ def get_ataturk_img_data():
     if not img_b64:
         img_b64 = get_file_base64("atatürk ve miti.jpg", "image/jpeg")
     if img_b64: return img_b64
-    return "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg"
+    return "ht" + "tps://upload.wikimedia" + ".org/wikipedia/commons/thumb/c/c5/Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg/440px-Mustafa_Kemal_Atat%C3%BCrk_in_janissary_costume.jpg"
 
 def get_blue_danube_audio_data():
     audio_b64 = get_file_base64("blue_danube.mp3", "audio/mp3")
     if audio_b64: return audio_b64
-    return "https://ia800501.us.archive.org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
+    return "ht" + "tps://ia800501.us.archive" + ".org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
 
 # ==========================================
 # 2. GOOGLE SHEETS ENTEGRASYONU (CANLI)
@@ -368,7 +369,10 @@ def get_gsheet_client():
     if not creds_dict: return None, "Google kimlik anahtarı bulunamadı!", ""
     sa_email = creds_dict.get("client_email", "Bilinmeyen Servis Hesabı")
     try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        scope = [
+            "ht" + "tps://spreadsheets.google" + ".com/feeds",
+            "ht" + "tps://www.googleapis" + ".com/auth/drive"
+        ]
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         return client, None, sa_email
@@ -404,7 +408,6 @@ def record_thanks(email):
     except: return False
 
 def get_saved_books():
-    """Canlı Google Sheets okuyucu (Önbelleksiz, her zaman en güncel veriyi çeker)"""
     sheet, err = get_sheet("Library")
     if not sheet: return [], err
     for attempt in range(2):
@@ -473,7 +476,6 @@ def delete_hybrid_book(book_id):
 # 3. ZIRHLI GEMINI VISION API MOTORU
 # ==========================================
 def sanitize_gemini_key(raw_key):
-    """Anahtardaki tüm köşeli parantez, tırnak ve boşlukları söker"""
     if not raw_key: return ""
     return re.sub(r"[^a-zA-Z0-9_\-\.]", "", str(raw_key)).strip()
 
@@ -487,20 +489,21 @@ def get_active_gemini_key():
                 if val: return val
     return None
 
+def get_gemini_endpoint(model_name="gemini-2.5-flash"):
+    """Arayüzün Markdown link dönüştürücüsüne yakalanmaması için adresi parçalı kurar"""
+    proto = "ht" + "tps" + "://"
+    domain = "generativelanguage" + "." + "googleapis" + "." + "com"
+    return f"{proto}{domain}/v1beta/models/{model_name}:generateContent"
+
 @st.cache_resource
 def load_ocr():
     return easyocr.Reader(['fr', 'en'], gpu=False)
 
 def call_gemini_vision_native(base64_image, api_key):
-    """
-    HTTP Header (x-goog-api-key) üzerinden çalışan, URL bozunmasından etkilenmeyen kesin Gemini Vision çağrısı.
-    """
     clean_key = sanitize_gemini_key(api_key)
     if not clean_key:
         return None, "API Key boş veya geçersiz."
         
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
-    
     prompt = (
         "You are an expert OCR engine for French children's picture books. "
         "Transcribe all visible French text with 100% precision, especially cursive handwriting (écriture cursive). "
@@ -532,64 +535,73 @@ def call_gemini_vision_native(base64_image, api_key):
     }
     
     req_data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=req_data,
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": clean_key,
-            "User-Agent": "Mozilla/5.0"
-        }
-    )
-    
-    try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            resp_body = resp.read().decode("utf-8")
-            data = json.loads(resp_body)
-            candidates = data.get("candidates", [])
-            if not candidates:
-                return None, "Gemini boş cevap döndürdü."
+    candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    last_error = "Bilinmeyen API hatası"
+
+    for model_name in candidate_models:
+        url = get_gemini_endpoint(model_name)
+        req = urllib.request.Request(
+            url,
+            data=req_data,
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": clean_key,
+                "User-Agent": "Mozilla/5.0"
+            }
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                resp_body = resp.read().decode("utf-8")
+                data = json.loads(resp_body)
+                candidates = data.get("candidates", [])
+                if not candidates:
+                    last_error = "Gemini boş cevap döndürdü."
+                    continue
+                    
+                raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "[]").strip()
+                if raw_text.startswith("```"):
+                    raw_text = re.sub(r"^```[a-zA-Z]*\n?", "", raw_text)
+                    raw_text = re.sub(r"\n?```$", "", raw_text).strip()
+                    
+                parsed = json.loads(raw_text)
+                items = []
+                if isinstance(parsed, list):
+                    items = parsed
+                elif isinstance(parsed, dict):
+                    for k in ["items", "boxes", "text_elements", "lines", "data"]:
+                        if k in parsed and isinstance(parsed[k], list):
+                            items = parsed[k]; break
+                    if not items:
+                        for v in parsed.values():
+                            if isinstance(v, list): items = v; break
+                            
+                clean_boxes = []
+                for i, b in enumerate(items):
+                    t = str(b.get("text", "")).strip()
+                    if not t: continue
+                    clean_boxes.append({
+                        "id": f"b_{i}",
+                        "text": t,
+                        "clean": clean_word_key(t),
+                        "left": float(b.get("left", 5)),
+                        "top": float(b.get("top", 5)),
+                        "width": float(b.get("width", 30)),
+                        "height": float(b.get("height", 8))
+                    })
+                    
+                if clean_boxes:
+                    return clean_boxes, None
+                last_error = "Görselde okunabilir metin bulunamadı."
                 
-            raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "[]").strip()
-            if raw_text.startswith("```"):
-                raw_text = re.sub(r"^```[a-zA-Z]*\n?", "", raw_text)
-                raw_text = re.sub(r"\n?```$", "", raw_text).strip()
-                
-            parsed = json.loads(raw_text)
-            items = []
-            if isinstance(parsed, list):
-                items = parsed
-            elif isinstance(parsed, dict):
-                for k in ["items", "boxes", "text_elements", "lines", "data"]:
-                    if k in parsed and isinstance(parsed[k], list):
-                        items = parsed[k]; break
-                if not items:
-                    for v in parsed.values():
-                        if isinstance(v, list): items = v; break
-                        
-            clean_boxes = []
-            for i, b in enumerate(items):
-                t = str(b.get("text", "")).strip()
-                if not t: continue
-                clean_boxes.append({
-                    "id": f"b_{i}",
-                    "text": t,
-                    "clean": clean_word_key(t),
-                    "left": float(b.get("left", 5)),
-                    "top": float(b.get("top", 5)),
-                    "width": float(b.get("width", 30)),
-                    "height": float(b.get("height", 8))
-                })
-                
-            if clean_boxes:
-                return clean_boxes, None
-            return None, "Görselde okunabilir metin bulunamadı."
-            
-    except urllib.error.HTTPError as he:
-        err_msg = he.read().decode("utf-8", errors="ignore")
-        return None, f"Google Hatası (HTTP {he.code}): {err_msg[:160]}"
-    except Exception as e:
-        return None, f"Bağlantı Hatası: {str(e)}"
+        except urllib.error.HTTPError as he:
+            err_msg = he.read().decode("utf-8", errors="ignore")
+            last_error = f"{model_name} HTTP {he.code}: {err_msg[:160]}"
+            continue
+        except Exception as e:
+            last_error = f"{model_name} Bağlantı Hatası: {str(e)}"
+            continue
+
+    return None, last_error
 
 def process_single_image(img):
     img_fixed = ImageOps.exif_transpose(img).convert("RGB")
@@ -1170,27 +1182,34 @@ elif st.session_state.editor_mode:
             else:
                 with st.spinner("Google sunucularına bağlanılıyor..."):
                     clean_k = sanitize_gemini_key(active_key)
-                    test_url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)"
-                    try:
-                        t_data = json.dumps({"contents": [{"parts": [{"text": "Say 'OK'"}]}]}).encode("utf-8")
-                        t_req = urllib.request.Request(
-                            test_url,
-                            data=t_data,
-                            headers={
-                                "Content-Type": "application/json",
-                                "x-goog-api-key": clean_k,
-                                "User-Agent": "Mozilla/5.0"
-                            }
-                        )
-                        with urllib.request.urlopen(t_req, timeout=12) as t_resp:
-                            if t_resp.status == 200:
-                                st.toast("✅ Mükemmel! Gemini API bağlantısı %100 çalışıyor.")
-                                st.success("✅ Bağlantı Başarılı: Gemini Çalışıyor!")
-                    except urllib.error.HTTPError as he:
-                        err_txt = he.read().decode('utf-8', errors='ignore')
-                        st.error(f"Google Hatası (HTTP {he.code}): {err_txt[:180]}")
-                    except Exception as te:
-                        st.error(f"Bağlantı Hatası: {str(te)}")
+                    test_success = False
+                    last_test_err = ""
+                    for m_name in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                        test_url = get_gemini_endpoint(m_name)
+                        try:
+                            t_data = json.dumps({"contents": [{"parts": [{"text": "Say 'OK'"}]}]}).encode("utf-8")
+                            t_req = urllib.request.Request(
+                                test_url,
+                                data=t_data,
+                                headers={
+                                    "Content-Type": "application/json",
+                                    "x-goog-api-key": clean_k,
+                                    "User-Agent": "Mozilla/5.0"
+                                }
+                            )
+                            with urllib.request.urlopen(t_req, timeout=12) as t_resp:
+                                if t_resp.status == 200:
+                                    st.toast(f"✅ Mükemmel! Gemini API ({m_name}) %100 çalışıyor.")
+                                    st.success(f"✅ Bağlantı Başarılı: {m_name} Çalışıyor!")
+                                    test_success = True
+                                    break
+                        except urllib.error.HTTPError as he:
+                            err_txt = he.read().decode('utf-8', errors='ignore')
+                            last_test_err = f"{m_name} HTTP {he.code}: {err_txt[:160]}"
+                        except Exception as te:
+                            last_test_err = f"{m_name} Bağlantı Hatası: {str(te)}"
+                    if not test_success:
+                        st.error(last_test_err)
 
     col_t1, col_t2, col_t3, col_t4 = st.columns([2.5, 1.5, 1.5, 1])
     with col_t1:
