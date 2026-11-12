@@ -143,7 +143,7 @@ UI_TRANSLATIONS = {
         "lib_title": "📖 Kütüphane Havuzu",
         "add_tab": "➕ Yeni Kitap Ekle",
         "empty_lib": "Kütüphanede henüz kitap bulunmuyor.",
-        "select_book": "Okumak istediğiniz kitabı seçin:",
+        "select_book": "Okumak istediğiniz kitabı seçin (En yeni yüklenenler en üstte):",
         "open_read": "🚀 Kitabı Aç ve Oku",
         "edit_book": "✏️ Kitabı Düzenle",
         "delete_book": "🗑️ Sil",
@@ -182,7 +182,7 @@ UI_TRANSLATIONS = {
         "lib_title": "📖 Library Pool",
         "add_tab": "➕ Add New Book",
         "empty_lib": "There are no books in the library yet.",
-        "select_book": "Select a book to read:",
+        "select_book": "Select a book to read (Newest uploads first):",
         "open_read": "🚀 Open & Read",
         "edit_book": "✏️ Edit Book",
         "delete_book": "🗑️ Delete",
@@ -221,7 +221,7 @@ UI_TRANSLATIONS = {
         "lib_title": "📖 Библиотека",
         "add_tab": "➕ Добави нова книга",
         "empty_lib": "В библиотеката все още няма добавени книги.",
-        "select_book": "Изберете книга за четене:",
+        "select_book": "Изберете книга за четене (Най-новите най-отгоре):",
         "open_read": "🚀 Отвори и чети",
         "edit_book": "✏️ Редактирай",
         "delete_book": "🗑️ Изтрий",
@@ -339,7 +339,7 @@ def get_blue_danube_audio_data():
     return "ht" + "tps://ia800501.us.archive" + ".org/33/items/TheBlueDanubeWaltz/TheBlueDanubeWaltz.mp3"
 
 # ==========================================
-# 2. GOOGLE SHEETS ENTEGRASYONU (CANLI)
+# 2. GOOGLE SHEETS ENTEGRASYONU (YÜKLEME TARİHİ SIRALI)
 # ==========================================
 def clean_private_key(key_str):
     if not key_str or not isinstance(key_str, str): return key_str
@@ -407,6 +407,14 @@ def record_thanks(email):
         return True
     except: return False
 
+def format_short_date(date_str):
+    if not date_str:
+        return ""
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", str(date_str).strip())
+    if m:
+        return f"{m.group(3)}.{m.group(2)}.{m.group(1)}"
+    return str(date_str).strip()[:10]
+
 def get_saved_books():
     sheet, err = get_sheet("Library")
     if not sheet: return [], err
@@ -414,12 +422,33 @@ def get_saved_books():
         try:
             records = sheet.get_all_records()
             books_list, seen_ids = [], set()
-            for r in records:
+            for idx, r in enumerate(records):
                 b_id = str(r.get("BookID", "")).strip()
                 if not b_id or b_id in seen_ids: continue
                 seen_ids.add(b_id)
-                books_list.append({"book_id": b_id, "title": r.get("BookName", "İsimsiz"), "page_count": r.get("PageCount", 0)})
-            return sorted(books_list, key=lambda x: str(x["title"]).lower()), None
+                
+                # Yükleme tarihi sütununu otomatik tespit et
+                date_val = ""
+                for k, v in r.items():
+                    k_low = str(k).lower()
+                    if any(w in k_low for w in ["date", "tarih", "time", "created", "eklenme", "yukleme"]):
+                        date_val = str(v).strip()
+                        break
+                if not date_val:
+                    vals = list(r.values())
+                    if len(vals) >= 3 and re.match(r"^\d{4}-\d{2}-\d{2}", str(vals[2]).strip()):
+                        date_val = str(vals[2]).strip()
+                        
+                books_list.append({
+                    "book_id": b_id,
+                    "title": r.get("BookName", "İsimsiz"),
+                    "page_count": r.get("PageCount", 0),
+                    "date": date_val,
+                    "row_idx": idx
+                })
+            # Son yüklenen kitaplar en üstte olacak şekilde tarihe ve satır sırasına göre ters sırala
+            books_list.sort(key=lambda x: (x["date"], x["row_idx"]), reverse=True)
+            return books_list, None
         except Exception as e:
             if attempt == 0:
                 time.sleep(0.5)
@@ -490,7 +519,6 @@ def get_active_gemini_key():
     return None
 
 def get_gemini_endpoint(model_name="gemini-2.5-flash"):
-    """Arayüzün Markdown link dönüştürücüsüne yakalanmaması için adresi parçalı kurar"""
     proto = "ht" + "tps" + "://"
     domain = "generativelanguage" + "." + "googleapis" + "." + "com"
     return f"{proto}{domain}/v1beta/models/{model_name}:generateContent"
@@ -1571,7 +1599,7 @@ elif st.session_state.editor_mode:
                         st.rerun()
 
 # ==========================================
-# 7. ANA KÜTÜPHANE EKRANI (CANLI & YENİLEME DESTEKLİ)
+# 7. ANA KÜTÜPHANE EKRANI (EN YENİ KİTAPLAR EN ÜSTTE)
 # ==========================================
 else:
     col_info1, col_thanks, col_info2, col_info3 = st.columns([2.5, 1.2, 1.8, 1])
@@ -1598,7 +1626,12 @@ else:
     if not saved_books:
         st.info(T("empty_lib"))
     else:
-        book_titles = {b["book_id"]: f"{b['title']} ({b['page_count']} sayfa)" for b in saved_books}
+        book_titles = {}
+        for b in saved_books:
+            short_d = format_short_date(b.get("date", ""))
+            date_suffix = f" • 📅 {short_d}" if short_d else ""
+            book_titles[b["book_id"]] = f"{b['title']} ({b['page_count']} sayfa){date_suffix}"
+            
         selected_id = st.selectbox(T("select_book"), options=list(book_titles.keys()), format_func=lambda x: book_titles[x])
         
         col_r, col_e, col_d = st.columns([2, 2, 1])
