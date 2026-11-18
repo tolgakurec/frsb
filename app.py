@@ -1326,7 +1326,7 @@ elif st.session_state.editor_mode:
                 for idx_f, nf in enumerate(new_files):
                     s_txt.text(f"Ekleniyor: {idx_f + 1} / {total_n}...")
                     b_img = ImageOps.exif_transpose(Image.open(nf)).convert("RGB")
-                    if split_new_spreads and (b_img.width / b_img.height) > 1.05:
+                    if split_spreads and (b_img.width / b_img.height) > 1.05:
                         mid = b_img.width // 2
                         p1, _, _ = process_single_image(b_img.crop((0, 0, mid, b_img.height)))
                         p2, _, _ = process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height)))
