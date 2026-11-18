@@ -50,6 +50,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+ACTIVE_FLASH_MODELS = [
+    "gemini-flash-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
+    "gemini-2.5-flash-lite"
+]
+
 # ==========================================
 # 0. HİKAYE METİNLERİ VE ARAYÜZ ÇEVİRİLERİ
 # ==========================================
@@ -274,6 +282,14 @@ def T(key):
     lang = st.session_state.app_lang if st.session_state.app_lang in UI_TRANSLATIONS else "tr"
     return UI_TRANSLATIONS[lang].get(key, UI_TRANSLATIONS["tr"].get(key, key))
 
+def safe_int(val, default=0):
+    try:
+        if val is None or str(val).strip() == "":
+            return default
+        return int(float(str(val).strip()))
+    except Exception:
+        return default
+
 # ==========================================
 # 1. ÇEVİRİ MOTORU VE YARDIMCI FONKSİYONLAR
 # ==========================================
@@ -314,7 +330,7 @@ def translate_turkish_to_target(text, target_lang):
     return translate_api(text, source_lang="tr", target_lang=target_lang)
 
 def get_file_base64(filename, mime_type):
-    script_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else "."
+    script_dir = os.path.dirname(os.path.abspath(globals()["__file__"])) if "__file__" in globals() else "."
     paths = [filename, os.path.join(script_dir, filename)]
     for p in paths:
         if os.path.exists(p):
@@ -427,7 +443,6 @@ def get_saved_books():
                 if not b_id or b_id in seen_ids: continue
                 seen_ids.add(b_id)
                 
-                # Yükleme tarihi sütununu otomatik tespit et
                 date_val = ""
                 for k, v in r.items():
                     k_low = str(k).lower()
@@ -442,11 +457,10 @@ def get_saved_books():
                 books_list.append({
                     "book_id": b_id,
                     "title": r.get("BookName", "İsimsiz"),
-                    "page_count": r.get("PageCount", 0),
+                    "page_count": safe_int(r.get("PageCount", 0)),
                     "date": date_val,
                     "row_idx": idx
                 })
-            # Son yüklenen kitaplar en üstte olacak şekilde tarihe ve satır sırasına göre ters sırala
             books_list.sort(key=lambda x: (x["date"], x["row_idx"]), reverse=True)
             return books_list, None
         except Exception as e:
@@ -466,7 +480,7 @@ def load_book_content(book_id):
             if str(r.get("BookID", "")).strip() == str(book_id).strip():
                 try: boxes = json.loads(r.get("OCRText", "[]"))
                 except: boxes = []
-                pages.append({"page_no": int(r.get("PageNo", 0)), "img_b64": r.get("ImageBase64", ""), "boxes": boxes})
+                pages.append({"page_no": safe_int(r.get("PageNo", 0)), "img_b64": r.get("ImageBase64", ""), "boxes": boxes})
         if not pages: return None, "Sayfa verisi yok."
         return sorted(pages, key=lambda x: x["page_no"]), None
     except Exception as e: return None, str(e)
@@ -502,7 +516,7 @@ def delete_hybrid_book(book_id):
         for row_idx in reversed(rows_to_delete): pages_sheet.delete_rows(row_idx); time.sleep(0.1)
 
 # ==========================================
-# 3. ZIRHLI GEMINI VISION API MOTORU
+# 3. ZIRHLI GEMINI VISION API MOTORU (GÜNCEL MODELLER)
 # ==========================================
 def sanitize_gemini_key(raw_key):
     if not raw_key: return ""
@@ -518,10 +532,52 @@ def get_active_gemini_key():
                 if val: return val
     return None
 
-def get_gemini_endpoint(model_name="gemini-2.5-flash"):
+def get_gemini_endpoint(model_name="gemini-flash-latest"):
     proto = "ht" + "tps" + "://"
     domain = "generativelanguage" + "." + "googleapis" + "." + "com"
     return f"{proto}{domain}/v1beta/models/{model_name}:generateContent"
+
+def clean_word_key(text):
+    if not text: return ""
+    return re.sub(r"\s+", " ", re.sub(r"^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$", "", text).strip().lower())
+
+def sort_reading_order(ocr_items):
+    if not ocr_items: return []
+    parsed = []
+    for item in ocr_items:
+        box, text, conf = item
+        t_clean = text.strip()
+        if not t_clean: continue
+        xs, ys = [p[0] for p in box], [p[1] for p in box]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        parsed.append({
+            'item': item, 'min_x': min_x, 'max_x': max_x, 'min_y': min_y, 'max_y': max_y,
+            'cy': (min_y + max_y) / 2.0, 'h': max(max_y - min_y, 1.0)
+        })
+    if not parsed: return []
+    parsed.sort(key=lambda p: (p['min_y'], p['min_x']))
+    
+    lines = []
+    for p in parsed:
+        matched_line = None
+        for line in lines:
+            overlaps = []
+            for other in line:
+                ov = max(0, min(p['max_y'], other['max_y']) - max(p['min_y'], other['min_y']))
+                min_h = min(p['h'], other['h'])
+                overlaps.append(ov / min_h)
+            if (sum(overlaps) / len(overlaps)) > 0.40:
+                matched_line = line; break
+        if matched_line is not None: matched_line.append(p)
+        else: lines.append([p])
+            
+    lines.sort(key=lambda line: min(k['min_y'] for k in line))
+    sorted_items = []
+    for line in lines:
+        line.sort(key=lambda p: p['min_x'])
+        for p in line: sorted_items.append(p['item'])
+    return sorted_items
 
 @st.cache_resource
 def load_ocr():
@@ -557,79 +613,82 @@ def call_gemini_vision_native(base64_image, api_key):
             ]
         }],
         "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.1
+            "responseMimeType": "application/json"
         }
     }
     
     req_data = json.dumps(payload).encode("utf-8")
-    candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-    last_error = "Bilinmeyen API hatası"
+    errors_collected = []
 
-    for model_name in candidate_models:
+    for model_name in ACTIVE_FLASH_MODELS:
         url = get_gemini_endpoint(model_name)
-        req = urllib.request.Request(
-            url,
-            data=req_data,
-            headers={
-                "Content-Type": "application/json",
-                "x-goog-api-key": clean_key,
-                "User-Agent": "Mozilla/5.0"
-            }
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=25) as resp:
-                resp_body = resp.read().decode("utf-8")
-                data = json.loads(resp_body)
-                candidates = data.get("candidates", [])
-                if not candidates:
-                    last_error = "Gemini boş cevap döndürdü."
+        for retry in range(2):
+            req = urllib.request.Request(
+                url,
+                data=req_data,
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": clean_key,
+                    "User-Agent": "Mozilla/5.0"
+                }
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=28) as resp:
+                    resp_body = resp.read().decode("utf-8")
+                    data = json.loads(resp_body)
+                    candidates = data.get("candidates", [])
+                    if not candidates:
+                        errors_collected.append(f"{model_name}: Boş cevap")
+                        break
+                        
+                    raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "[]").strip()
+                    if raw_text.startswith("```"):
+                        raw_text = re.sub(r"^```[a-zA-Z]*\n?", "", raw_text)
+                        raw_text = re.sub(r"\n?```$", "", raw_text).strip()
+                        
+                    parsed = json.loads(raw_text)
+                    items = []
+                    if isinstance(parsed, list):
+                        items = parsed
+                    elif isinstance(parsed, dict):
+                        for k in ["items", "boxes", "text_elements", "lines", "data"]:
+                            if k in parsed and isinstance(parsed[k], list):
+                                items = parsed[k]; break
+                        if not items:
+                            for v in parsed.values():
+                                if isinstance(v, list): items = v; break
+                                
+                    clean_boxes = []
+                    for i, b in enumerate(items):
+                        t = str(b.get("text", "")).strip()
+                        if not t: continue
+                        clean_boxes.append({
+                            "id": f"b_{i}",
+                            "text": t,
+                            "clean": clean_word_key(t),
+                            "left": float(b.get("left", 5)),
+                            "top": float(b.get("top", 5)),
+                            "width": float(b.get("width", 30)),
+                            "height": float(b.get("height", 8))
+                        })
+                        
+                    if clean_boxes:
+                        return clean_boxes, None
+                    errors_collected.append(f"{model_name}: Metin bulunamadı")
+                    break
+                    
+            except urllib.error.HTTPError as he:
+                if he.code == 429 and retry == 0:
+                    time.sleep(5)
                     continue
-                    
-                raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "[]").strip()
-                if raw_text.startswith("```"):
-                    raw_text = re.sub(r"^```[a-zA-Z]*\n?", "", raw_text)
-                    raw_text = re.sub(r"\n?```$", "", raw_text).strip()
-                    
-                parsed = json.loads(raw_text)
-                items = []
-                if isinstance(parsed, list):
-                    items = parsed
-                elif isinstance(parsed, dict):
-                    for k in ["items", "boxes", "text_elements", "lines", "data"]:
-                        if k in parsed and isinstance(parsed[k], list):
-                            items = parsed[k]; break
-                    if not items:
-                        for v in parsed.values():
-                            if isinstance(v, list): items = v; break
-                            
-                clean_boxes = []
-                for i, b in enumerate(items):
-                    t = str(b.get("text", "")).strip()
-                    if not t: continue
-                    clean_boxes.append({
-                        "id": f"b_{i}",
-                        "text": t,
-                        "clean": clean_word_key(t),
-                        "left": float(b.get("left", 5)),
-                        "top": float(b.get("top", 5)),
-                        "width": float(b.get("width", 30)),
-                        "height": float(b.get("height", 8))
-                    })
-                    
-                if clean_boxes:
-                    return clean_boxes, None
-                last_error = "Görselde okunabilir metin bulunamadı."
-                
-        except urllib.error.HTTPError as he:
-            err_msg = he.read().decode("utf-8", errors="ignore")
-            last_error = f"{model_name} HTTP {he.code}: {err_msg[:160]}"
-            continue
-        except Exception as e:
-            last_error = f"{model_name} Bağlantı Hatası: {str(e)}"
-            continue
+                err_msg = he.read().decode("utf-8", errors="ignore")
+                errors_collected.append(f"{model_name} HTTP {he.code}: {err_msg[:120]}")
+                break
+            except Exception as e:
+                errors_collected.append(f"{model_name}: {str(e)[:120]}")
+                break
 
-    return None, last_error
+    return None, " | ".join(errors_collected[:2])
 
 def process_single_image(img):
     img_fixed = ImageOps.exif_transpose(img).convert("RGB")
@@ -696,48 +755,6 @@ def process_single_image(img):
     gc.collect()
     
     return {"img_b64": final_b64, "boxes": boxes}, engine_name, error_msg
-
-def sort_reading_order(ocr_items):
-    if not ocr_items: return []
-    parsed = []
-    for item in ocr_items:
-        box, text, conf = item
-        t_clean = text.strip()
-        if not t_clean: continue
-        xs, ys = [p[0] for p in box], [p[1] for p in box]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        parsed.append({
-            'item': item, 'min_x': min_x, 'max_x': max_x, 'min_y': min_y, 'max_y': max_y,
-            'cy': (min_y + max_y) / 2.0, 'h': max(max_y - min_y, 1.0)
-        })
-    if not parsed: return []
-    parsed.sort(key=lambda p: (p['min_y'], p['min_x']))
-    
-    lines = []
-    for p in parsed:
-        matched_line = None
-        for line in lines:
-            overlaps = []
-            for other in line:
-                ov = max(0, min(p['max_y'], other['max_y']) - max(p['min_y'], other['min_y']))
-                min_h = min(p['h'], other['h'])
-                overlaps.append(ov / min_h)
-            if (sum(overlaps) / len(overlaps)) > 0.40:
-                matched_line = line; break
-        if matched_line is not None: matched_line.append(p)
-        else: lines.append([p])
-            
-    lines.sort(key=lambda line: min(k['min_y'] for k in line))
-    sorted_items = []
-    for line in lines:
-        line.sort(key=lambda p: p['min_x'])
-        for p in line: sorted_items.append(p['item'])
-    return sorted_items
-
-def clean_word_key(text):
-    if not text: return ""
-    return re.sub(r"\s+", " ", re.sub(r"^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$", "", text).strip().lower())
 
 def build_coherent_page_text(boxes):
     if not boxes: return ""
@@ -1212,7 +1229,7 @@ elif st.session_state.editor_mode:
                     clean_k = sanitize_gemini_key(active_key)
                     test_success = False
                     last_test_err = ""
-                    for m_name in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                    for m_name in ACTIVE_FLASH_MODELS:
                         test_url = get_gemini_endpoint(m_name)
                         try:
                             t_data = json.dumps({"contents": [{"parts": [{"text": "Say 'OK'"}]}]}).encode("utf-8")
@@ -1279,18 +1296,24 @@ elif st.session_state.editor_mode:
                 if st.button("🔄 Tüm Kitabı Baştan Tara (Toplu)", type="primary"):
                     p_bar = st.progress(0)
                     s_txt = st.empty()
+                    first_err = None
                     for idx, p in enumerate(pages):
                         s_txt.text(f"Sayfa {idx + 1} / {total_p} taranıyor...")
                         try:
                             img_bytes = base64.b64decode(p['img_b64'])
                             pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
                             re_page, engine_name, err = process_single_image(pil_img)
+                            if err and not first_err:
+                                first_err = err
                             p['boxes'] = re_page['boxes']
                         except Exception:
                             pass
                         p_bar.progress((idx + 1) / total_p)
                     s_txt.text("Tüm sayfaların taraması tamamlandı!")
-                    st.success("Tüm sayfalar güncellendi! Kalıcı olması için 'Değişiklikleri Kaydet' butonuna basınız.")
+                    if first_err:
+                        st.warning(f"Bazı sayfalarda uyarı oluştu: {first_err}")
+                    else:
+                        st.success("Tüm sayfalar güncellendi! Kalıcı olması için 'Değişiklikleri Kaydet' butonuna basınız.")
                     time.sleep(0.5)
                     st.rerun()
             with col_b2:
@@ -1326,7 +1349,7 @@ elif st.session_state.editor_mode:
                 for idx_f, nf in enumerate(new_files):
                     s_txt.text(f"Ekleniyor: {idx_f + 1} / {total_n}...")
                     b_img = ImageOps.exif_transpose(Image.open(nf)).convert("RGB")
-                    if split_spreads and (b_img.width / b_img.height) > 1.05:
+                    if split_new_spreads and (b_img.width / b_img.height) > 1.05:
                         mid = b_img.width // 2
                         p1, _, _ = process_single_image(b_img.crop((0, 0, mid, b_img.height)))
                         p2, _, _ = process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height)))
@@ -1735,7 +1758,7 @@ else:
                         st.session_state.editor_mode = True; st.rerun()
 
             else:
-                upl_files = st.file_uploader("Kitap sayfaları (PNG/JPG):", type=["png", "jpg"], accept_multiple_files=True)
+                upl_files = st.file_uploader("Kitap sayfaları (PNG/JPG):", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
                 if upl_files and st.button("⚡ Taramayı Başlat", type="primary", use_container_width=True):
                     extracted_pages = []
                     total_f = len(upl_files)
