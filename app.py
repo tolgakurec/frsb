@@ -1745,7 +1745,7 @@ else:
                     for f_i, file in enumerate(upl_files):
                         stat_text.text(f"Fotoğraf {f_i + 1} / {total_f} taranıyor...")
                         b_img = ImageOps.exif_transpose(Image.open(file)).convert("RGB")
-                        if split_new_spreads and (b_img.width / b_img.height) > 1.05:
+                        if split_spreads and (b_img.width / b_img.height) > 1.05:
                             mid = b_img.width // 2
                             p1, _, _ = process_single_image(b_img.crop((0, 0, mid, b_img.height)))
                             p2, _, _ = process_single_image(b_img.crop((mid, 0, b_img.width, b_img.height)))
